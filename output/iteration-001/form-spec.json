@@ -1,0 +1,1130 @@
+{
+  "meta": {
+    "product": "Asteron Life Quote & Apply",
+    "baseUrl": "https://outsystems-dev.asteronlife.co.nz/QuoteAndApply/",
+    "extracted": "2026-08-04",
+    "extractor": "Playwright browser automation (DOM-first)",
+    "coverage": "Full end-to-end — Quote form + complete Apply flow (steps 2–6c; steps 6d and 6e blocked by payment gate)",
+    "quoteId": "57d0a8ac-e396-4261-85de-4738503b2f0c",
+    "applicationId": "8103d198-8e5c-406a-882c-b3fd7061f775"
+  },
+  "sections": {
+    "personalDetails": {
+      "label": "Personal Details",
+      "fields": [
+        {
+          "id": "b14-Input_FirstName",
+          "label": "First Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "id": "b14-Input_LastName",
+          "label": "Last Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "id": "b14-Input_BirthDate",
+          "label": "Date of birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "b14-Input_AgeNextBirthday",
+          "label": "Age next birthday",
+          "type": "number",
+          "required": true,
+          "note": "Auto-calculated from Date of birth"
+        },
+        {
+          "id": "b14-ButtonGroupItem1 / b14-ButtonGroupItem2",
+          "label": "Gender",
+          "type": "button-group",
+          "options": ["Male", "Female"],
+          "required": false
+        },
+        {
+          "id": "b14-ButtonTrue / b14-ButtonFalse",
+          "label": "Smoking status (incl. vapes & e-cigarettes)",
+          "type": "button-group",
+          "options": ["Yes", "No"],
+          "required": false
+        },
+        {
+          "id": "b14-OccupationCode_Dropdown",
+          "label": "Occupation code",
+          "type": "select",
+          "options": [
+            { "label": "AM", "value": "AM" },
+            { "label": "AA", "value": "AA" },
+            { "label": "A1", "value": "A1" },
+            { "label": "A2", "value": "A2" },
+            { "label": "B", "value": "B" },
+            { "label": "C", "value": "C" },
+            { "label": "S", "value": "S" },
+            { "label": "U", "value": "U" },
+            { "label": "IC", "value": "IC" }
+          ],
+          "required": false,
+          "note": "Preceded by a searchable Occupation lookup (React Select)"
+        },
+        {
+          "id": "b14-EmploymentStatus_Dropdown",
+          "label": "Employment status",
+          "type": "select",
+          "options": [
+            { "label": "Employed", "value": "0" },
+            { "label": "Self-Employed", "value": "1" },
+            { "label": "Employed by own company", "value": "2" },
+            { "label": "Other", "value": "3" }
+          ],
+          "required": true,
+          "validationMessage": "Please complete the client's employment details before applying"
+        },
+        {
+          "id": "b14-b4-MaskedInput",
+          "label": "Pre-tax annual income ($)",
+          "type": "masked-number",
+          "required": false,
+          "tooltip": "Annual income can include salary, wages, packaged fringe benefits, commissions, bonuses and company superannuation contributions e.g KiwiSaver. For the self-employed it's the insured's share of the net profit (or loss) of the business, derived from their own personal exertion (after deduction of all business expenses, including depreciation), but before tax."
+        }
+      ]
+    },
+    "policySettings": {
+      "label": "Policy-level Settings",
+      "note": "Applied to all covers within the policy",
+      "fields": [
+        {
+          "id": "b22-b1-Checkbox_InflationAdjustmentBenefit",
+          "label": "Inflation Adjustment Benefit",
+          "type": "checkbox",
+          "default": true
+        },
+        {
+          "id": "b22-b1-Checkbox_PremiumFreeze",
+          "label": "Premium Freeze",
+          "type": "checkbox",
+          "default": false
+        },
+        {
+          "id": "b22-b1-Dropdown_Premiums",
+          "label": "We Pay Your Premiums",
+          "type": "select",
+          "options": [
+            { "label": "None", "value": "0" },
+            { "label": "30 days", "value": "1" },
+            { "label": "60 days", "value": "2" },
+            { "label": "90 days", "value": "3" }
+          ],
+          "default": "None",
+          "tooltip": "Waives the premiums for all the lump sum cover premiums on the policy after the chosen wait period if the insured is sick or disabled and cannot work for more than 10 hours a week after the chosen waiting period."
+        },
+        {
+          "id": "b22-b1-Dropdown_FlexiRate",
+          "label": "Flexi Rate",
+          "type": "select",
+          "options": [
+            "N/A", "2.5%", "5.0%", "7.5%", "10.0%", "12.5%", "15.0%",
+            "17.5%", "20.0%", "22.5%", "25.0%", "27.5%", "30.0%"
+          ],
+          "default": "N/A",
+          "tooltip": "Flexi-rate allows you to discount your clients premium by reducing all or part of the Advisers Initial and/or Renewal Commission."
+        }
+      ]
+    },
+    "lumpSumCovers": {
+      "label": "Lump Sum Covers",
+      "activationPattern": "eval: [...document.querySelectorAll('button.cover-button')].find(b=>b.innerText.trim()==='<CoverName>').click()",
+      "covers": [
+        {
+          "id": "Life",
+          "label": "Life Cover A",
+          "elementIndex": "1343_0",
+          "fields": [
+            {
+              "id": "b22-l2-1343_0-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "note": "Right-to-left digit shifting. Clear with 10x Backspace then retype. Dynamic ID — use input[id*=SumInsured] within cover section.",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_0-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": [
+                "Stepped", "Level to 50", "Level to 60", "Level to 65",
+                "Level to 70", "Level to 75", "Level to 80", "Level to 100"
+              ],
+              "default": "Stepped"
+            }
+          ],
+          "subCoverButtons": ["TI Support", "Acc. TPD", "Acc. Trauma", "Acc. Cancer"],
+          "tooltip": "The large sum insured discount bands for Life Cover are: $150,000–$199,999 / $200,000–$249,999 / $250,000–$299,999 / $300,000–$349,999 / $350,000–$399,999 / $400,000–$499,999 / $500,000–$749,999 / $750,000–$999,999 / $1,000,000+"
+        },
+        {
+          "id": "TISupport",
+          "label": "TI Support",
+          "parentCover": "Life",
+          "elementIndex": "1344_0",
+          "fields": [
+            {
+              "id": "b22-l2-1343_0-b7-l7-1344_0-b21-Input_SumInsured_L2",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "constraint": "Up to 100% of Life Cover sum insured, maximum $300,000"
+            },
+            {
+              "id": "b22-l2-1343_0-b7-l7-1344_0-b21-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped"],
+              "note": "Stepped only — no level options"
+            }
+          ],
+          "tooltip": "Pays the Terminal illness support benefit sum insured if diagnosed as terminally ill with less than 24 months to live. Apply for up to 100% Life Cover sum insured to a maximum of $300,000."
+        },
+        {
+          "id": "AcceleratedTPD",
+          "label": "Accelerated TPD",
+          "parentCover": "Life",
+          "elementIndex": "1344_1",
+          "fields": [
+            {
+              "id": "b22-l2-1343_0-b7-l7-1344_1-b21-Input_SumInsured_L2",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask"
+            },
+            {
+              "id": "b22-l2-1343_0-b7-l7-1344_1-b21-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped"],
+              "note": "Stepped only"
+            },
+            {
+              "id": "b22-l2-1343_0-b7-l7-1344_1-b21-Dropdown2",
+              "label": "Definition",
+              "type": "select",
+              "options": ["Own", "Any", "Modified"]
+            }
+          ]
+        },
+        {
+          "id": "TPD",
+          "label": "TPD A",
+          "elementIndex": "1343_1",
+          "fields": [
+            {
+              "id": "b22-l2-1343_1-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_1-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to 65", "Level to 70"],
+              "default": "Stepped"
+            },
+            {
+              "id": "b22-l2-1343_1-b7-Dropdown2",
+              "label": "Definition",
+              "type": "select",
+              "options": ["Own", "Any", "Modified"]
+            }
+          ],
+          "tooltip": "The large sum insured discount bands for TPD Cover are: $100,000–$249,999 / $250,000–$499,999 / $500k+"
+        },
+        {
+          "id": "Trauma",
+          "label": "Trauma A",
+          "elementIndex": "1343_2",
+          "fields": [
+            {
+              "id": "b22-l2-1343_2-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_2-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to 65", "Level to 70"],
+              "default": "Stepped"
+            },
+            {
+              "id": "b22-l2-1343_2-b7-b19-l1-3285_0-Checkbox1",
+              "label": "Early Trauma Benefit",
+              "type": "checkbox",
+              "default": false,
+              "tooltip": "Provides a partial payment for an additional 20 conditions which are less severe in nature. Pays the greater of $10,000 or 20% of the Trauma Recovery sum insured, up to a maximum of $100,000."
+            },
+            {
+              "id": "b22-l2-1343_2-b7-b19-l1-3285_1-Checkbox1",
+              "label": "Trauma Reinstatement",
+              "type": "checkbox",
+              "default": false,
+              "tooltip": "Allows reinstatement of Trauma Recovery Cover 12 months after a claim is made. There must be enough Life Cover to support the Trauma Recovery Cover reinstatement or Life Cover buy-back benefit should be selected."
+            },
+            {
+              "id": "b22-l2-1343_2-b7-b19-l1-3285_2-Checkbox1",
+              "label": "Continuous Trauma Benefit",
+              "type": "checkbox",
+              "default": false,
+              "tooltip": "Provides continuous cover even after a Trauma claim is made. Automatically reinstating the sum insured immediately after claim and allowing for up to 3 full trauma claims to be made under the policy for the same insured person."
+            }
+          ],
+          "subCoverButtons": [
+            {
+              "label": "Major Trauma",
+              "tooltip": "This benefit provides additional cover on top of any Trauma Recovery Cover (TRC) for more severe conditions likely to require more financial support. Please note: A maximum of 300% of the TRC sum insured applied if TRC is less than $25,000."
+            },
+            {
+              "label": "TPD on Trauma"
+            }
+          ],
+          "tooltip": "The large sum insured discount bands for Trauma Recovery Cover are: $100,000–$249,999 / $250,000–$499,999 / $500k+"
+        },
+        {
+          "id": "Cancer",
+          "label": "Cancer A",
+          "elementIndex": "1343_3",
+          "fields": [
+            {
+              "id": "b22-l2-1343_3-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_3-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to 65", "Level to 70"],
+              "default": "Stepped"
+            }
+          ],
+          "tooltip": "Provides additional money over and above the Trauma Recovery sum insured for cancer conditions and includes the Early stage cancer benefit. The large sum insured discount bands for Cancer Cover are: $100,000–$249,999 / $250k+"
+        },
+        {
+          "id": "AccidentalDeath",
+          "label": "Accidental Death A",
+          "elementIndex": "1343_4",
+          "fields": [
+            {
+              "id": "b22-l2-1343_4-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_4-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": [
+                "Stepped", "Level to 50", "Level to 60", "Level to 65",
+                "Level to 70", "Level to 75", "Level to 80", "Level to 100"
+              ],
+              "default": "Stepped"
+            }
+          ],
+          "tooltip": "The large sum insured discount bands for Accidental Death are: $150,000–$249,999 / $250,000–$499,999 / $500,000–$999,999 / $1,000,000+"
+        },
+        {
+          "id": "Needlestick",
+          "label": "Needlestick A",
+          "elementIndex": "1343_5",
+          "fields": [
+            {
+              "id": "b22-l2-1343_5-b7-Dropdown3",
+              "label": "Sum Insured ($)",
+              "type": "select",
+              "options": [
+                "$0", "$50,000", "$100,000", "$150,000", "$200,000",
+                "$250,000", "$300,000", "$350,000", "$400,000", "$450,000", "$500,000"
+              ],
+              "note": "Fixed steps — not a calc-mask"
+            },
+            {
+              "id": "b22-l2-1343_5-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": [
+                "Stepped", "Level to 50", "Level to 60", "Level to 65",
+                "Level to 70", "Level to 75", "Level to 80", "Level to 100"
+              ],
+              "default": "Stepped"
+            }
+          ],
+          "tooltip": "For certain occupations, provides additional financial protection against the risk of contracting hepatitis B or C or HIV."
+        },
+        {
+          "id": "SpecificInjury",
+          "label": "Specific Injury A",
+          "elementIndex": "1343_6",
+          "fields": [
+            {
+              "id": "b22-l2-1343_6-b7-Input_SumInsured",
+              "label": "Sum Insured ($)",
+              "type": "calc-mask",
+              "required": true
+            },
+            {
+              "id": "b22-l2-1343_6-b7-Dropdown1",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": [
+                "Stepped", "Level to 50", "Level to 60", "Level to 65",
+                "Level to 70", "Level to 75", "Level to 80", "Level to 100"
+              ],
+              "default": "Stepped"
+            }
+          ],
+          "tooltip": "The Specific injury support benefit — Lump sum pays a multiple of the sum insured for specified injuries suffered as a result of an accident. It must be purchased with at least one eligible Personal Insurance cover."
+        }
+      ]
+    },
+    "disabilityCovers": {
+      "label": "Disability Covers",
+      "activationPattern": "eval: [...document.querySelectorAll('button.cover-button')].find(b=>b.innerText.trim()==='<CoverName>').click()",
+      "covers": [
+        {
+          "id": "MortgageLiving",
+          "label": "Mortgage & Living",
+          "elementIndex": "996_0",
+          "fields": [
+            {
+              "id": "b22-b12-l9-996_0-Dropdown3",
+              "label": "Cover Type",
+              "type": "select",
+              "options": ["Annual Income", "Monthly Mortgage"]
+            },
+            {
+              "id": "b22-b12-l9-996_0-Input_SumInsured",
+              "label": "Monthly Benefit ($)",
+              "type": "calc-mask",
+              "note": "Unlabelled in DOM; visually labelled 'Monthly Benefit ($)'"
+            },
+            {
+              "id": "b22-b12-l9-996_0-Dropdown2",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to Expiry"],
+              "default": "Stepped",
+              "note": "DOM label says 'Monthly Benefit ($)' — OutSystems mislabel; visual label is 'Premium Structure'"
+            },
+            {
+              "id": "b22-b12-l9-996_0-Dropdown_MLCOffsetBenefit",
+              "label": "Offset Benefit",
+              "type": "select",
+              "options": ["Agreed Value", "Agreed Value Plus"],
+              "default": "Agreed Value Plus",
+              "tooltip": "Agreed Value — will offset 'other income' from the monthly benefit. Agreed Value Plus — will not offset 'other income' from the monthly benefit."
+            },
+            {
+              "id": "b22-b12-l9-996_0-Dropdown_BenefitPeriod2",
+              "label": "Benefit Period",
+              "type": "select",
+              "options": ["2 Years", "5 Years", "To Age 65", "To Age 70"],
+              "default": "To Age 65"
+            },
+            {
+              "id": "b22-b12-l9-996_0-Dropdown_WaitingPeriod3",
+              "label": "Waiting Period",
+              "type": "select",
+              "options": ["14 Days", "30 Days", "60 Days", "90 Days", "180 Days", "365 Days", "730 Days"],
+              "default": "30 Days",
+              "note": "DOM label says 'Benefit Period' — OutSystems mislabel; visual label is 'Waiting Period'"
+            }
+          ],
+          "optionButtons": [
+            {
+              "label": "Increasing Claim"
+            },
+            {
+              "label": "Income Top-up Package",
+              "tooltip": "Includes two benefits: Income booster — Pays an extra 33% of the monthly benefit for the first 3 months on a full claim. 25% income bonus — Pays an extra 25% of income earned when back at work part time but still on claim."
+            },
+            {
+              "label": "Specific Injury Support Benefit",
+              "tooltip": "Monthly pays a multiple of the monthly benefit for specified injuries suffered as a result of an accident. While receiving payments under this benefit no additional Living or Homemaker Support benefit is payable."
+            },
+            {
+              "label": "Immediate Assist Package",
+              "tooltip": "Includes two benefits: Bed-Confinement — Pays a benefit for each day the insured is confined to bed during the waiting period. Crisis Benefit — Pays a benefit upon diagnosis with one of the 11 specified conditions (including cancer, heart attack and stroke), regardless of the waiting period."
+            },
+            {
+              "label": "Ten-Hour Benefit",
+              "tooltip": "Allows you to work up to 10 hours per week without affecting your Living support benefit."
+            },
+            {
+              "label": "Mental Health Discount"
+            },
+            {
+              "label": "Split Benefit",
+              "tooltip": "Splits the total monthly benefit into two sums insured to allow a top-up on the base cover or different waiting periods."
+            }
+          ]
+        },
+        {
+          "id": "IncomeProtection",
+          "label": "Income Protection",
+          "elementIndex": "996_1",
+          "fields": [
+            {
+              "id": "b22-b12-l9-996_1-Dropdown4",
+              "label": "Policy Type",
+              "type": "select",
+              "options": ["Loss Of Earnings", "Loss Of Earnings Plus"],
+              "default": "Loss Of Earnings Plus"
+            },
+            {
+              "id": "b22-b12-l9-996_1-Input_SumInsured",
+              "label": "Monthly Benefit ($)",
+              "type": "calc-mask",
+              "note": "Unlabelled in DOM"
+            },
+            {
+              "id": "b22-b12-l9-996_1-Dropdown2",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to Expiry"],
+              "default": "Stepped"
+            },
+            {
+              "id": "b22-b12-l9-996_1-Dropdown_BenefitPeriod2",
+              "label": "Benefit Period",
+              "type": "select",
+              "options": ["2 Years", "5 Years", "To Age 65", "To Age 70"],
+              "default": "To Age 65"
+            },
+            {
+              "id": "b22-b12-l9-996_1-Dropdown_WaitingPeriod3",
+              "label": "Waiting Period",
+              "type": "select",
+              "options": ["14 Days", "30 Days", "60 Days", "90 Days", "180 Days", "365 Days", "730 Days"],
+              "default": "30 Days"
+            }
+          ],
+          "optionButtons": [
+            {
+              "label": "Increasing Claim"
+            },
+            {
+              "label": "Income Top-up Package",
+              "tooltip": "Income booster — Pays an extra 33% of the monthly benefit for the first 3 months on a full claim. 25% income bonus — Pays an extra 25% of income earned when back at work part time but still on claim."
+            },
+            {
+              "label": "Specific Injury Support Benefit",
+              "tooltip": "Monthly pays a multiple of the monthly benefit for specified injuries suffered as a result of an accident."
+            },
+            {
+              "label": "Immediate Assist Package",
+              "tooltip": "Bed-Confinement and Crisis Benefit (11 specified conditions, regardless of waiting period)."
+            },
+            {
+              "label": "Mental Health Discount"
+            },
+            {
+              "label": "Split Waiting Period",
+              "tooltip": "Splits the total monthly benefit into two sums insured each with a different waiting period."
+            }
+          ]
+        },
+        {
+          "id": "Workability",
+          "label": "Workability",
+          "elementIndex": "996_2",
+          "fields": [
+            {
+              "id": "b22-b12-l9-996_2-Input_SumInsured",
+              "label": "Monthly Benefit ($)",
+              "type": "calc-mask",
+              "note": "Unlabelled in DOM"
+            },
+            {
+              "id": "b22-b12-l9-996_2-Dropdown2",
+              "label": "Premium Structure",
+              "type": "select",
+              "options": ["Stepped", "Level to Expiry"],
+              "default": "Stepped"
+            },
+            {
+              "id": "b22-b12-l9-996_2-Dropdown_BenefitPeriod2",
+              "label": "Benefit Period",
+              "type": "select",
+              "options": ["To Age 65", "To Age 70"],
+              "default": "To Age 65"
+            },
+            {
+              "id": "b22-b12-l9-996_2-Dropdown_WaitingPeriod3",
+              "label": "Waiting Period",
+              "type": "select",
+              "options": ["30 Days", "45 Days", "60 Days", "75 Days", "90 Days"],
+              "default": "30 Days"
+            }
+          ],
+          "optionButtons": [
+            {
+              "label": "Increasing Claim"
+            }
+          ]
+        }
+      ]
+    },
+    "kidsCover": {
+      "label": "Kids Cover",
+      "fields": [
+        {
+          "id": "b22-b14-Dropdown1",
+          "label": "Number of Kids",
+          "type": "select",
+          "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+          "default": "0"
+        }
+      ]
+    },
+    "premium": {
+      "label": "Premium",
+      "fields": [
+        {
+          "id": "b24-l4-28921_0-l4-28319_0-PaymentFrequencyDropdown",
+          "label": "Payment frequency",
+          "type": "select",
+          "options": ["Fortnightly", "Monthly", "Quarterly", "Half Yearly", "Yearly"],
+          "default": "Monthly"
+        }
+      ],
+      "displays": [
+        {
+          "label": "Total Monthly Premium (All Lives)",
+          "type": "calculated-read-only"
+        },
+        {
+          "label": "Total Yearly Premium",
+          "type": "calculated-read-only",
+          "tooltip": "This is the total premium the clients will pay for the year. For example, the monthly premium x 12 or the half-yearly premium x 2"
+        }
+      ]
+    }
+  },
+  "applyFlow": {
+    "overview": {
+      "description": "Sequential multi-step application flow triggered by clicking Apply on the Quote form",
+      "steps": [
+        { "step": 1, "label": "Quote", "url": "/QuoteAndApply/Quote" },
+        { "step": 2, "label": "Client (Personal Details)", "url": "/QuoteAndApply/Client" },
+        { "step": 3, "label": "Duty of Disclosure", "url": "/QuoteAndApply/DutyOfDisclosure" },
+        { "step": "4a", "label": "Insurance History", "url": "/QuoteAndApply/InsuranceHistory" },
+        { "step": "4b", "label": "Occupation Details", "url": "/QuoteAndApply/OccupationDetails" },
+        { "step": "4c", "label": "Financial Details", "url": "/QuoteAndApply/FinancialDetails" },
+        { "step": "4d", "label": "Tele Interview", "url": "/QuoteAndApply/TeleInterview" },
+        { "step": "5", "label": "Personal Statement (7 pages)", "url": "/QuoteAndApply/PersonalStatement?p=1..7" },
+        { "step": "6a", "label": "Underwriting Decision", "url": "/QuoteAndApply/UnderwritingDecision" },
+        { "step": "6b", "label": "Owner and Address Detail", "url": "/QuoteAndApply/OwnerAndAddressDetail" },
+        { "step": "6c", "label": "Payment", "url": "/QuoteAndApply/Payment" },
+        { "step": "6d", "label": "Submit Application", "url": "/QuoteAndApply/SubmitApplication" },
+        { "step": "6e", "label": "Next Steps", "url": "/QuoteAndApply/NextSteps" }
+      ],
+      "navigationEnforcement": "Steps are sequential; direct URL to a later step redirects to earliest incomplete step"
+    },
+    "client": {
+      "label": "Step 2 — Client (Personal Details)",
+      "note": "Pre-populated from Quote form; can be amended",
+      "fields": [
+        { "label": "First Name", "type": "text", "required": false },
+        { "label": "Last Name", "type": "text", "required": false },
+        { "label": "Date of Birth", "type": "date", "required": true },
+        { "label": "Age Next Birthday", "type": "number", "required": true, "note": "Auto-calculated" },
+        { "label": "Gender", "type": "button-group", "options": ["Male", "Female"] },
+        { "label": "Smoking Status", "type": "button-group", "options": ["Yes", "No"] },
+        { "label": "Occupation", "type": "react-select-searchable" },
+        { "label": "Occupation Code", "type": "select", "options": ["AM", "AA", "A1", "A2", "B", "C", "S", "U", "IC"] },
+        { "label": "Employment Status", "type": "select", "required": true, "options": ["Employed", "Self-Employed", "Employed by own company", "Other"] }
+      ]
+    },
+    "dutyOfDisclosure": {
+      "label": "Step 3 — Duty of Disclosure",
+      "sections": [
+        { "title": "Why Accurate Information Matters", "type": "informational-text" },
+        { "title": "Duty to Disclose", "type": "informational-text", "keyPoints": [
+          "Disclose all material information — occupation, medical history, health, habits, finances",
+          "Answer all questions accurately; proactively disclose even if not asked",
+          "Disclose any change in circumstances from form submission until policy issuance",
+          "Duty applies when extending, altering, or reinstating a lapsed policy"
+        ]},
+        { "title": "Risks of Non-Disclosure", "type": "informational-text", "keyPoints": [
+          "Claims may not be paid",
+          "Policy may be cancelled or treated as void",
+          "Future insurance may be unavailable",
+          "Other financial hardship"
+        ]},
+        { "title": "Privacy Statement", "type": "informational-text", "contact": "0800 737 101 / contactus@asteronlife.co.nz / PO Box 894, Wellington" },
+        { "title": "Financial Strength Rating", "type": "informational-text", "rating": "A+ (Strong)", "ratingAgency": "Fitch Australia Pty Ltd" }
+      ],
+      "fields": [
+        {
+          "id": "ButtonGroupItem9 / ButtonGroupItem10",
+          "label": "Adviser Confirmation",
+          "type": "button-group",
+          "options": ["Yes", "No"],
+          "required": true,
+          "confirmationText": "I confirm that I have made the person to be insured and policy owner(s) aware of their duty of disclosure, our privacy statement and FSR disclosure as outlined above and they have confirmed to me that they have understood their Duty of Disclosure."
+        }
+      ]
+    },
+    "insuranceHistory": {
+      "label": "Step 4a — Insurance History",
+      "fields": [
+        {
+          "label": "Have you ever had or applied for any insurance cover with Asteron Life or AA Life?",
+          "type": "radio",
+          "options": ["Yes", "No"],
+          "required": true
+        },
+        {
+          "label": "Other than this application, do you currently have, or are you currently applying for, any Life or Accidental Death benefit insurance?",
+          "type": "radio",
+          "options": ["Yes", "No"],
+          "required": true,
+          "conditionalFields": {
+            "condition": "Yes",
+            "fields": [{ "label": "Details of existing cover (provider, type, amount)", "type": "text" }]
+          }
+        }
+      ]
+    },
+    "occupationDetails": {
+      "label": "Step 4b — Occupation Details",
+      "fields": [
+        {
+          "label": "As part of your job, are you involved in any of the following?",
+          "type": "radio",
+          "options": ["Yes", "No"],
+          "required": true,
+          "conditionalFields": {
+            "condition": "Yes",
+            "type": "multi-select-checkboxes",
+            "options": [
+              "Working underground in a mine or tunnel",
+              "Working at heights in excess of 10 metres",
+              "Working offshore or at sea or underwater",
+              "Working with or handling dangerous substances or chemicals",
+              "Working with or handling weapons or explosives",
+              "Other hazardous duties"
+            ]
+          }
+        }
+      ]
+    },
+    "financialDetails": {
+      "label": "Step 4c — Financial Details",
+      "fields": [
+        {
+          "label": "Annual earned income",
+          "type": "masked-currency",
+          "required": true,
+          "note": "Used for underwriting income replacement calculations; may differ from Quote form pre-tax annual income"
+        }
+      ]
+    },
+    "teleInterview": {
+      "label": "Step 4d — Tele Interview",
+      "fields": [
+        {
+          "label": "Would you like to use our tele-interview service?",
+          "type": "button-group",
+          "options": ["Yes", "No"],
+          "note": "If Yes, scheduling interface or contact details provided to complete Personal Statement by phone"
+        }
+      ]
+    },
+    "personalStatement": {
+      "label": "Step 5 — Personal Statement",
+      "totalPages": 7,
+      "note": "All questions are Yes/No radio unless noted. Yes answers reveal follow-up sub-questions. All 7 pages must be completed before Underwriting Decision.",
+      "unansweredQuestionsUrl": "/QuoteAndApply/UnderwritingSummary?l=1&ApplicationId=...",
+      "pages": [
+        {
+          "page": 1,
+          "title": "Mental Health",
+          "questions": [
+            { "q": 1, "text": "Have you ever been admitted to hospital or referred to a psychiatrist for a mental health condition or eating disorder?", "type": "radio" },
+            { "q": 2, "text": "Have you ever had any symptoms of, been diagnosed with, or received treatment for: depression, anxiety, stress, panic attacks, eating disorder, or any other mental health condition?", "type": "radio" }
+          ]
+        },
+        {
+          "page": 2,
+          "title": "Physical Health — Ever",
+          "preamble": "Have you ever had, been diagnosed with, or received treatment for any of the following?",
+          "questions": [
+            { "q": 1, "conditionGroup": "Disease or disorder of the heart or blood vessels (heart attack, heart murmur, angina, chest pain, irregular heartbeat, heart valve disorder, peripheral vascular disorder)" },
+            { "q": 2, "conditionGroup": "Stroke, mini-stroke (TIA), brain haemorrhage or aneurysm, brain injury or disorder, bleeding within the skull" },
+            { "q": 3, "conditionGroup": "Epilepsy, seizures, fainting attacks, or fits" },
+            { "q": 4, "conditionGroup": "Diabetes, pre-diabetes, impaired glucose tolerance, or abnormal blood sugar" },
+            { "q": 5, "conditionGroup": "HIV, AIDS, or autoimmune disease (Lupus SLE, Scleroderma, CREST syndrome)" },
+            { "q": 6, "conditionGroup": "Crohn's disease, Ulcerative colitis, Barrett's oesophagus, Polycystic kidney disease (PKD), Cirrhosis, Hepatitis B or C" },
+            { "q": 7, "conditionGroup": "Any cancer, skin cancer, early-stage cancer, or carcinoma in situ (Hodgkin's disease, lymphoma, leukaemia, melanoma)" },
+            { "q": 8, "conditionGroup": "Any benign tumour, growth, cyst, or lump in the breast, lungs, brain, or spine" },
+            { "q": 9, "conditionGroup": "Any condition of the back, spine, or neck (physiotherapist, chiropractor, or osteopath; back/neck pain, sciatica, whiplash)" },
+            { "q": 10, "conditionGroup": "Multiple Sclerosis, paralysis, or other neurological disease or disorder (Parkinson's, Alzheimer's, Dementia, Cerebral palsy, Muscular dystrophy, Motor neurone disease)" }
+          ]
+        },
+        {
+          "page": 3,
+          "title": "Physical Health — In the Last 5 Years",
+          "preamble": "In the last 5 years, have you had, been diagnosed with, or received treatment for any of the following?",
+          "questions": [
+            { "q": 1, "conditionGroup": "Raised blood pressure (hypertension) or raised cholesterol" },
+            { "q": 2, "conditionGroup": "Sleep apnoea, asthma, or any other lung or breathing condition (COPD, emphysema, sarcoidosis, chronic bronchitis, tuberculosis)" },
+            { "q": 3, "conditionGroup": "Chronic fatigue, sustained poor sleep or lack of energy, current or recurrent long Covid" },
+            { "q": 4, "conditionGroup": "Anaemia, haemophilia, haemochromatosis, DVT (deep vein thrombosis), or any other blood, bleeding, or connective tissue disorder" },
+            { "q": 5, "conditionGroup": "Fibromyalgia, osteoporosis, gout, regional pain syndrome, Ehlers-Danlos Syndrome, or any form of arthritis" },
+            { "q": 6, "conditionGroup": "Any fractured or broken bone" },
+            { "q": 7, "conditionGroup": "Any condition affecting bones, joints, muscles, ligaments, tendons, or limbs (physiotherapy, soft tissue or cartilage tears, overuse injury)" },
+            { "q": 8, "conditionGroup": "Any gastro-intestinal tract disease or disorder (coeliac disease, hiatus hernia, IBS, ulcers, bowel polyps, weight loss surgery, blood from bowel, vomiting blood)" },
+            { "q": 9, "conditionGroup": "Any disease or disorder of the kidney, bladder, or urinary tract (kidney stones, recurrent UTIs, blood or protein in urine, abnormal kidney function tests)" },
+            { "q": 10, "conditionGroup": "Any disease or disorder of the liver or gall bladder (fatty liver, raised liver function tests, gallstones)" },
+            { "q": 11, "conditionGroup": "Any disease or disorder of the thyroid, pancreas, or any other glandular condition (hypothyroidism, hyperthyroidism, pancreatitis, Addison's disease)" },
+            { "q": 12, "conditionGroup": "Loss of feeling or reduced muscle power, balance/coordination problems, tremor, numbness, pins and needles, dizziness, migraines, or recurring headaches" },
+            { "q": 13, "conditionGroup": "Any condition affecting ears/hearing or eyes/vision (tinnitus, Menière's disease, labyrinthitis, glaucoma, optic neuritis, blurred or double vision)" },
+            { "q": 14, "conditionGroup": "Skin spots or moles that have bled, changed, or become painful; any other cyst, lump, growth, or benign tumour" },
+            { "q": 15, "conditionGroup": "Any disease or disorder of the reproductive system (e.g. testicles or prostate; not including infertility or erectile dysfunction)" }
+          ]
+        },
+        {
+          "page": 4,
+          "title": "Other Medical History",
+          "questions": [
+            { "q": 1, "timeframe": "Last 3 years", "text": "Consulted, or been advised to consult, any medical professional for any other sickness, injury, impairment, procedure, or syndrome?" },
+            { "q": 2, "timeframe": "Last 3 years", "text": "Had any surgery, been admitted overnight to hospital, or been asked to have any tests or investigations at a hospital or specialist clinic?" },
+            { "q": 3, "timeframe": "Last 3 years", "text": "Had any other condition that has caused you to be absent from work, or unable to perform your daily activities, for more than 2 weeks at a time?" },
+            { "q": 4, "timeframe": "Current", "text": "Currently receiving any counselling, or taking any medication or treatment for any other condition on a regular basis?" },
+            { "q": 5, "timeframe": "Current", "text": "Currently waiting for a referral, investigation, results, operation, or any other treatment for any other condition?" },
+            { "q": 6, "timeframe": "Last 12 months", "text": "Any of the following symptoms: unexplained weight loss; recurrent nausea or vomiting; unexplained memory loss, confusion, or change in movement; cough lasting 3 or more weeks; unexplained shortness of breath?" },
+            { "q": 7, "timeframe": "Last 12 months", "text": "Any of the following symptoms: persistent or recurrent fatigue, dizziness, numbness, weakness, pins and needles, or tremor; any other recurrent or unusual pain, discomfort, or bleeding; any symptom you are planning to consult a doctor about for the first time?" }
+          ]
+        },
+        {
+          "page": 5,
+          "title": "Family History",
+          "preamble": "Have any of your biological parents, brothers, or sisters been diagnosed with any of the following conditions before the age of 60?",
+          "type": "multi-select-checkboxes",
+          "automationNote": "Requires scrollIntoView + mouse-click on input element. label.click() via eval does NOT register with OutSystems.",
+          "options": [
+            "Don't know as I am adopted",
+            "Bowel or colon cancer",
+            "Breast and/or ovarian cancer",
+            "Another type of cancer (not breast, ovarian, bowel, or colon)",
+            "Alzheimer's disease or dementia",
+            "Angina, heart attack, heart disease and/or stroke",
+            "Diabetes",
+            "Familial adenomatous polyposis (FAP) or another hereditary bowel condition",
+            "Haemochromatosis",
+            "Huntington's disease (Chorea)",
+            "Motor neurone disease",
+            "Multiple Sclerosis",
+            "Muscular dystrophy",
+            "Parkinson's disease",
+            "Polycystic kidney disease (PKD)",
+            "Other condition running in the family for which you have received or been offered screening",
+            "None of the above"
+          ]
+        },
+        {
+          "page": 6,
+          "title": "Underwriting Assessments & Claims",
+          "questions": [
+            { "q": 1, "timeframe": "Last 5 years", "text": "Has any application for any type of insurance been declined or deferred?" },
+            { "q": 2, "timeframe": "Last 12 months", "text": "Has any application for insurance been offered with modified terms (loadings or exclusions)?" },
+            { "q": 3, "timeframe": "Current", "text": "Are you currently receiving a WINZ or ACC benefit, making a claim on an insurance policy, or expecting to receive the first payment of a claim?" },
+            { "q": 4, "timeframe": "Last 5 years", "text": "Other than anything already stated, have you previously made a claim on an insurance policy or received a WINZ or ACC benefit?" }
+          ]
+        },
+        {
+          "page": 7,
+          "title": "Residence, Activities & Lifestyle",
+          "groups": [
+            {
+              "groupTitle": "Residence and Travel",
+              "questions": [
+                {
+                  "q": 1,
+                  "text": "Are you a New Zealand citizen or do you hold a New Zealand permanent resident visa?",
+                  "type": "radio",
+                  "conditionalFields": {
+                    "condition": "No",
+                    "fields": [{
+                      "label": "How long have you lived in New Zealand?",
+                      "type": "select",
+                      "options": ["Less than 4 months", "4–6 months", "7–12 months", "More than 12 months but less than 3 years", "3–5 years", "Over 5 years"]
+                    }]
+                  }
+                },
+                {
+                  "q": 2,
+                  "text": "Do you plan to live, work, or travel outside of New Zealand or Australia in the next 12 months?",
+                  "type": "radio"
+                }
+              ]
+            },
+            {
+              "groupTitle": "Pursuits, Sports and Activities",
+              "questions": [
+                {
+                  "q": 3,
+                  "text": "Do you participate in any of the following activities?",
+                  "type": "radio",
+                  "conditionalFields": {
+                    "condition": "Yes",
+                    "type": "multi-select-checkboxes",
+                    "options": [
+                      "Flying or any aerial activity (hang gliding, paragliding, micro-lighting, parachuting & skydiving)",
+                      "Motor car or motorcycle sport",
+                      "Mountaineering or rock climbing (excluding artificial walls)",
+                      "Powerboat racing",
+                      "Caving or potholing",
+                      "Diving over 30 metres or solo"
+                    ]
+                  }
+                },
+                {
+                  "q": 4,
+                  "text": "Do you participate in any of the following activities?",
+                  "type": "radio",
+                  "conditionalFields": {
+                    "condition": "Yes",
+                    "type": "multi-select-checkboxes",
+                    "options": [
+                      "Ocean racing or long-distance open ocean sailing",
+                      "Horse riding (other than private hacking)",
+                      "Rugby or football (union, league, Australian rules, American football & Soccer)",
+                      "Full contact martial arts, combat sport or boxing",
+                      "Any extreme sport (bungee jumping, canyoning, white water rafting, heli-skiing, competitive BMX or mountain biking)",
+                      "Any professional or semi-professional sport not already stated"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "groupTitle": "Lifestyle and Medical History",
+              "questions": [
+                {
+                  "q": 5,
+                  "text": "Have you used any tobacco or nicotine products, including e-cigarettes, in the last 12 months?",
+                  "type": "select",
+                  "options": ["Please select an option", "Yes", "No"],
+                  "automationNote": "Uses <select> element, not a radio/button-group. Use selectOption or eval getElementById().value + change event."
+                },
+                { "q": 6, "text": "Have you used marijuana or cannabis recreationally in the last 5 years?", "type": "radio" },
+                { "q": 7, "text": "Have you used any other recreational drugs in the last 10 years (excluding marijuana or cannabis)?", "type": "radio" },
+                {
+                  "q": 8,
+                  "text": "How many standard drinks of alcohol do you typically have per week?",
+                  "type": "text-number",
+                  "id": "Input_AlcoholUnits"
+                },
+                { "q": 9, "text": "Have you ever attended, or been advised to attend, a support service, treatment programme, or counselling for your use of alcohol?", "type": "radio" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "summaryAndPayment": {
+      "label": "Step 6 — Summary & Payment",
+      "subSteps": [
+        {
+          "step": "6a",
+          "label": "Underwriting Decision",
+          "elements": [
+            { "label": "Outcome banner", "type": "display", "values": ["Accepted", "Declined", "Referred", "Deferred"] },
+            {
+              "label": "Summary table",
+              "type": "display-table",
+              "columns": ["Product", "Benefit", "Benefit Amount", "Premium", "Frequency", "Underwriting Assessment"]
+            },
+            { "label": "Link applications", "type": "toggle", "note": "Links multiple applications to the same commencement date" },
+            {
+              "label": "Attach files",
+              "type": "file-upload",
+              "maxFileSizeMB": 10,
+              "maxFilenameLengthChars": 60,
+              "acceptedFormats": ["pdf", "tiff", "tif", "jpeg", "jpg", "png"]
+            }
+          ]
+        },
+        {
+          "step": "6b",
+          "label": "Owner and Address Detail",
+          "elements": [
+            {
+              "label": "Policy Owner",
+              "type": "dropdown-plus-add-button",
+              "note": "Selecting from dropdown does NOT add the owner. The Add button must be explicitly clicked.",
+              "validationMessage": "At least one owner must be added to the policy"
+            },
+            { "label": "Create New (Owner)", "type": "button", "note": "Opens create-new-contact form" },
+            { "label": "Address for Correspondence", "type": "dropdown" },
+            { "label": "Create New (Address)", "type": "button", "note": "Opens create-new-address form" }
+          ]
+        },
+        {
+          "step": "6c",
+          "label": "Payment",
+          "paymentMethods": [
+            {
+              "method": "Credit Card",
+              "value": "0",
+              "note": "Uses external QuickStream iframe (cross-domain). Cannot be automated with Playwright.",
+              "automatable": false
+            },
+            {
+              "method": "Direct Debit",
+              "value": "1",
+              "automatable": true,
+              "fields": [
+                { "id": "b6-Input_BankName", "label": "Bank Name", "type": "text" },
+                { "id": "b6-Input_AccountName", "label": "Account Name", "type": "text" },
+                { "id": "b6-Input_Bank", "label": "Bank code", "type": "text", "format": "2 digits (e.g. 06)" },
+                { "id": "b6-Input_Branch", "label": "Branch code", "type": "text", "format": "4 digits (e.g. 0141)" },
+                { "id": "b6-Input_AccountNumber", "label": "Account Number (main)", "type": "text", "format": "7 digits (e.g. 0336267)" },
+                { "id": "b6-Input_AccountNumber2", "label": "Account Number (suffix)", "type": "text", "format": "2 digits (e.g. 00)" },
+                {
+                  "id": "b6-Checkbox2",
+                  "label": "DD Confirmation",
+                  "type": "checkbox",
+                  "required": true,
+                  "confirmationText": "I confirm that all required signatories for the nominated bank account have agreed to Asteron Life's direct debit terms and conditions..."
+                }
+              ],
+              "validationMessage": "Bank & Branch and Account Number combination entered is not valid",
+              "validationNote": "NZ banks validate bank/branch/account via backend modulus check. Must use a real valid combination.",
+              "nzBankAccountFormat": "BB-BBBB-AAAAAAA-SS (bank code – branch code – account number – suffix)"
+            }
+          ],
+          "productAssignmentTable": {
+            "note": "Apply to Policy button must be clicked for each product row before payment details form is shown",
+            "columns": ["Policy/Product name", "Owner(s)", "Illustrated Premium", "Payment Frequency and Date", "Payment Method"]
+          },
+          "fileAttachment": {
+            "maxFileSizeMB": 10,
+            "maxFilenameLengthChars": 60,
+            "acceptedFormats": ["pdf", "tiff", "tif", "jpeg", "jpg", "png"]
+          }
+        },
+        {
+          "step": "6d",
+          "label": "Submit Application",
+          "note": "Access gate: requires payment to be successfully submitted. Provides final summary and confirmation before formal submission.",
+          "accessible": false,
+          "blockedBy": "Payment step (requires valid payment)"
+        },
+        {
+          "step": "6e",
+          "label": "Next Steps",
+          "note": "Access gate: requires Submit Application to complete. Displays post-submission information, processing timeline, and confirmation details.",
+          "accessible": false,
+          "blockedBy": "Submit Application step"
+        }
+      ]
+    }
+  },
+  "businessRules": {
+    "sumInsuredDiscountBands": {
+      "Life": [
+        "$150,000–$199,999", "$200,000–$249,999", "$250,000–$299,999",
+        "$300,000–$349,999", "$350,000–$399,999", "$400,000–$499,999",
+        "$500,000–$749,999", "$750,000–$999,999", "$1,000,000+"
+      ],
+      "TPD": ["$100,000–$249,999", "$250,000–$499,999", "$500k+"],
+      "Trauma": ["$100,000–$249,999", "$250,000–$499,999", "$500k+"],
+      "Cancer": ["$100,000–$249,999", "$250k+"],
+      "AccidentalDeath": [
+        "$150,000–$249,999", "$250,000–$499,999", "$500,000–$999,999", "$1,000,000+"
+      ]
+    },
+    "bundlingDiscounts": {
+      "2 cover types": "15%",
+      "3 or more cover types": "20%",
+      "note": "Applies to Personal & Business"
+    },
+    "tiSupportConstraint": "Up to 100% of Life Cover sum insured, maximum $300,000",
+    "majorTraumaConstraint": "Maximum 300% of TRC sum insured if TRC is less than $25,000",
+    "earlyTraumaBenefit": "Pays the greater of $10,000 or 20% of the Trauma Recovery sum insured, up to a maximum of $100,000",
+    "continuousTraumaBenefit": "Up to 3 full trauma claims per insured person",
+    "traumaReinstatement": "12-month wait after claim; requires sufficient Life Cover or Life Cover buy-back benefit",
+    "specificInjuryConstraint": "Must be purchased with at least one eligible Personal Insurance cover",
+    "wePay_YourPremiumsConstraint": "Applies to lump sum cover premiums only; triggers when insured cannot work more than 10 hours/week",
+    "tenHourBenefitWorkability": "Allows working up to 10 hours/week without affecting Living support benefit",
+    "incomeTopUpPackageMLC": "Income booster: +33% monthly benefit for first 3 months. 25% income bonus when partially back at work",
+    "immediateAssistPackage": "Bed-Confinement + Crisis Benefit (11 specified conditions). Crisis benefit ignores waiting period.",
+    "agreedValueOffsetBenefit": "Agreed Value offsets 'other income' from monthly benefit. Agreed Value Plus does not."
+  },
+  "validationRules": [
+    {
+      "trigger": "Apply button clicked (Quote form)",
+      "message": "Please complete the client's employment details before applying",
+      "condition": "Employment status not selected"
+    },
+    {
+      "trigger": "Tab/blur out of Sum Insured field",
+      "effect": "OutSystems auto-save triggered — 'Quote saved.' toast appears",
+      "note": "This bypasses the footer Save modal entirely"
+    },
+    {
+      "trigger": "Sum Insured field left empty on save attempt",
+      "message": "Sum Insured field is required for all covers.",
+      "resolution": "Enter value and tab out to trigger blur/auto-save"
+    },
+    {
+      "trigger": "Duty of Disclosure Next button",
+      "condition": "Adviser confirmation not set to Yes",
+      "effect": "Cannot proceed — Next button inactive"
+    },
+    {
+      "trigger": "Owner and Address Detail Next",
+      "condition": "No owner added via Add button (selecting from dropdown alone is insufficient)",
+      "message": "At least one owner must be added to the policy"
+    },
+    {
+      "trigger": "Direct Debit Submit",
+      "condition": "Invalid NZ bank account combination",
+      "message": "Bank & Branch and Account Number combination entered is not valid",
+      "note": "Modulus check validates bank/branch/account combination against real NZ banking data"
+    },
+    {
+      "trigger": "Personal Statement — Next on page 7",
+      "condition": "Any question on pages 1-7 left unanswered",
+      "effect": "Unanswered Questions summary page shown at /UnderwritingSummary?l=1. Each item has an Answer button linking to specific page."
+    }
+  ],
+  "automationNotes": {
+    "quoteForm": {
+      "sumInsuredEntry": "Use 10x Backspace to clear calc-mask field, then type digits one at a time",
+      "coverButtonActivation": "Must use eval button.click() — standard Playwright click does not trigger OutSystems XHR",
+      "saveMethod": "Tab out of any Sum Insured field to trigger auto-save (no modal required)",
+      "dynamicIds": "OutSystems regenerates element IDs per session; use attribute selectors like input[id*=SumInsured]",
+      "newQuoteNavigation": "Patch window.open before clicking New Quote link; nav happens in-page",
+      "occupationSearch": "Uses React Select — type search text then click dropdown option"
+    },
+    "applyFlow": {
+      "textInputBinding": "Standard fill() does NOT trigger OutSystems reactive binding in the apply flow. Use the 'type' action in server.js (clicks field, clears with Ctrl+A+Delete, types with 40ms delay, Tab blur).",
+      "checkboxInteraction": "label.click() via eval does NOT register with OutSystems. Pattern: el.scrollIntoView({block:'center'}) → getBoundingClientRect() → mouse-click at viewport coordinates",
+      "radioButtonInteraction": "Same pattern as checkbox — scrollIntoView + mouse-click required for all radio inputs",
+      "buttonGroupInteraction": "button-group-item elements. Selected state has class button-group-selected-item. Use scrollIntoView + mouse-click pattern.",
+      "offScreenElements": "Elements with y > viewport height or y < 0 must be scrolled into view: el.scrollIntoView({block:'center'}) → re-query getBoundingClientRect() → mouse-click",
+      "selectWithComplexIds": "page.selectOption() may fail with long hyphenated IDs. Use eval: document.getElementById('...').value = '...'; document.getElementById('...').dispatchEvent(new Event('change'))",
+      "personalStatementCompletion": "All 7 pages must be answered. Unanswered questions surfaced at UnderwritingSummary?l=1. Each Answer button navigates to specific page.",
+      "paymentCreditCard": "QuickStream cross-domain iframe — cannot be automated with Playwright",
+      "paymentDirectDebit": "Requires real valid NZ bank account. Backend modulus check validates bank/branch/account combination.",
+      "policyOwnerAdd": "Selecting from owner dropdown does NOT add the owner. The Add button must be explicitly clicked.",
+      "adviserModals": "Adviser Use popups and separate block modals must have OK or Apply button pressed before proceeding on main screen. Check for [role='dialog'] modals after every navigation."
+    }
+  }
+}
