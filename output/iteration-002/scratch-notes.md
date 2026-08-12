@@ -275,3 +275,135 @@ None of these individually-reasonable fixes restored the premium calculation. Th
 - [ ] Save vs Save as New vs Apply button behavior differences — not tested (only Apply was exercised, repeatedly, as the validation-trigger)
 - [ ] Close / View PDF button behavior — not tested
 - [ ] First Name/Last Name/DOB — confirmed NOT required to clear the Apply-time validation banner in any test performed; still worth a footnote that this may change at a later Apply-flow step (Client/Personal Details step), which is out of scope for this Quote screen
+
+## Major Trauma Cap Formula — RESOLVED (2026-08-12)
+
+### Summary
+The Major Trauma benefit has TWO distinct cap regimes based on the parent Trauma Recovery Cover (TRC) Sum Insured:
+
+### Formula
+
+| TRC Sum Insured | Major Trauma Maximum | Source Error Text |
+|-----------------|---------------------|-------------------|
+| < $25,000 | 300% × TRC Sum Insured | "The maximum Sum Insured for Major Trauma Benefit based on the Trauma Cover Sum Insured of $X is $Y." |
+| ≥ $25,000 | $2,000,000 − TRC SI − Cancer SI (global combined cap) | "The maximum total Sum Insured per life for Trauma Recovery Cover, including Cancer Cover, is $2,000,000." |
+
+### Evidence
+
+**Test 1: TRC = $20,000 (below threshold)**
+- Major Trauma $60,000 → ✅ Accepted (300% of $20k = $60k)
+- Major Trauma $60,001 → ❌ "The maximum Sum Insured for Major Trauma Benefit based on the Trauma Cover Sum Insured of $20000 is $60000."
+
+**Test 2: TRC = $25,000 (at threshold)**
+- Major Trauma $75,000 → ✅ Accepted (300% would be $75k — but this is NOT the cap)
+- Major Trauma $500,000 → ✅ Accepted
+- Major Trauma $1,000,000 → ✅ Accepted  
+- Major Trauma $1,975,000 → ✅ Accepted (total: $25k + $1.975M = $2M exactly)
+- Major Trauma $1,975,001 → ❌ "The maximum total Sum Insured per life for Trauma Recovery Cover, including Cancer Cover, is $2,000,000."
+- Major Trauma $2,000,000 → ❌ Same error (total would be $2.025M)
+
+### Key Insight
+When TRC ≥ $25,000, there is **no percentage-based cap** on Major Trauma. The only constraint is the global $2,000,000 combined maximum for all Trauma-related covers (TRC + Major Trauma + Cancer Cover combined).
+
+### Additional Discovery: Major Trauma has its own fields
+- **Sum Insured field**: `Input_SumInsured_L2` (calc-mask, same interaction pattern as parent)
+- **Premium Structure dropdown**: Only option is "Stepped" (1 option, no Level alternatives)
+- Major Trauma is NOT a percentage multiplier — it's a standalone sub-cover with its own independently-set Sum Insured
+
+### Test Config Used
+- Age: 35, Male, Non-smoker, Occupation Code: AA, Employment: Employed
+- Trauma cover activated under Lump Sum Covers (Personal policy)
+- Major Trauma sub-benefit activated via cover button inside Trauma card
+
+
+---
+
+## Footer Buttons — RESOLVED (2026-08-12)
+
+| Button | Behavior |
+|--------|----------|
+| Save | Opens "Add Reference (Optional)" modal with text input + Cancel/Save. Persists quote, URL gains QuoteId. Shows "Last modified" timestamp. |
+| Save as New | Same modal. Creates a new quote copy with different QuoteId. |
+| View PDF | Available when quote is valid/priced. |
+| Close | Navigates back to the quote list. |
+
+---
+
+## Business Expenses & Farmers Disability — RESOLVED (2026-08-12)
+
+### Caps are FLAT (not occupation-varying or income-varying)
+- **Business Expenses**: $16,666/month maximum for ALL eligible occupations
+- **Farmers Disability**: $10,000/month maximum for ALL eligible occupations
+
+### Occupation Availability Matrix
+
+| Occupation | Business Expenses | Farmers Disability |
+|-----------|------------------|-------------------|
+| AM | ✅ Available | ❌ Blocked |
+| AA | ✅ Available | ❌ Blocked |
+| A1 | ✅ Available | ❌ Blocked |
+| A2 | ✅ Available | ❌ Blocked |
+| B | ✅ Available | ✅ Available |
+| C | ✅ Available | ✅ Available |
+| S | ❌ Blocked | ❌ Blocked |
+| U | ❌ Blocked | ❌ Blocked |
+
+### Farmers Disability Additional Requirement
+- Employment Status must be "Self-Employed" or "Employed by own company"
+- Blocked for "Employed" and "Other"
+
+---
+
+## Phantom-until-focused Lump Sum covers — RESOLVED (2026-08-12)
+
+- An activated cover with unfocused Sum Insured (value=".") does NOT silently vanish on Apply
+- Instead produces error: "The minimum premium is $240.00 per year per Life insured"
+- The cover persists in a zombie state (button loses active class but cover exists)
+- This differs from Disability covers which DO silently vanish
+
+---
+
+## Duplicate Lump Sum cover instances — RESOLVED (2026-08-12)
+
+- Clicking a cover button when that cover already exists is a **NO-OP**
+- No "Life Cover B" is created — only one instance of each cover type per policy
+- Card naming "Life Cover A" does NOT imply multiple instances are supported
+
+---
+
+## Add Life minimum bar — RESOLVED (2026-08-12)
+
+- "Add life" button works **UNCONDITIONALLY** — no validation on Life 1 required
+- Can add Life 2 with completely empty Life 1 fields
+- Validation only occurs at Apply time, not at tab-switch time
+- The error "Cannot proceed — Please enter the minimum requirement..." only fires from Apply, not from Add Life
+
+---
+
+## Specific Injury cross-policy dependency — RESOLVED (2026-08-12)
+
+- Specific Injury activates **independently** with no companion cover requirement
+- No need for Life, TPD, or Trauma on the same policy
+- Uses a fixed-tier dropdown for Sum Insured ($0 to $500K in $50K steps), not free-text calc-mask
+- Can be activated on any policy regardless of other covers present
+
+---
+
+## Fortnightly payment frequency — RESOLVED (2026-08-12)
+
+- **Formula confirmed**: Fortnightly = Yearly ÷ 26 (with per-payment rounding)
+- Example: $254.16/year ÷ 26 = $9.7754 → rounded to $9.77/fortnight
+- Slight yearly total difference due to rounding artifact ($9.77 × 26 = $254.02 vs exact $254.16)
+- Dropdown options: Fortnightly(0), Monthly(1), Quarterly(2), Half Yearly(3), Yearly(4)
+- Default: Monthly
+
+---
+
+## Needlestick occupation gate — RESOLVED (2026-08-12)
+
+- Needlestick is **ONLY available for Occupation Code = AA**
+- For ALL other codes (AM, A1, A2, B, C, S, U), the Needlestick button is completely removed from the DOM
+- This is the strictest occupation gate of any cover — most restrictive single-code availability
+- The entire cover panel switches between two layouts based on occupation:
+  - AA: Life, TPD, Trauma, Cancer, Acd. Death, **Needlestick**, Specific Injury
+  - Non-AA: Life, TPD, Trauma, Specific Injury, Business Expenses, Business Disability, Farmers Disability

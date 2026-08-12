@@ -15,9 +15,20 @@ Confluence/Jira documentation and OutSystems OutDoc for screen-level documentati
 - **Form entry point:** Navigate to Quote & Apply → click "New Quote" (opens in new tab)
 - **Form URL pattern:** `/QuoteAndApply/Quote?QuoteId=...`
 
-## In-progress: iteration 002 follow-up (Kiro CLI + server.js pass)
+## Iteration 002 follow-up — COMPLETE (2026-08-12)
 
-Iteration 002's report (`output/iteration-002/quote-screen-business-rules.md`) has an open §13 of unresolved items — testing continues via `server.js`/`explore-form.js` from an Amazon Workspace (the prior pass used a different machine's direct Playwright MCP browser, unreachable from here). **Read `HANDOFF_TO_KIRO_CLI.md` (project root) before doing anything** — it has full environment setup steps, a priority-ordered checklist (Major Trauma ≥$25k cap formula first), and every interaction gotcha discovered so far (calc-mask fields, disability-cover focus+blur commitment requirement, Apply's silent same-URL navigation, the multi-policy "Personal"/"Business" architecture).
+All open items from `HANDOFF_TO_KIRO_CLI.md` §4 have been resolved via `server.js` from the Amazon Workspace. Key findings appended to `output/iteration-002/scratch-notes.md`. Summary of resolutions:
+
+1. **Major Trauma ≥$25k formula**: When TRC ≥ $25,000, no percentage cap — only the global $2M combined limit (TRC + Major Trauma + Cancer). Below $25k: 300% × TRC.
+2. **Save/Save as New/Close/View PDF**: Save shows optional reference modal then persists. Close returns to list.
+3. **Business Expenses**: Flat $16,666/month cap, available for AM/AA/A1/A2/B/C, blocked for S/U.
+4. **Farmers Disability**: Flat $10,000/month cap, only B/C occupation + self-employed.
+5. **Phantom Lump Sum covers**: Don't vanish — produce $240 minimum premium error.
+6. **Duplicate covers**: NO-OP — one instance per cover type per policy.
+7. **Add Life minimum**: Unconditional — no validation required.
+8. **Specific Injury**: No companion cover requirement. Fixed-tier dropdown ($50K steps).
+9. **Fortnightly**: Yearly ÷ 26 with per-payment rounding.
+10. **Needlestick**: AA-only — removed from DOM for all other occupation codes.
 
 ## Interaction patterns and automation guide
 
@@ -33,7 +44,7 @@ Read that file before starting any automation session.
 | Iteration | Date | Coverage | Folder |
 |-----------|------|----------|--------|
 | 001 | 2026-08-04 | Full form — Quote + Apply steps 2–6c (payment gate blocks 6d/6e) | `output/iteration-001/` |
-| 002 | 2026-08-11 | Exhaustive business-rules + stress-test pass on the Quote/Illustration step. See `output/iteration-002/quote-screen-business-rules.md` (final) and `scratch-notes.md` (full raw trail). Major corrections vs. first draft: "Personal"/"Business" are ADD-POLICY buttons supporting multiple concurrent policies per life, not a two-way toggle; Bundling Discount counts Disability covers too (was wrongly excluded at first); Disability covers require focus+blur on their benefit field to "commit" or they silently vanish on Apply. New mechanism discovered: Apply silently navigates to a same-URL "Client summary" screen when valid. Occupation confirmed as a hard cover-availability gate (Farmers Disability). Open follow-ups: Save/Save-as-New/Close/View PDF never exercised; Major Trauma ≥$25k formula unresolved (app error interrupted); Business Expenses/Farmers Disability occupation-table formulas not fully reverse-engineered. | `output/iteration-002/` |
+| 002 | 2026-08-11/12 | Exhaustive business-rules + stress-test pass on the Quote/Illustration step. ALL open items resolved (Major Trauma formula, footer buttons, occupation gates, cover dependencies, payment frequency). See `quote-screen-business-rules.md` + `scratch-notes.md` + individual test files. | `output/iteration-002/` |
 
 QuoteId (iteration-001): `57d0a8ac-e396-4261-85de-4738503b2f0c`  
 ApplicationId (iteration-001): `8103d198-8e5c-406a-882c-b3fd7061f775`

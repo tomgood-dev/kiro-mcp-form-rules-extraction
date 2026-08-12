@@ -319,6 +319,33 @@ async function handle(cmd) {
       return { ok: true, url: page.url() };
     }
 
+    case 'calcmask': {
+      // Reliable entry for right-to-left calc-mask fields (Sum Insured, Monthly Benefit)
+      // Usage: { action: "calcmask", id: "field-id", value: "250000" }
+      const loc = buildLocator(cmd);
+      await loc.scrollIntoViewIfNeeded().catch(() => {});
+      await loc.click();
+      await page.waitForTimeout(200);
+      // Clear the field with backspaces
+      for (let i = 0; i < 12; i++) {
+        await page.keyboard.press('Backspace');
+        await page.waitForTimeout(50);
+      }
+      await page.waitForTimeout(200);
+      // Type each digit individually
+      const digits = String(cmd.value).replace(/[^0-9]/g, '');
+      for (const d of digits) {
+        await page.keyboard.press(d);
+        await page.waitForTimeout(60);
+      }
+      await page.waitForTimeout(200);
+      // Tab out to trigger blur/commit
+      await page.keyboard.press('Tab');
+      await waitForLoad();
+      const errors = await page.evaluate(READ_ERRORS);
+      return { ok: true, errors };
+    }
+
     case 'eval': {
       const result = await page.evaluate(new Function(cmd.code));
       return { ok: true, result };
