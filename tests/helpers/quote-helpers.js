@@ -82,9 +82,10 @@ async function setMinimumPersonalDetails(page, opts = {}) {
   await page.keyboard.press('Delete');
   await page.keyboard.type(String(age), { delay: 40 });
   await page.keyboard.press('Tab');
-  await waitForSettle(page);
+  await waitForSettle(page, 1000);
 
   // Gender — button group (not a radio input). Use scrollIntoView + click via evaluate.
+  // This triggers a FULL page recalculation — must wait for it to complete.
   await page.evaluate((g) => {
     const btn = [...document.querySelectorAll('.button-group-item, .button-group-selected-item')]
       .find(b => b.innerText.trim() === g);
@@ -93,21 +94,32 @@ async function setMinimumPersonalDetails(page, opts = {}) {
       btn.click();
     }
   }, gender);
-  await waitForSettle(page);
+  await waitForSettle(page, 2000); // Gender change triggers heavy recalculation
 
-  // Occupation Code — native <select> dropdown
+  // Occupation Code — native <select> dropdown. May be temporarily disabled after Gender change.
   const occDropdown = page.locator('select[id*="OccupationCode_Dropdown"]').first();
+  await occDropdown.waitFor({ state: 'visible', timeout: 10000 });
+  // Wait for dropdown to become enabled (OutSystems may disable during recalculation)
+  await page.waitForFunction(
+    () => !document.querySelector('select[id*="OccupationCode_Dropdown"]')?.disabled,
+    { timeout: 10000 }
+  ).catch(() => {});
   await occDropdown.selectOption(occupationCode);
-  await waitForSettle(page);
+  await waitForSettle(page, 1500);
 
   if (employmentStatus) {
-    await page.locator('select[id*="EmploymentStatus_Dropdown"]').first()
-      .selectOption({ label: employmentStatus });
-    await waitForSettle(page);
+    const empDropdown = page.locator('select[id*="EmploymentStatus_Dropdown"]').first();
+    await empDropdown.waitFor({ state: 'visible', timeout: 10000 });
+    await page.waitForFunction(
+      () => !document.querySelector('select[id*="EmploymentStatus_Dropdown"]')?.disabled,
+      { timeout: 10000 }
+    ).catch(() => {});
+    await empDropdown.selectOption({ label: employmentStatus });
+    await waitForSettle(page, 1500);
   }
   if (income !== undefined) {
     await fillCalcMask(page.locator('input[id*="MaskedInput"]').first(), String(income));
-    await waitForSettle(page);
+    await waitForSettle(page, 1000);
   }
 }
 
@@ -127,23 +139,27 @@ async function setOccupation(page, searchText, optionStartsWith) {
  * Monthly Benefit, Annual Income). A plain `.fill()` corrupts these fields.
  * @param {import('@playwright/test').Locator} locator
  * @param {string} value - digits only, e.g. "200000"
+ * @param {import('@playwright/test').Page} [page] - optional explicit page ref (avoids stale locator.page())
  */
-async function fillCalcMask(locator, value) {
+async function fillCalcMask(locator, value, page) {
+  const p = page || locator.page();
   await locator.scrollIntoViewIfNeeded();
   await locator.click();
-  await locator.page().waitForTimeout(200);
+  await p.waitForTimeout(200);
   for (let i = 0; i < 12; i++) {
-    await locator.page().keyboard.press('Backspace');
-    await locator.page().waitForTimeout(50);
+    await p.keyboard.press('Backspace');
+    await p.waitForTimeout(50);
   }
-  await locator.page().waitForTimeout(200);
+  await p.waitForTimeout(200);
   for (const digit of String(value).replace(/[^0-9]/g, '')) {
-    await locator.page().keyboard.press(digit);
-    await locator.page().waitForTimeout(60);
+    await p.keyboard.press(digit);
+    await p.waitForTimeout(60);
   }
-  await locator.page().waitForTimeout(200);
-  await locator.page().keyboard.press('Tab');
-  await waitForSettle(locator.page());
+  await p.waitForTimeout(200);
+  await p.keyboard.press('Tab');
+  // Wait for the value to commit (Loading indicator + settle)
+  await p.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
+  await p.waitForTimeout(2000);
 }
 
 /**
