@@ -30,6 +30,23 @@ All open items from `HANDOFF_TO_KIRO_CLI.md` §4 have been resolved via `server.
 9. **Fortnightly**: Yearly ÷ 26 with per-payment rounding.
 10. **Needlestick**: AA-only — removed from DOM for all other occupation codes.
 
+## Automated regression tests for the business rules
+
+`tests/` is a proper `@playwright/test` suite (not the ad-hoc `server.js`/`explore-form.js`
+scripts) verifying the Quote screen rules in `output/confluence-pages/business-rules/quote-screen/*`.
+51 tests across 7 files, one per business-rules page, test titles cite Rule IDs. See
+`tests/README.md` for setup/running instructions and — importantly — the "PROBE tests"
+section: two tests deliberately don't assert a pinned answer yet because the source docs
+themselves flag those exact behaviors as an unresolved discrepancy between two testing
+sessions (multi-policy mechanism, Add-Life minimum bar). **This suite has not yet been run
+against the live app** (written from a machine without network access to
+`outsystems-dev.asteronlife.co.nz`) — `npx playwright test --list` confirms it all parses,
+but expect a first-pass fixup round against the real running app.
+
+## Confluence-ready business rules (BA/Dev reference)
+
+`output/confluence-pages/business-rules/` contains the full business-rules documentation restructured as a hub-and-child page tree, ready to paste/import into Confluence (folder nesting = intended parent/child page nesting; each `page.md` = one Confluence page). Every discrete rule carries a stable Rule ID (e.g. `LSC-17`, `DC-21`) for citing in tickets/tests. Start at `output/confluence-pages/business-rules/page.md` — it indexes every child page and lists open discrepancies between the two testing sessions that still need re-verification (multi-policy mechanism, Business policy's 4th Lump Sum cover, and the Add-Life minimum-bar gate). The Quote Screen section is exhaustively stress-tested; the Apply Flow section is a lighter single-pass port of iteration-001 and is flagged as such.
+
 ## Interaction patterns and automation guide
 
 All interaction patterns, element-type rules, section-by-section gotchas, and server.js
