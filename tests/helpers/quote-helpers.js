@@ -7,18 +7,43 @@
 // disability-cover commitment trap) are easy to get subtly wrong.
 
 /**
- * Opens a brand-new Quote screen in a new tab and returns that Page.
+ * Opens a brand-new Quote screen and returns the Page it's on.
  * Assumes `page` is already authenticated (via storageState).
+ *
+ * "New Quote" uses a JS handler that calls window.open(). In headless mode
+ * this may or may not create a popup. We patch window.open to capture the
+ * target URL, then navigate to it directly.
  */
 async function openNewQuote(page) {
   await page.goto('/QuoteAndApply/');
-  const [quotePage] = await Promise.all([
-    page.waitForEvent('popup'),
-    page.getByText('New Quote', { exact: false }).click(),
-  ]);
-  await quotePage.waitForLoadState('domcontentloaded');
-  await waitForSettle(quotePage);
-  return quotePage;
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(3000); // Give the SPA time to fully render the quote list
+
+  // Strategy: patch window.open to capture the URL, click New Quote, then navigate
+  const quoteUrl = await page.evaluate(() => {
+    return new Promise((resolve) => {
+      window.open = function(url) { resolve(url); };
+      const link = [...document.querySelectorAll('a')].find(a => a.innerText.trim() === 'New Quote');
+      if (link) link.click();
+      // Fallback if window.open isn't called within 3s
+      setTimeout(() => resolve(null), 3000);
+    });
+  });
+
+  if (quoteUrl) {
+    // Navigate to the captured URL
+    await page.goto(quoteUrl, { waitUntil: 'domcontentloaded' });
+  } else {
+    // Fallback: navigate directly to a new blank quote
+    await page.goto('/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=', { waitUntil: 'domcontentloaded' });
+  }
+
+  // Wait for the quote form to actually render
+  await page.waitForTimeout(3000);
+  await page.locator('input[id*="Input_AgeNextBirthday"], input[id*="Input_FirstName"]').first()
+    .waitFor({ state: 'visible', timeout: 30000 });
+  await waitForSettle(page);
+  return page;
 }
 
 /** Waits for the OutSystems "Loading" indicator to clear, plus a short settle buffer. */
@@ -45,23 +70,45 @@ async function setMinimumPersonalDetails(page, opts = {}) {
   const {
     age = 35,
     gender = 'Male',
-    occupationSearch = 'Civil Engineer',
-    occupationOptionStartsWith = 'Civil Engineer - qualified',
+    occupationCode = '1', // '1'=AA by default (safe for all covers)
     employmentStatus,
     income,
   } = opts;
 
-  await page.getByRole('spinbutton', { name: /Age next birthday/ }).fill(String(age));
-  await page.getByRole('radio', { name: gender, exact: true }).click();
-  await setOccupation(page, occupationSearch, occupationOptionStartsWith);
+  // Age — use type action pattern (clear + type + tab) for OutSystems reactive binding
+  const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
+  await ageInput.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type(String(age), { delay: 40 });
+  await page.keyboard.press('Tab');
+  await waitForSettle(page);
+
+  // Gender — button group (not a radio input). Use scrollIntoView + click via evaluate.
+  await page.evaluate((g) => {
+    const btn = [...document.querySelectorAll('.button-group-item, .button-group-selected-item')]
+      .find(b => b.innerText.trim() === g);
+    if (btn && !btn.className.includes('selected')) {
+      btn.scrollIntoView({ block: 'center' });
+      btn.click();
+    }
+  }, gender);
+  await waitForSettle(page);
+
+  // Occupation Code — native <select> dropdown
+  const occDropdown = page.locator('select[id*="OccupationCode_Dropdown"]').first();
+  await occDropdown.selectOption(occupationCode);
+  await waitForSettle(page);
 
   if (employmentStatus) {
-    await page.getByRole('combobox', { name: 'Employment status' }).selectOption({ label: employmentStatus });
+    await page.locator('select[id*="EmploymentStatus_Dropdown"]').first()
+      .selectOption({ label: employmentStatus });
+    await waitForSettle(page);
   }
   if (income !== undefined) {
     await fillCalcMask(page.locator('input[id*="MaskedInput"]').first(), String(income));
+    await waitForSettle(page);
   }
-  await waitForSettle(page);
 }
 
 /** Opens the Occupation type-ahead, types a search string, and clicks the first matching option. */
@@ -82,10 +129,21 @@ async function setOccupation(page, searchText, optionStartsWith) {
  * @param {string} value - digits only, e.g. "200000"
  */
 async function fillCalcMask(locator, value) {
+  await locator.scrollIntoViewIfNeeded();
   await locator.click();
-  for (let i = 0; i < 12; i++) await locator.page().keyboard.press('Backspace');
-  for (const digit of String(value)) await locator.page().keyboard.press(digit);
+  await locator.page().waitForTimeout(200);
+  for (let i = 0; i < 12; i++) {
+    await locator.page().keyboard.press('Backspace');
+    await locator.page().waitForTimeout(50);
+  }
+  await locator.page().waitForTimeout(200);
+  for (const digit of String(value).replace(/[^0-9]/g, '')) {
+    await locator.page().keyboard.press(digit);
+    await locator.page().waitForTimeout(60);
+  }
+  await locator.page().waitForTimeout(200);
   await locator.page().keyboard.press('Tab');
+  await waitForSettle(locator.page());
 }
 
 /**
