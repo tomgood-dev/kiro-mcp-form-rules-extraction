@@ -9,7 +9,7 @@ Lump Sum covers pay a one-off sum insured on the relevant event (death, disabili
 | Rule ID | Policy type | Covers offered |
 |---|---|---|
 | `LSC-01` | **Personal** | Life, TPD, Trauma, Cancer, Accidental Death, Needlestick, Specific Injury (7 covers) |
-| `LSC-01b` | **Business** — ⚠️ **discrepancy, not resolved** | Session 1: Life, TPD, Trauma, **Specific Injury** (Cancer/Acd.Death/Needlestick absent). Session 2: Life, TPD, Trauma, **Cancer** (Specific Injury/Acd.Death/Needlestick absent). Both agree the Business menu has exactly 4 Lump Sum covers and that Life/TPD/Trauma are 3 of them — they disagree on the 4th. See [hub page §4](../../page.md#4-known-discrepancies-between-testing-sessions--read-before-trusting-any-single-source) and [Policy Structure — POL-06 through POL-10](../policy-structure/page.md). |
+| `LSC-01b` | **Business** | Life, TPD, Trauma, **Specific Injury** (4 covers). Cancer, Accidental Death, and Needlestick are NOT available on Business policies. See [Policy Structure — POL-14](../policy-structure/page.md). *(Confirmed in iteration 003 — see changelog)* |
 
 ## Occupation gating — availability, not just pricing
 
@@ -111,17 +111,18 @@ Discount bands: $150k–$249k / $250k–$499k / $500k–$999k / $1,000k+
 | Rule ID | Rule |
 |---|---|
 | `LSC-31` | Only available for Occupation Code = AA — see `LSC-02`. Purpose per tooltip: *"For certain occupations, provides additional financial protection against the risk of contracting hepatitis B or C or HIV."* |
+| `LSC-31b` | **Needlestick REQUIRES a companion cover** — cannot be taken standalone. Exact error: *"Needlestick Cover requires one of the following covers to also be selected: Life, Trauma Recovery, Cancer, TPD or Income Protection"*. Note: this is a **narrower** set of acceptable companions than Specific Injury (excludes Accidental Death, Mortgage & Living, and Workability). Maximum ANB: 65 (see [Personal Details — PD-31](../personal-details/page.md)). |
 
-### Specific Injury — dependency requirement resolved (no longer required)
+### Specific Injury — dependency requirement confirmed (companion cover REQUIRED)
 
 | Rule ID | Field | Type | Options | Default |
 |---|---|---|---|---|
-| `LSC-32` | Sum Insured ($) | **Fixed-tier select dropdown — not a calc-mask** | $0 to $500,000 in $50,000 steps (same tier list as Needlestick) | $0 |
-| `LSC-33` | Premium Structure | Select — **disabled/locked to Stepped** | Full 8-option list shown but unusable | Stepped |
+| `LSC-32` | Sum Insured ($) | **Calc-mask input** (free-text, same as Life/TPD/Trauma/Cancer) | — | empty (`.`) |
+| `LSC-33` | Premium Structure | Select | Stepped, Level to 50/60/65/70/75/80/100 (8 options — full set) | Stepped |
 
 | Rule ID | Rule |
 |---|---|
-| `LSC-34` | **Resolved:** Specific Injury activates and prices **independently**, with **no companion-cover requirement**. An earlier tooltip-based inference ("must be purchased with at least one eligible Personal Insurance cover") was tested directly and disproven — the cover activated cleanly on a policy with no other cover present. Disabled for Occupation Code = AM (see `LSC-03`). |
+| `LSC-34` | **Specific Injury REQUIRES a companion cover.** Cannot be taken standalone. Exact error: *"Specific Injury Lump Sum requires one of the following covers to also be selected: Life, Trauma Recovery, Cancer, TPD, Accidental Death, Income Protection, Mortgage & Living or Workability"*. The cover activates successfully (button becomes disabled, Sum Insured field appears), but Apply is blocked until at least one companion cover is also active. Minimum Sum Insured: $500. Disabled for Occupation Code = AM (see `LSC-03`). Maximum ANB: 61 (see [Personal Details — PD-31](../personal-details/page.md)). *(Corrected in iteration 003 — see changelog)* |
 
 ## Life Cover riders (accelerated benefits)
 
@@ -138,18 +139,20 @@ Activating a rider adds its own nested card under the parent Life cover, with it
 
 | Rule ID | Rule |
 |---|---|
-| `LSC-39` | **Deactivation must go through the "Remove" link inside the cover's own card — re-clicking the toggle button does not remove an active cover.** For top-level Lump Sum covers specifically, once a cover row exists, clicking its toggle button again is a **no-op**: no duplicate is created, the existing row is untouched, and no new error appears beyond whatever validation the existing (possibly still-empty) row already had. There is no "Life Cover B" — exactly one instance of each Lump Sum cover type per policy. |
+| `LSC-39` | **Life Cover supports multiple instances (at least 2 confirmed, likely 3).** Re-clicking the Life toggle button creates a new instance (not a no-op). Each new instance defaults to the next Premium Structure in sequence: 1st = Stepped, 2nd = Level to 50, 3rd = requires 2nd instance to have Sum Insured filled first (*"Please complete the 'Sum Insured' field in the above row"*). The Life button remains enabled after 2 instances. For all other Lump Sum cover types, re-clicking the toggle button after activation is a no-op: no duplicate is created and the existing row is untouched. Deactivation of any cover must go through the "Remove" link inside the cover's own card. *(Corrected in iteration 003 — see changelog)* |
 | `LSC-40` | **A Lump Sum cover left with its Sum Insured never filled in (still showing the empty `.` placeholder) does NOT silently disappear on Apply** — unlike some Disability covers (see [Disability Covers](../disability-covers/page.md)). It persists in a "zombie" state: its toggle button loses its active/highlighted styling, but the cover row itself remains on screen with a Remove link. Clicking Apply in this state surfaces *"The minimum premium is $240.00 per year per Life insured"* and, on a second Apply attempt, additionally *"Please complete the 'Sum Insured' field in the above row."* The cover must be explicitly fixed (fill Sum Insured) or explicitly removed — it will not resolve itself. |
+| `LSC-41` | **Needlestick standalone blocked.** Requires at least one companion cover: Life, Trauma Recovery, Cancer, TPD, or Income Protection (narrower list than Specific Injury — excludes Acd. Death, M&L, and Workability). Exact error: *"Needlestick Cover requires one of the following covers to also be selected: Life, Trauma Recovery, Cancer, TPD or Income Protection"*. See also `LSC-31b`. |
+| `LSC-42` | **Needlestick uses a select dropdown for Sum Insured** ($0–$500,000 in $50,000 increments, 11 options), NOT a calc-mask free-text input. This is confirmed to be the same fixed-tier mechanism documented in `LSC-29`. |
 
 ## Premium Structure lock summary (all covers)
 
 | Rule ID | Cover | Options available | Locked? |
 |---|---|---|---|
-| `LSC-41` | Life | Full 8-option set | No |
+| `LSC-43` | Life | Full 8-option set | No |
 | | TPD | Stepped / Level to 65 / 70 | No |
 | | Trauma | Stepped / Level to 65 / 70 | No |
 | | Cancer | Stepped / Level to 65 / 70 | No |
 | | Accidental Death | Full 8-option set shown | **Yes — locked to Stepped** |
 | | Needlestick | Full 8-option set shown | **Yes — locked to Stepped** |
-| | Specific Injury | Full 8-option set shown | **Yes — locked to Stepped** |
+| | Specific Injury | Full 8-option set (not locked — see `LSC-33`) | No |
 | | All Life riders (TI Support, Acc. TPD/Trauma/Cancer) | Mirrors parent, shown disabled | **Yes — locked** |

@@ -21,32 +21,20 @@ These apply to every cover within the policy they're set on.
 |---|---|
 | `POL-05` | **Inflation Adjustment Benefit and Premium Freeze are mutually exclusive**, and the system enforces this **silently** — no error message is shown. Confirmed behavior: if Inflation Adjustment is already on and you turn Premium Freeze on, the system automatically switches Inflation Adjustment off (Premium Freeze wins). This is a UX trap worth flagging to BAs writing acceptance criteria: a user checking "Premium Freeze" will see Inflation Adjustment silently uncheck itself with no warning. |
 
-## Personal / Business — ⚠️ open discrepancy, see hub page §4
+## Personal / Business — CONFIRMED: add-policy action (resolved in iteration 003)
 
-Two independent testing sessions produced conflicting models of how "Personal" and "Business" work. Both are documented below with their evidence; **neither has been confirmed as definitively correct** — this needs a clarifying re-test.
-
-### Session 1 finding: Personal/Business are "add a new policy" actions
+Clicking "Personal" or "Business" creates a new, independently-numbered policy. This is NOT a two-state toggle.
 
 | Rule ID | Rule | Evidence |
 |---|---|---|
-| `POL-06` | Clicking **"Personal"** or **"Business"** each time creates a **new, independently-numbered policy** (Personal 1, Personal 2, Business 1, Business 2, ...) and immediately switches the visible panel to that new, empty policy. | Confirmed by creating Personal 1 → Business 1 → Personal 2 → Business 2 in sequence and watching the "Policies" badge count up to 4. |
-| `POL-07` | A single Life can carry **multiple Personal policies and multiple Business policies concurrently.** | Same test as above — all four policies coexisted; switching between the "Personal 1" and "Business 1" links (not the buttons) round-tripped to each one's own independent cover configuration correctly. |
-| `POL-08` | Each policy link has an adjacent **icon-only "remove this policy" control**, with **no confirmation dialog** — clicking it deletes that policy instantly. | Used to remove Personal 2, Business 1, and Business 2 individually; each removal updated the Policies badge and remaining links correctly. |
-| `POL-09` | Policy numbering is **independent per type** — removing "Personal 2" did not renumber "Business 2" down to "Business 1". | Observed directly during cleanup of the 4-policy test state. |
-
-### Session 2 finding: Personal/Business is a two-state toggle
-
-| Rule ID | Rule | Evidence |
-|---|---|---|
-| `POL-06b` (conflicts with `POL-06`–`POL-09`) | Personal and Business are described as two mutually-exclusive **policy type** states on a single policy, not separate policy instances. Switching does not clear already-configured covers, but a cover that becomes unavailable in the new state loses its configuration. No "selected" CSS class was found on either button, so the session could not determine selection state from the DOM directly. | This session's own "Policies" badge was observed showing "1" throughout policy-type switching in their test — i.e. they did not observe the badge incrementing the way Session 1 did, though it isn't clear from their notes whether they specifically tried clicking either button a second/third time to check. |
-
-**Recommendation for whoever resolves this:** repeat Session 1's exact test (click Personal, then Business, then Personal again, watching the Policies badge count each time) on a fresh quote and confirm which model holds. If Session 1's model is correct, Session 2's Lump-Sum-cover-menu findings for "Business" (`LSC-01` conflict, see [Lump Sum Covers](../lump-sum-covers/page.md)) may simply have been recorded while viewing a specific policy instance rather than a persistent "Business mode," which would also need re-checking.
-
-### What both sessions agree on
+| `POL-06` | Clicking **"Personal"** or **"Business"** each time creates a **new, independently-numbered policy** (Personal 1, Personal 2, Business 1, Business 2, ...) and immediately switches the visible panel to that new, empty policy. | Confirmed across multiple sessions: creating Personal 1 → Business 1 → Personal 2 → Business 2 in sequence, watching the "Policies" badge count up to 4. *(Confirmed in iteration 003 — see changelog)* |
+| `POL-07` | A single Life can carry **multiple Personal policies and multiple Business policies concurrently.** | Same test as above — all four policies coexisted; switching between policy links round-tripped correctly. |
+| `POL-08` | Each policy link has an adjacent **icon-only "remove this policy" control**, with **no confirmation dialog** — clicking it deletes that policy instantly. | Used to remove policies individually; each removal updated the Policies badge and remaining links correctly. |
+| `POL-09` | Policy numbering is **independent per type** — removing "Personal 2" did not renumber "Business 2" down to "Business 1". | Observed directly during cleanup. |
 
 | Rule ID | Rule |
 |---|---|
-| `POL-10` | The set of available Lump Sum and Disability covers **does change** depending on whether you're looking at a Personal-type or Business-type policy — see [Lump Sum Covers](../lump-sum-covers/page.md) and [Disability Covers](../disability-covers/page.md) for the exact menus, which themselves have a documented discrepancy. |
+| `POL-10` | The set of available Lump Sum and Disability covers **does change** depending on whether you're looking at a Personal-type or Business-type policy — see [Lump Sum Covers](../lump-sum-covers/page.md) and [Disability Covers](../disability-covers/page.md) for the exact menus. See `POL-14`–`POL-16` for confirmed details. |
 | `POL-10b` | Sub-cover/rider buttons (Acc. TPD, Acc. Trauma, Acc. Cancer, Major Trauma, TPD on Trauma) are only available under **Personal**-type policies. |
 
 ## Multi-life ("Add life")
@@ -54,6 +42,14 @@ Two independent testing sessions produced conflicting models of how "Personal" a
 | Rule ID | Rule |
 |---|---|
 | `POL-11` | Clicking **"Add life"** creates a new, **fully independent** `Life N` tab — blank Personal Details, and its own fresh "Personal 1" policy with zero covers. Nothing is copied or shared from Life 1. |
-| `POL-12` | ⚠️ **Discrepancy — see hub §4 point 4.** A dedicated, isolated test (fresh quote, no fields filled, no covers) found that clicking "Add life" succeeds **unconditionally** with **no validation** of Life 1's completeness. A separate, less-isolated observation during broader multi-life testing saw a **blocking modal** appear: *"Cannot proceed — Please enter the minimum requirement for a quote before proceeding to another life"* (dismissed with an OK button). These may not be a true contradiction — it's possible *creating* a new life via "Add life" is unconditional, while *switching to view* an already-existing but still-incomplete life (via clicking its tab) is separately gated. This distinction has not been isolated by either session. |
+| `POL-12` | **CONFIRMED: Add Life IS blocked when the current life doesn't meet minimum requirements.** A blocking modal appears: *"Cannot proceed — Please enter the minimum requirement for a quote before proceeding to another life"* (dismissed with an OK button). The earlier finding that "Add life" succeeded unconditionally on a completely empty Life 1 was likely observing a state before any cover had been partially configured — once a cover is activated (even incompletely), the system enforces completion before allowing a new life. *(Confirmed in iteration 003 — see changelog)* |
 | `POL-13` | The Premium panel aggregates **"Total Monthly/Yearly Premium (All Lives)"** — a genuine combined total across every life on the quote — while still showing each life's own premium subtotal separately underneath. |
-| `POL-14` | Each life is independently configurable — different covers, amounts, sum insured levels, and options per life, with no shared state beyond the aggregate premium total. |
+| `POL-13b` | Each life is independently configurable — different covers, amounts, sum insured levels, and options per life, with no shared state beyond the aggregate premium total. |
+
+## Business policy cover menus — CONFIRMED (resolved in iteration 003)
+
+| Rule ID | Rule |
+|---|---|
+| `POL-14` | **Business policy Lump Sum covers: Life, TPD, Trauma, Specific Injury** (4 covers). Cancer, Accidental Death, and Needlestick are NOT available on Business policies. *(Confirmed in iteration 003 — see changelog)* |
+| `POL-15` | **Business policy Disability covers: Business Expenses, Business Disability, Farmers Disability.** Mortgage & Living is the only cover shared between Personal and Business menus (see [Disability Covers — DC-04/DC-05](../disability-covers/page.md)). |
+| `POL-16` | **Cover-menu split is driven by policy type (Personal vs Business), NOT by occupation code.** The cover menu changes based on which policy (Personal-type or Business-type) is currently selected — occupation code affects individual cover *eligibility* within that menu (see [Lump Sum Covers — LSC-02/LSC-03](../lump-sum-covers/page.md)) but does not control which covers appear in the menu itself. |

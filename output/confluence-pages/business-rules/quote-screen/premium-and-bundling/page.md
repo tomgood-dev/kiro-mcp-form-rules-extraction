@@ -43,6 +43,19 @@
 | Rule ID | Rule |
 |---|---|
 | `PREM-19` | Tooltip: *"A discount that applies to Personal & Business for taking out multiple cover types: 2 cover types: 15%, 3 or more cover types: 20%."* |
-| `PREM-20` | **The discount counts distinct, properly-committed cover types across Lump Sum AND Disability covers combined** — it is not restricted to one category. Confirmed: 2 committed covers of any mix (e.g. Life + TPD, or Life + Income Protection) → **"15% (2 covers)"**; 3+ committed covers → **"20% (3 covers or more)"**. |
+| `PREM-20` | **The discount counts distinct, properly-committed cover types that meet or exceed their category's minimum sum insured / monthly benefit threshold** — across Lump Sum AND Disability covers combined (not restricted to one category). Covers below threshold are priced normally but do NOT count toward the bundling tally. Confirmed: 2 committed covers of any mix (e.g. Life + TPD, or Life + Income Protection) at or above their minimums → **"15% (2 covers)"**; 3+ → **"20% (3 covers or more)"**. See `PREM-23`–`PREM-26` for per-cover minimum thresholds. *(Updated in iteration 003 — see changelog)* |
 | `PREM-21` | A Disability cover that is active but **not yet committed** (its benefit field never focused+blurred — see [Disability Covers — DC-01/DC-02](../disability-covers/page.md)) does **not** count toward this tally, since it isn't really "on" yet. An earlier test session incorrectly concluded Disability covers were excluded from bundling entirely — that was purely this uncommitted-cover artifact, not a real category exclusion. |
 | `PREM-22` | Displayed as **"None"** when only 1 cover type is committed. |
+
+## Bundling minimum thresholds (per cover category)
+
+Each cover must meet its category's minimum Sum Insured / Monthly Benefit to count toward the bundling discount tally. Covers below threshold are priced normally but contribute zero toward the "2 covers" or "3+ covers" count.
+
+| Rule ID | Cover | Minimum threshold | Boundary evidence |
+|---|---|---|---|
+| `PREM-23` | **Life** | Sum Insured ≥ **$100,000** | $99,999 = "None"; $100,000 = "15% (2 covers)" ✓ (exact boundary confirmed) |
+| `PREM-24` | **TPD** | Sum Insured ≥ **$100,000** | $99,999 = "None"; $100,000 = "15% (2 covers)" ✓ (exact boundary confirmed) |
+| `PREM-25` | **Trauma** | Sum Insured ≥ **~$25,000** | $20,000 = "None"; $25,000 = "15% (2 covers)" (exact boundary between $20k–$25k, likely $25,000 given round-number pattern) |
+| `PREM-26` | **M&L (Disability)** | Monthly Benefit ≥ **$500–$1,000/mo** | $500/mo = "None"; $1,000/mo = "15% (2 covers)" (exact boundary not narrowed further — likely $1,000/mo or an annualised equivalent) |
+
+**Note:** Cancer, Accidental Death, Needlestick, Income Protection, and Workability bundling minimums have not been independently tested. Cancer likely matches Trauma; IP/Workability likely match M&L — but these are inferences, not confirmed.

@@ -55,13 +55,23 @@ Personal Details is a per-life section (each Life tab has its own, independent c
 | `PD-23` | While typing, First Name/Last Name strip **apostrophes**, **numbers**, and **hash (`#`)** characters as they're entered. Hyphens, other special characters (`!`, `@`, `$`, `%`), and HTML angle brackets are **preserved** — there is no XSS sanitization at the input level, though this is a display-layer concern, not necessarily an exploitable one without confirming how the value is later rendered/used server-side. |
 | `PD-24` | This character filtering appears to be an artifact of the specific keystroke-simulation method used during testing (real character-by-character typing) rather than a value set directly via script, which was observed to bypass both the filter and the max-length limit. **Needs developer confirmation of which behavior is the "real" validation** — the filtering seen may be specific to how a real browser keyboard event is handled by the page's own JS, in which case it's a genuine rule; if it's an artifact of the test tool's typing method, it isn't. |
 
+## Age-banding — cover restrictions by age
+
+| Rule ID | Rule |
+|---|---|
+| `PD-28` | **Life Cover max $50,000 for ANB 11–16.** Exact error: *"The Maximum 'Life Cover' sum insurable for clients under Age Next Birthday 17 is $50,000"*. No sum insured cap was observed for Life Cover at ANB 17–21 (tested up to $999,999). |
+| `PD-29` | **TPD max $250,000 for ANB 17–21.** Exact error: *"The maximum 'TPD Cover' Sum Insured per life for clients Age Next Birthday 17 - 21 is $250,000. Age Next Birthday 17-21 is only eligible for Modified TPD"*. TPD is silently blocked (button click is a no-op) below ANB 17. |
+| `PD-30` | **TPD Definition restricted to 'Modified' for ANB 17–21.** The dropdown still shows all three options (Own / Any / Modified) — restriction is enforced **server-side only**. Selecting Own or Any at ANB 17–21 triggers the error in `PD-29`. |
+| `PD-31` | **Maximum ages per cover (server-side — button remains clickable, error on activation):** Accidental Death ANB ≤ 70 (*"The maximum Age Next Birthday for Accidental Death Cover is 70"*), Needlestick ANB ≤ 65 (*"The maximum Age Next Birthday for Needlestick cover is 65"*), Specific Injury ANB ≤ 61 (*"The maximum Age Next Birthday for Specific Injury cover is 61"*). Cover activates but immediately shows the error — not blocked at the UI level. |
+| `PD-32` | **Premium Structure dropdown shows ALL options regardless of age** (no client-side filtering). All "Level to X" options remain visible even when the client's age exceeds the level-to target age (e.g. "Level to 50" visible at ANB 56). Server validates on Save/Apply/Calculate. |
+
 ## Error message reference (this section)
 
 | Rule ID | Error text | Trigger |
 |---|---|---|
-| `PD-25` | *"Required field!"* | Age Next Birthday empty |
-| `PD-26` | *"Age next birthday should be between 11 and 75"* | Client-side range check |
-| `PD-27` | *"Age Next Birthday must be between 11 and 75"* | Server-side range check (after blur) |
-| `PD-28` | *"The minimum Age Next Birthday for Stepped 'Standalone TPD Cover' is 17"* | Age < 17 with a TPD cover configured |
-| `PD-29` | *"You must complete the following fields - Gender, Age Next Birthday & Occupation/Occupation Code"* | Cover(s) configured but required personal fields still empty (this list narrows dynamically as fields are filled — see [Validation & Navigation](../validation-and-navigation/page.md)) |
-| `PD-30` | *"Please contact underwriting as this Occupation requires Individual Consideration"* | Occupation Code = IC with incomplete fields |
+| `PD-33` | *"Required field!"* | Age Next Birthday empty |
+| `PD-34` | *"Age next birthday should be between 11 and 75"* | Client-side range check |
+| `PD-35` | *"Age Next Birthday must be between 11 and 75"* | Server-side range check (after blur) |
+| `PD-36` | *"The minimum Age Next Birthday for Stepped 'Standalone TPD Cover' is 17"* | Age < 17 with a TPD cover configured |
+| `PD-37` | *"You must complete the following fields - Gender, Age Next Birthday & Occupation/Occupation Code"* | Cover(s) configured but required personal fields still empty (this list narrows dynamically as fields are filled — see [Validation & Navigation](../validation-and-navigation/page.md)) |
+| `PD-38` | *"Please contact underwriting as this Occupation requires Individual Consideration"* | Occupation Code = IC with incomplete fields |

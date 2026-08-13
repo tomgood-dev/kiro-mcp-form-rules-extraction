@@ -71,7 +71,7 @@ Disability covers pay an ongoing monthly benefit rather than a lump sum. They ar
 
 | Rule ID | Rule |
 |---|---|
-| `DC-21` | **Maximum monthly benefit = 75% × Pre-tax Annual Income ÷ 12.** Confirmed exact: income $150,000 → max $9,375/month. Exact error: *"The maximum remaining monthly benefit for Income Protection benefit is $9,375."* |
+| `DC-21` | **Maximum monthly benefit is a 3-TIER progressive formula:** Tier 1: 75% of the first $320,000 of annual income. Tier 2: +50% of income between $320,001–$560,000. Tier 3: +20% of income above $560,000. **Product hard cap: $30,000/month** regardless of income level. Formula: `min($30,000, (75% × min(income, $320k) + 50% × max(0, min(income, $560k) - $320k) + 20% × max(0, income - $560k)) ÷ 12)`. Confirmed: income $150,000 → $9,375/month (all tier 1); income $400,000 → $23,333/month (tier 1 + tier 2); income $600,000 → $30,000/month (hard cap). Exact error: *"The maximum remaining monthly benefit for Income Protection benefit is $X,XXX."* Note: the cap of $30,000/month corresponds to the tier 2 boundary ($560k) — tier 3 is effectively made irrelevant by the product cap. *(Corrected in iteration 003 — see changelog)* |
 | `DC-22` | When focused+blurred with nothing typed, this field **auto-defaults to the formula max** from `DC-21` and prices successfully at that value. |
 
 ## Workability
@@ -87,7 +87,7 @@ Disability covers pay an ongoing monthly benefit rather than a lump sum. They ar
 
 | Rule ID | Rule |
 |---|---|
-| `DC-27` | **Maximum monthly benefit = 75% × Pre-tax Annual Income ÷ 12** — same formula as Income Protection. Exact error: *"The maximum allowable monthly benefit for Workability based on annual income $150,000 is $9,375"* (note the different phrasing from IP's "maximum remaining" — same number, different wording). |
+| `DC-27` | **Maximum monthly benefit = min($10,000, 75% × Pre-tax Annual Income ÷ 12).** Product hard cap: **$10,000/month** (applies when income exceeds $160,000). Confirmed: income $100,000 → $6,250/month (formula-driven); income $150,000 → $9,375/month (formula-driven); income $200,000 → $10,000/month (cap applies, formula would give $12,500). Exact error: *"The maximum allowable monthly benefit for Workability based on annual income $X is $Y"* (note the different phrasing from IP's "maximum remaining" — same underlying mechanism, different wording). *(Corrected in iteration 003 — see changelog)* |
 | `DC-28` | **Hard mutual-exclusivity rule:** *"Workability Cover is not available to be taken in conjunction with Mortgage & Living Cover or Income Protection Cover."* Workability cannot coexist with **either** M&L or IP on the same policy. Mortgage & Living and Income Protection **can** coexist with each other (confirmed — no exclusivity error when both are active together). |
 
 ## Business Expenses
@@ -137,3 +137,13 @@ Same shape as Business Disability, minus the Classification field; Benefit Perio
 | Rule ID | Rule |
 |---|---|
 | `DC-44` | **Maximum monthly benefit: flat $10,000/month**, for every eligible occupation (B/C), at every income level tested. Exact error: *"The maximum allowable Farmers Disability monthly benefit for the selected occupation is $10,000."* See `DC-06` for the additional Employment Status gate. |
+
+## Cross-cover exclusivity and checkbox behavior
+
+| Rule ID | Rule |
+|---|---|
+| `DC-45` | **Business Disability + Farmers Disability are MUTUALLY EXCLUSIVE** within the same policy. They cannot be active simultaneously. The exclusion is NOT enforced by disabling the second button (Farmers Disability stays enabled even after Business Disability is committed) — it is enforced via server-side validation. Exact error: *"Business Disability Cover and Farmers Disability Cover are not available to be taken in conjunction with each other"*. If both are somehow in the DOM (legacy state), both show the error. |
+| `DC-46` | **NO cross-policy exclusions.** Workability on a Personal policy does NOT block Business Disability or Business Expenses on a Business policy. Each policy type has its own independent disability cover rules — cross-policy combinations are unrestricted. |
+| `DC-47` | **Mental Health Discount disabled when Benefit Period = 2 Years.** Applies to both Income Protection and Mortgage & Living. When Benefit Period is set to "2 Years", the Mental Health Discount checkbox becomes disabled (greyed out, cannot be checked). For all other Benefit Period values (5 Years, To Age 65, To Age 70), it remains enabled. |
+| `DC-48` | **Ten-Hour Benefit (M&L only) auto-checks for Self-Employed, default OFF for Employed.** When Employment Status = "Self-Employed" (or "Employed by own company"), the Ten-Hour Benefit checkbox on Mortgage & Living defaults to ON (checked). For Employment Status = "Employed" or "Other", it defaults to OFF (unchecked). Ten-Hour Benefit does NOT appear on Income Protection (IP has 5 checkboxes; M&L has 6). |
+| `DC-49` | **Increasing Claim (IP/M&L checkbox) is INDEPENDENT of Inflation Adjustment Benefit (policy-level checkbox).** These are separate controls with no cross-field dependency: unchecking one does not affect the other. Increasing Claim adjusts benefit payments over time during a claim; Inflation Adjustment Benefit adjusts the sum insured annually for inflation. |
