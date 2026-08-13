@@ -30,19 +30,35 @@ All open items from the (now-superseded) iteration-002 `HANDOFF_TO_KIRO_CLI.md` 
 9. **Fortnightly**: Yearly ÷ 26 with per-payment rounding.
 10. **Needlestick**: AA-only — removed from DOM for all other occupation codes.
 
-## Iteration 003 — gap-closing pass (planned, not yet started)
+## Iteration 003 — gap-closing pass (COMPLETED 2026-08-13)
 
-The user's own BA supplied a draft reference spreadsheet (`Current Rules Asteron Connect
-v0.1.ods`, their Downloads folder — format reference only, not authoritative) that surfaced
-a batch of business rules we never tested or knew existed: age-banded Sum Insured limits
-(everything so far was tested at age 35, missing the ANB 17–21 and 11–16 bands entirely),
-the full 3-tier Income Protection formula, Mortgage & Living's "Agreed Value" basis and its
-$7,500/month cap, Kids Cover's Personal-cover prerequisite, several cross-cover exclusivity
-rules (Business Disability vs. Farmers Disability, Workability's Business-side exclusions),
-and a handful of cross-field checkbox links (Increasing Claim → Inflation Adjustment,
-Mental Health Discount linking, Ten-Hour Benefit's occupation-conditional auto-toggle). Full
-worklist with step-by-step instructions: `HANDOFF_TO_KIRO_CLI.md` (repo root) — this replaced
-the old iteration-002 handoff, which is fully resolved. Must be run from the Amazon Workspace
+Resolved all items from `HANDOFF_TO_KIRO_CLI.md` §1–§10. Key findings by section:
+
+**§1 — Specific Injury field type**: calc-mask input (NOT fixed-tier dropdown). Same widget as Life/TPD/Trauma with 8 Premium Structure options.
+
+**§10 — 4 open discrepancies resolved**:
+1. Personal/Business = add-policy action (supports multiple concurrent policies)
+2. Business 4th Lump Sum = Specific Injury (not Cancer)
+3. Cover-menu split driven by policy type, not occupation code
+4. Add Life IS blocked when current life incomplete (modal error)
+
+**§2 — Age banding**: Life max $50k for ANB<17, TPD max $250k (Modified only) for 17-21, max ages confirmed (Acd Death 70, Needlestick 65, Specific Injury 61). Premium Structure dropdown has NO client-side filtering.
+
+**§3 — Dependencies**: Specific Injury requires companion cover. Needlestick requires companion (narrower list). Kids Cover requires ≥1 Personal Insurance Cover.
+
+**§4 — Duplicates**: Life allows 2+ instances (2nd defaults Level 50). 3rd blocked until 2nd has SI.
+
+**§5 — Exclusivity**: Business Disability + Farmers Disability mutually exclusive. NO cross-policy exclusions.
+
+**§6 — Formulas**: IP tiered 75%/$320k + 50%/$320-560k, cap $30k/mo. Workability min($10k, 75%×income÷12). M&L min($7,500, 45%×income÷12).
+
+**§7 — Checkboxes**: Increasing Claim independent of Inflation Adjustment. Mental Health disabled at BP=2yr. Ten-Hour auto-checks for Self-Employed (M&L only).
+
+**§8 — Kids**: Single aggregated premium line. SI options $50k(Free) to $200k in $10k steps.
+
+**§9 — Bundling minimums**: Life/TPD min $100k, Trauma ~$25k, M&L $500-$1000/mo.
+
+Raw test evidence: `output/iteration-003-*.md` (5 files).
 (only network-whitelisted environment for `outsystems-dev.asteronlife.co.nz`).
 
 ## Spreadsheet (.ods/.xlsx) version of the business rules
@@ -97,7 +113,7 @@ Read that file before starting any automation session.
 |-----------|------|----------|--------|
 | 001 | 2026-08-04 | Full form — Quote + Apply steps 2–6c (payment gate blocks 6d/6e) | `output/archive/iteration-001/` |
 | 002 | 2026-08-11/12 | Exhaustive business-rules + stress-test pass on the Quote/Illustration step. ALL open items resolved (Major Trauma formula, footer buttons, occupation gates, cover dependencies, payment frequency). See `quote-screen-business-rules.md` + `scratch-notes.md` + individual test files. | `output/archive/iteration-002/` |
-| 003 | planned | Gap-closing pass — age-banded limits, dependency/exclusivity rules, multi-tier formulas, cross-field checkbox links surfaced by comparing against a BA reference spreadsheet. Not yet started. | `HANDOFF_TO_KIRO_CLI.md` |
+| 003 | 2026-08-13 | Gap-closing pass COMPLETE — age-banded limits, dependency/exclusivity rules, multi-tier formulas, cross-field checkbox links, bundling minimums, 4 discrepancies resolved. | `output/iteration-003-*.md` |
 
 QuoteId (iteration-001): `57d0a8ac-e396-4261-85de-4738503b2f0c`  
 ApplicationId (iteration-001): `8103d198-8e5c-406a-882c-b3fd7061f775`
