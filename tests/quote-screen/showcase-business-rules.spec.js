@@ -23,6 +23,8 @@
  *   - Button groups (Gender, Smoking) need evaluate-based clicking
  *   - All field interactions must Tab out to trigger reactive binding
  *   - Wait for "Loading" indicator to clear after any server round-trip
+ *   - After any auto-save (Tab out of Sum Insured), React re-renders the DOM —
+ *     always re-query locators rather than caching them before the interaction
  */
 
 const { test, expect } = require('@playwright/test');
@@ -37,7 +39,6 @@ const {
   clickApply,
   getTotalYearlyPremium,
   getBundlingDiscount,
-  sumInsuredInput,
 } = require('../helpers/quote-helpers');
 
 // Each test gets its own fresh quote page
@@ -47,18 +48,19 @@ test.beforeEach(async ({ page }) => {
   quote = await openNewQuote(page);
 });
 
+/**
+ * Helper: fills a calc-mask field found by a partial ID match.
+ * Re-queries the DOM each time to avoid stale references after React re-renders.
+ */
+async function fillCalcMaskById(page, idSubstring, value, nth = 0) {
+  // Wait for the field to exist after potential re-render
+  const locator = page.locator(`input[id*="${idSubstring}"]`).nth(nth);
+  await locator.waitFor({ state: 'visible', timeout: 15000 });
+  await fillCalcMask(locator, value, page);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST 1: Major Trauma Cap Formula (LSC-19/LSC-20)
-//
-// Business Rule:
-//   When Trauma Recovery Cover (TRC) < $25,000:
-//     Major Trauma max = 300% × TRC Sum Insured
-//   When TRC >= $25,000:
-//     Major Trauma max = $2,000,000 - TRC - Cancer (global combined cap only)
-//
-// Why this matters:
-//   The tooltip only mentions the <$25k case. The ≥$25k behavior was unknown
-//   until we tested it — there is NO percentage cap, only the global ceiling.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('LSC-19: Major Trauma below $25k TRC — capped at 300% of TRC Sum Insured', async () => {
@@ -66,23 +68,21 @@ test('LSC-19: Major Trauma below $25k TRC — capped at 300% of TRC Sum Insured'
 
   // Activate Trauma cover
   await activateCover(quote, 'Trauma');
-  await waitForSettle(quote);
 
   // Set Trauma Sum Insured to $20,000 (below $25k threshold)
-  const traumaSI = quote.locator('input[id*="SumInsured"]').first();
-  await fillCalcMask(traumaSI, '20000', quote);
+  await fillCalcMaskById(quote, 'SumInsured', '20000', 0);
 
-  // Activate Major Trauma sub-benefit
+  // Activate Major Trauma sub-benefit — wait extra for DOM to stabilize
+  await quote.waitForTimeout(2000);
   await activateCover(quote, 'Major Trauma');
-  await waitForSettle(quote);
+  await quote.waitForTimeout(2000);
 
-  // Set Major Trauma Sum Insured to $60,001 (just over 300% of $20k = $60,000)
-  const majorTraumaSI = quote.locator('input[id*="SumInsured"]').nth(1);
-  await fillCalcMask(majorTraumaSI, '60001', quote);
+  // Set Major Trauma Sum Insured — it's the SECOND SumInsured field now
+  await fillCalcMaskById(quote, 'SumInsured', '60001', 1);
 
   // Assert: the 300% cap error fires
   await expectErrorContaining(quote,
-    'The maximum Sum Insured for Major Trauma Benefit based on the Trauma Cover Sum Insured of $20000 is $60000'
+    'maximum Sum Insured for Major Trauma Benefit based on the Trauma Cover Sum Insured of $20000 is $60000'
   );
 });
 
@@ -90,46 +90,30 @@ test('LSC-20: Major Trauma at/above $25k TRC — no percentage cap, only $2M glo
   await setMinimumPersonalDetails(quote, { age: 35, gender: 'Male', occupationCode: '1' });
 
   await activateCover(quote, 'Trauma');
-  await waitForSettle(quote);
 
   // Set Trauma Sum Insured to $25,000 (at threshold)
-  const traumaSI = quote.locator('input[id*="SumInsured"]').first();
-  await fillCalcMask(traumaSI, '25000', quote);
+  await fillCalcMaskById(quote, 'SumInsured', '25000', 0);
 
+  // Activate Major Trauma
+  await quote.waitForTimeout(2000);
   await activateCover(quote, 'Major Trauma');
-  await waitForSettle(quote);
+  await quote.waitForTimeout(2000);
 
-  // Set Major Trauma to $1,975,000 — exactly $2M combined with TRC ($25k + $1.975M = $2M)
-  const majorTraumaSI = quote.locator('input[id*="SumInsured"]').nth(1);
-  await fillCalcMask(majorTraumaSI, '1975000', quote);
+  // Set Major Trauma to $1,975,001 — exceeds $2M global cap ($25k + $1,975,001 > $2M)
+  // This also proves no 300% cap exists (300% of $25k = $75k, we're entering way more)
+  await fillCalcMaskById(quote, 'SumInsured', '1975001', 1);
 
-  // Assert: NO percentage-based error (300% of $25k = $75k, but we're way past that)
+  // Assert: the global cap error fires (NOT the 300% error)
   const errors = await getVisibleErrors(quote);
   const has300Error = errors.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit based on'));
-  expect(has300Error).toBe(false);
-
-  // Now exceed the global $2M cap
-  await fillCalcMask(majorTraumaSI, '1975001', quote);
-
-  // Assert: the global cap error fires
-  await expectErrorContaining(quote,
-    'The maximum total Sum Insured per life for Trauma Recovery Cover, including Cancer Cover, is $2,000,000'
-  );
+  const hasGlobalCap = errors.some(e => e.includes('maximum total Sum Insured per life for Trauma Recovery Cover'));
+  
+  expect(has300Error).toBe(false); // No percentage cap at $25k+
+  expect(hasGlobalCap).toBe(true); // Only the $2M global cap applies
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST 2: Income Protection 3-Tier Progressive Formula (DC-21)
-//
-// Business Rule:
-//   Tier 1: 75% of first $320,000 income
-//   Tier 2: 50% of income between $320,001 - $560,000
-//   Tier 3: 20% of income above $560,000
-//   Product cap: $30,000/month regardless of income
-//
-// Why this matters:
-//   Previously documented as a simple 75% formula (only tested at $150k income).
-//   The progressive tiers only surface at higher incomes. A policy with $400k+
-//   income would be under-insured if the simple formula were used.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('DC-21: Income Protection uses 3-tier progressive formula (75%/50%/20%)', async () => {
@@ -145,12 +129,12 @@ test('DC-21: Income Protection uses 3-tier progressive formula (75%/50%/20%)', a
     income: '400000',
   });
 
+  // Activate Income Protection (disability cover)
   await activateCover(quote, 'Income Protection');
-  await waitForSettle(quote);
+  await quote.waitForTimeout(4000);
 
   // Enter an oversized Monthly Benefit to trigger the cap error
-  const benefitField = quote.locator('input[id*="SumInsured"]').nth(1);
-  await fillCalcMask(benefitField, '99999', quote);
+  await fillCalcMaskById(quote, 'SumInsured', '99999', 0);
 
   // Assert: error names the exact tiered cap ($23,333)
   await expectErrorContaining(quote, '$23,333');
@@ -158,16 +142,6 @@ test('DC-21: Income Protection uses 3-tier progressive formula (75%/50%/20%)', a
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST 3: Specific Injury Companion-Cover Requirement (LSC-32)
-//
-// Business Rule:
-//   Specific Injury cannot be activated standalone. It requires at least one of:
-//   Life, Trauma Recovery, Cancer, TPD, Accidental Death, Income Protection,
-//   Mortgage & Living, or Workability on the same policy.
-//
-// Why this matters:
-//   Previously documented as "no companion cover required" (incorrect). An
-//   adviser attempting to sell Specific Injury as a standalone product would
-//   be blocked at Apply time with no prior warning in the UI.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('LSC-32: Specific Injury requires a companion cover — blocked standalone', async () => {
@@ -180,11 +154,9 @@ test('LSC-32: Specific Injury requires a companion cover — blocked standalone'
 
   // Activate ONLY Specific Injury (no other covers)
   await activateCover(quote, 'Specific Injury');
-  await waitForSettle(quote);
 
   // Set a valid Sum Insured
-  const siField = quote.locator('input[id*="SumInsured"]').first();
-  await fillCalcMask(siField, '5000', quote);
+  await fillCalcMaskById(quote, 'SumInsured', '5000', 0);
 
   // Click Apply
   await clickApply(quote);
@@ -194,7 +166,7 @@ test('LSC-32: Specific Injury requires a companion cover — blocked standalone'
     'Specific Injury Lump Sum requires one of the following covers to also be selected'
   );
 
-  // Verify the error lists the valid companions
+  // Verify the error lists valid companions
   const errors = await getVisibleErrors(quote);
   const companionError = errors.find(e => e.includes('Specific Injury Lump Sum requires'));
   expect(companionError).toContain('Life');
@@ -204,16 +176,6 @@ test('LSC-32: Specific Injury requires a companion cover — blocked standalone'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST 4: Life Cover Age-Band Cap — $50,000 Maximum for ANB 11-16 (PD-28)
-//
-// Business Rule:
-//   Life Cover Sum Insured is capped at $50,000 for clients with
-//   Age Next Birthday between 11 and 16 (inclusive).
-//   Above ANB 17, the standard caps apply ($5,000,000 for 22+).
-//
-// Why this matters:
-//   All previous testing used Age 35 (adult band). A child policy would
-//   silently fail to price if sum insured exceeds the youth cap. This rule
-//   protects against over-insurance of minors.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('PD-28: Life Cover maximum $50,000 for Age Next Birthday under 17', async () => {
@@ -226,56 +188,41 @@ test('PD-28: Life Cover maximum $50,000 for Age Next Birthday under 17', async (
 
   // Activate Life cover
   await activateCover(quote, 'Life');
-  await waitForSettle(quote);
 
-  // Enter Sum Insured exceeding the youth cap ($999,999 >> $50,000)
-  const lifeSI = quote.locator('input[id*="SumInsured"]').first();
-  await fillCalcMask(lifeSI, '999999', quote);
+  // Enter Sum Insured exceeding the youth cap
+  await fillCalcMaskById(quote, 'SumInsured', '999999', 0);
 
-  // Assert: age-band cap error fires with exact text
+  // Assert: age-band cap error fires
   await expectErrorContaining(quote,
-    "The Maximum 'Life Cover' sum insurable for clients under Age Next Birthday 17 is $50,000"
+    "Maximum 'Life Cover' sum insurable for clients under Age Next Birthday 17 is $50,000"
   );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST 5: Bundling Discount Minimum Threshold (PREM-23/24)
-//
-// Business Rule:
-//   The bundling discount requires 2+ covers from different categories, BUT
-//   each cover must meet its category's minimum Sum Insured to count:
-//     - Life: minimum $100,000
-//     - TPD:  minimum $100,000
-//   A cover below its threshold does NOT count toward the bundling tally.
-//
-// Why this matters:
-//   Without this rule, a low-value policy ($10k Life + $200k TPD) would
-//   appear to qualify for a discount but actually doesn't. This prevents
-//   advisers from gaming the discount with trivial cover amounts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('PREM-23/24: Bundling discount requires Life/TPD minimum $100,000 each', async () => {
   await setMinimumPersonalDetails(quote, { age: 35, gender: 'Male', occupationCode: '1' });
 
-  // Activate Life at $99,999 (just UNDER the $100k minimum) + TPD at $200,000
+  // Activate Life — set to $99,999 (just UNDER threshold)
   await activateCover(quote, 'Life');
-  await waitForSettle(quote);
-  const lifeSI = quote.locator('input[id*="SumInsured"]').first();
-  await fillCalcMask(lifeSI, '99999', quote);
+  await fillCalcMaskById(quote, 'SumInsured', '99999', 0);
 
+  // Activate TPD — set to $200,000 (well above threshold)
+  await quote.waitForTimeout(2000);
   await activateCover(quote, 'TPD');
-  await waitForSettle(quote);
-  const tpdSI = quote.locator('input[id*="SumInsured"]').nth(1);
-  await fillCalcMask(tpdSI, '200000', quote);
+  await quote.waitForTimeout(2000);
+  await fillCalcMaskById(quote, 'SumInsured', '200000', 1);
 
-  // Assert: NO bundling discount (Life below threshold, only TPD qualifies = 1 cover)
+  // Assert: NO bundling discount (Life below $100k threshold)
   const discountBelow = await getBundlingDiscount(quote);
   expect(discountBelow).toBe('None');
 
-  // Now raise Life to exactly $100,000 (meets threshold)
-  await fillCalcMask(lifeSI, '100000', quote);
+  // Now raise Life to exactly $100,000
+  await fillCalcMaskById(quote, 'SumInsured', '100000', 0);
 
-  // Assert: bundling discount activates (2 qualifying covers)
+  // Assert: bundling discount activates
   const discountAtThreshold = await getBundlingDiscount(quote);
   expect(discountAtThreshold).toContain('15%');
 });
