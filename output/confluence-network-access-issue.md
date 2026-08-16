@@ -68,17 +68,26 @@ BODY=There was an error processing your request. RELOAD
 ## Solution
 
 ### Required Action
-Whitelist IP `54.253.37.176` on the OutSystems dev environment (`outsystems-dev.asteronlife.co.nz`) at the application/platform level.
+Whitelist IP `54.253.37.176` on the OutSystems dev environment (`outsystems-dev.asteronlife.co.nz`) via the **OutSystems Service Center** Internal Network configuration.
+
+### Process
+1. Log in to **OutSystems Service Center** for the dev environment
+2. Navigate to **Administration** → **Security** → **Network Security** (or **Internal Network**)
+3. Add `54.253.37.176` to the list of trusted/whitelisted IP addresses
+4. Save and confirm the change takes effect (may require an application restart or cache clear)
+
+The OutSystems Service Center Internal Network whitelist controls which IP addresses are allowed to access the platform's applications. Requests from non-whitelisted IPs receive a valid TCP connection but the application rejects the session during initialization, redirecting to the generic `_error.html` error page.
 
 ### Who to Contact
-- OutSystems infrastructure team / platform administrators
-- The team that manages the `outsystems-dev` environment's Internal Network configuration in Service Center
+- OutSystems platform administrators with Service Center access
+- The team that manages the `outsystems-dev` environment's security configuration
 
 ### Questions to Confirm
 1. Is `54.253.37.176` a **static** egress IP for the OutSystems Test Suite environment, or does it rotate?
    - If static → single IP whitelist is sufficient
-   - If dynamic → need a CIDR range or VPN/peering solution
-2. Where is the trust boundary configured? (OutSystems Service Center → Internal Network settings? AWS Security Group? Application-level IP filter?)
+   - If dynamic → need a CIDR range whitelisted, or a VPN/peering solution
+2. Are there any other IPs that should be whitelisted for the Test Suite (e.g. if it runs across multiple nodes)?
+3. Does the whitelist change require an application republish or does it take effect immediately?
 
 ---
 
