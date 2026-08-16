@@ -1,23 +1,36 @@
 /**
- * Network Diagnostic — Forces the IP and connectivity info into FAILURE messages
- * so they're visible in any test reporter (even ones that hide console.log).
- * 
- * These tests INTENTIONALLY FAIL with the diagnostic info in the error message.
+ * Network Diagnostic — Multiple strategies to surface the IP address
+ * regardless of what the test reporter shows/hides.
  */
 
 const { test, expect } = require('@playwright/test');
 
 test.setTimeout(30_000);
 
-test('DIAGNOSTIC: Report outbound IP (will fail with IP in error message)', async ({ page }) => {
+test('DIAGNOSTIC: Get outbound IP', async ({ page }) => {
   await page.goto('https://api.ipify.org');
   const ip = await page.locator('body').innerText();
   
-  // Force a failure that contains the IP in the error message
-  expect(ip, `OUTBOUND_IP=${ip}`).toBe('INTENTIONAL_FAIL_TO_SHOW_IP');
+  // Strategy 1: Set page title to the IP (shows in screenshots)
+  await page.evaluate((ipAddr) => { document.title = 'IP: ' + ipAddr; }, ip);
+  
+  // Strategy 2: Make the page content huge and obvious
+  await page.evaluate((ipAddr) => {
+    document.body.innerHTML = '<h1 style="font-size:80px;color:red;text-align:center;margin-top:100px;">OUTBOUND IP: ' + ipAddr + '</h1>';
+  }, ip);
+
+  // Strategy 3: Take a screenshot (if the reporter shows attachments)
+  await page.screenshot({ path: 'diagnostic-ip-result.png', fullPage: true });
+
+  // Strategy 4: Fail with a specific error format
+  // Using test.info().annotations to try to surface it
+  test.info().annotations.push({ type: 'IP_ADDRESS', description: ip });
+
+  // Now fail so the screenshot is captured by the reporter
+  expect('IP_RESULT:' + ip).toBe('CHECK_ERROR_DETAILS_OR_SCREENSHOT');
 });
 
-test('DIAGNOSTIC: Report connectivity to outsystems-dev (will fail with result in error message)', async ({ page }) => {
+test('DIAGNOSTIC: Check outsystems-dev connectivity', async ({ page }) => {
   let result = '';
   
   try {
@@ -25,13 +38,19 @@ test('DIAGNOSTIC: Report connectivity to outsystems-dev (will fail with result i
       waitUntil: 'domcontentloaded',
       timeout: 20000,
     });
-    const status = response?.status() || 'no response';
-    const url = page.url();
-    result = `REACHABLE=YES | STATUS=${status} | URL=${url}`;
+    result = 'REACHABLE_STATUS_' + (response?.status() || 'null');
   } catch (e) {
-    result = `REACHABLE=NO | ERROR=${e.message.substring(0, 150)}`;
+    result = 'UNREACHABLE_' + e.message.substring(0, 80).replace(/[^a-zA-Z0-9_.]/g, '_');
   }
 
-  // Force a failure that contains the connectivity result
-  expect(result, result).toBe('INTENTIONAL_FAIL_TO_SHOW_RESULT');
+  // Make it visible on page for screenshot
+  await page.evaluate((r) => {
+    document.body.innerHTML = '<h1 style="font-size:60px;color:red;text-align:center;margin-top:100px;">' + r + '</h1>';
+  }, result).catch(() => {});
+
+  await page.screenshot({ path: 'diagnostic-connectivity-result.png', fullPage: true }).catch(() => {});
+
+  test.info().annotations.push({ type: 'CONNECTIVITY', description: result });
+
+  expect('CONNECTIVITY:' + result).toBe('CHECK_ERROR_DETAILS_OR_SCREENSHOT');
 });
