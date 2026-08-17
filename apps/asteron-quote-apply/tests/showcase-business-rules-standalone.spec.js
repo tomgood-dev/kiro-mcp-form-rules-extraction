@@ -1,31 +1,32 @@
 /**
- * Sequential tests — each shows as its own pass/fail line.
- * Test 01 logs in and saves session. Tests 02+ reuse the session.
+ * Sequential tests sharing one browser page.
+ * Requires: --workers=1 (or Playwright config workers:1)
  * 
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
+ * 
+ * @playwright-config: { "workers": 1 }
  */
 
-const { test, expect } = require('@playwright/test');
-const path = require('path');
-const fs = require('fs');
-
-const AUTH_FILE = path.join(__dirname, '.auth-state.json');
+const { test, expect, chromium } = require('@playwright/test');
 
 test.setTimeout(120_000);
 
-// Force serial execution
+// Shared state across tests (works when workers=1 and serial mode)
+let browser;
+let page;
+
+test.beforeAll(async () => {
+  browser = await chromium.launch();
+  page = await browser.newPage({ ignoreHTTPSErrors: true });
+});
+
+test.afterAll(async () => {
+  await browser.close();
+});
+
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Asteron Quote & Apply', () => {
-  let page;
-
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-  });
-
-  test.afterAll(async () => {
-    await page.close();
-  });
 
   test('01 - Environment variables are set', async () => {
     expect(process.env.BASE_URL).toBeTruthy();
@@ -122,7 +123,7 @@ test.describe('Asteron Quote & Apply', () => {
     expect(visible).toBe(true);
   });
 
-  test('09 - Sum Insured entry triggers premium calculation', async () => {
+  test('09 - Sum Insured $200k triggers premium calculation', async () => {
     const siField = page.locator('input[id*="SumInsured"]').first();
     await siField.scrollIntoViewIfNeeded();
     await siField.click();
@@ -140,7 +141,6 @@ test.describe('Asteron Quote & Apply', () => {
   });
 
   test('10 - RULE PD-28: Age < 17 caps Life at $50,000', async () => {
-    // Change age to 15
     const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
     await ageInput.click();
     await page.keyboard.press('Control+a');
@@ -149,7 +149,6 @@ test.describe('Asteron Quote & Apply', () => {
     await page.keyboard.press('Tab');
     await page.waitForTimeout(3000);
 
-    // Re-enter Sum Insured over the cap
     const siField = page.locator('input[id*="SumInsured"]').first();
     await siField.scrollIntoViewIfNeeded();
     await siField.click();
