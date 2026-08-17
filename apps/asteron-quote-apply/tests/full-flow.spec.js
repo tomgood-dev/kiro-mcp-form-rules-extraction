@@ -33,7 +33,8 @@ test('Full flow: Login → Quote List → New Quote → Fill Form', async ({ pag
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  if (page.url().includes('CentralPortalsLogin')) throw new Error('Login failed');
+  const loginSucceeded = !page.url().includes('CentralPortalsLogin');
+  expect(loginSucceeded, 'Login failed - still on login page after 30s').toBe(true);
 
   // Quote list
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
