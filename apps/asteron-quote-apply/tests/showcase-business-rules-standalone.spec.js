@@ -29,7 +29,7 @@ const { test, expect } = require('@playwright/test');
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
-const LOGIN_EMAIL = process.env.ENV_LOGIN_EMAIL || 'miguel.silva@resolutionlife.com.au';
+const LOGIN_EMAIL = process.env.ENV_LOGIN_EMAIL || 'hanno.coetzee+1123@resolutionlife.com.au';
 const LOGIN_PASSWORD = process.env.ENV_LOGIN_PASSWORD || 'P@ssw0rd135';
 
 // Increase timeout — OutSystems is slow (form load + server round-trips)
@@ -47,16 +47,22 @@ async function loginAndOpenNewQuote(page) {
   // --- Login ---
   await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`);
   await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(5000); // Wait for SPA to hydrate
 
   const emailField = page.locator('input[type="text"]').first();
   const passwordField = page.locator('input[type="password"]').first();
 
-  if (await emailField.isVisible().catch(() => false)) {
-    await emailField.fill(LOGIN_EMAIL);
-    await passwordField.fill(LOGIN_PASSWORD);
-    await page.locator('button:has-text("Log in")').click();
-    await page.waitForURL('**/AdviserCentral_Uplift/**', { timeout: 60_000 }).catch(() => {});
-  }
+  // Wait for login form to actually render
+  await emailField.waitFor({ state: 'visible', timeout: 30000 });
+
+  // Use click + type (not fill) for OutSystems reactive binding
+  await emailField.click();
+  await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
+  await passwordField.click();
+  await page.keyboard.type(LOGIN_PASSWORD, { delay: 30 });
+  await page.locator('button:has-text("Log in")').click();
+  await page.waitForURL('**/AdviserCentral_Uplift/**', { timeout: 60_000 }).catch(() => {});
+  await page.waitForTimeout(3000);
 
   // --- Navigate to Quote & Apply list ---
   await page.goto(`${BASE_URL}/QuoteAndApply/`);
