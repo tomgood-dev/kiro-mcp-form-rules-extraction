@@ -134,6 +134,9 @@ test('02 - RULE PD-28: Life Cover $50k cap for Age under 17', async ({ page }) =
   await fillSumInsured(page, 0, '999999');
   const errors = await getErrors(page);
   const hasCapError = errors.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'));
+  if (!hasCapError) {
+    throw new Error(`PD-28 FAILED: Expected $50k cap error. Got errors: ${JSON.stringify(errors).substring(0, 300)}. URL: ${page.url()}`);
+  }
   expect(hasCapError).toBe(true);
 });
 
