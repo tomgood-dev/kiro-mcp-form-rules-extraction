@@ -10,14 +10,21 @@ const { test, expect } = require('@playwright/test');
 test.setTimeout(180_000);
 
 test('Lump Sum Cover Rules (LSC-19, LSC-32)', async ({ page }) => {
-  const BASE_URL = process.env.BASE_URL;
-  const LOGIN_EMAIL = process.env.LOGIN_EMAIL;
-  const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD;
+  const BASE_URL = (process.env.BASE_URL || '').trim();
+  const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
+  const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
+
+  if (!BASE_URL) throw new Error('BASE_URL env var is empty or not set');
+  if (!LOGIN_EMAIL) throw new Error('LOGIN_EMAIL env var is empty or not set');
+  if (!LOGIN_PASSWORD) throw new Error('LOGIN_PASSWORD env var is empty or not set');
 
   // ─── LOGIN ───────────────────────────────────────────────────────────────
-  await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
-    waitUntil: 'domcontentloaded', timeout: 30000,
-  });
+  const loginUrl = `${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`;
+  try {
+    await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  } catch (e) {
+    throw new Error(`GOTO FAILED: Could not reach ${loginUrl}. Error: ${e.message.substring(0, 150)}`);
+  }
   await page.waitForTimeout(8000);
   if (page.url().includes('_error.html')) throw new Error('LOGIN: Page blocked (error page)');
 
