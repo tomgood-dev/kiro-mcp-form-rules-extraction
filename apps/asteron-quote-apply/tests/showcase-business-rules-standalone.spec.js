@@ -1,58 +1,72 @@
 /**
- * Sequential flow with named steps.
- * Uses test.step() so each step is labeled in the report.
- * If the Test Suite doesn't show steps, the failure message includes the step name.
+ * Sequential tests — each shows as its own pass/fail line.
+ * Test 01 logs in and saves session. Tests 02+ reuse the session.
  * 
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
 const { test, expect } = require('@playwright/test');
+const path = require('path');
+const fs = require('fs');
 
-test.setTimeout(240_000);
+const AUTH_FILE = path.join(__dirname, '.auth-state.json');
 
-test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) => {
-  const BASE_URL = process.env.BASE_URL;
-  const LOGIN_EMAIL = process.env.LOGIN_EMAIL;
-  const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD;
+test.setTimeout(120_000);
 
-  await test.step('01 - Verify environment variables', async () => {
-    expect(BASE_URL, 'BASE_URL not set').toBeTruthy();
-    expect(LOGIN_EMAIL, 'LOGIN_EMAIL not set').toBeTruthy();
-    expect(LOGIN_PASSWORD, 'LOGIN_PASSWORD not set').toBeTruthy();
+// Force serial execution
+test.describe.configure({ mode: 'serial' });
+
+test.describe('Asteron Quote & Apply', () => {
+  let page;
+
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
   });
 
-  await test.step('02 - Navigate to login page', async () => {
-    await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
+  test.afterAll(async () => {
+    await page.close();
+  });
+
+  test('01 - Environment variables are set', async () => {
+    expect(process.env.BASE_URL).toBeTruthy();
+    expect(process.env.LOGIN_EMAIL).toBeTruthy();
+    expect(process.env.LOGIN_PASSWORD).toBeTruthy();
+  });
+
+  test('02 - Login page loads (no error page)', async () => {
+    await page.goto(`${process.env.BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
       waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
     await page.waitForTimeout(5000);
-    expect(page.url().includes('_error.html'), 'Got error page - IP not whitelisted').toBe(false);
+    expect(page.url().includes('_error.html')).toBe(false);
   });
 
-  await test.step('03 - Login form renders', async () => {
-    const emailField = page.locator('input[type="text"]').first();
-    await emailField.waitFor({ state: 'visible', timeout: 15000 });
+  test('03 - Login form renders', async () => {
+    const visible = await page.locator('input[type="text"]').first().isVisible().catch(() => false);
+    expect(visible).toBe(true);
   });
 
-  await test.step('04 - Enter credentials and login', async () => {
+  test('04 - Login succeeds', async () => {
     await page.locator('input[type="text"]').first().click();
-    await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
+    await page.keyboard.type(process.env.LOGIN_EMAIL, { delay: 30 });
     await page.locator('input[type="password"]').first().click();
-    await page.keyboard.type(LOGIN_PASSWORD, { delay: 30 });
+    await page.keyboard.type(process.env.LOGIN_PASSWORD, { delay: 30 });
     await page.locator('button:has-text("Log in")').click();
     await page.waitForTimeout(10000);
-    const url = page.url();
-    expect(url.includes('CentralPortalsLogin'), 'Still on login page - credentials failed').toBe(false);
+    expect(page.url().includes('CentralPortalsLogin')).toBe(false);
   });
 
-  await test.step('05 - Navigate to Quote & Apply list', async () => {
-    await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  test('05 - Quote & Apply list loads', async () => {
+    await page.goto(`${process.env.BASE_URL}/QuoteAndApply/`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
     await page.waitForTimeout(3000);
-    expect(page.url().includes('_error.html'), 'QuoteAndApply got error page').toBe(false);
+    expect(page.url().includes('_error.html')).toBe(false);
   });
 
-  await test.step('06 - Open New Quote form', async () => {
+  test('06 - New Quote form opens', async () => {
     const quoteUrl = await page.evaluate(() => {
       return new Promise((resolve) => {
         window.open = function(url) { resolve(url); };
@@ -64,14 +78,14 @@ test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) 
     if (quoteUrl) {
       await page.goto(quoteUrl, { waitUntil: 'domcontentloaded' });
     } else {
-      await page.goto(`${BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${process.env.BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
     }
     await page.waitForTimeout(5000);
-    const ageField = page.locator('input[id*="Input_AgeNextBirthday"]').first();
-    await ageField.waitFor({ state: 'visible', timeout: 15000 });
+    const visible = await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false);
+    expect(visible).toBe(true);
   });
 
-  await test.step('07 - Set personal details (Age 35, Male, Occupation AA)', async () => {
+  test('07 - Personal details set (Age 35, Male, Occ AA)', async () => {
     const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
     await ageInput.click();
     await page.keyboard.press('Control+a');
@@ -93,19 +107,22 @@ test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) 
     ).catch(() => {});
     await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
     await page.waitForTimeout(2000);
+
+    const ageValue = await page.locator('input[id*="Input_AgeNextBirthday"]').first().inputValue();
+    expect(ageValue).toBe('35');
   });
 
-  await test.step('08 - Activate Life cover', async () => {
+  test('08 - Life cover activates with Sum Insured field', async () => {
     await page.evaluate(() => {
       const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
-    const siField = page.locator('input[id*="SumInsured"]').first();
-    await siField.waitFor({ state: 'visible', timeout: 10000 });
+    const visible = await page.locator('input[id*="SumInsured"]').first().isVisible().catch(() => false);
+    expect(visible).toBe(true);
   });
 
-  await test.step('09 - Enter Sum Insured $200,000 and verify premium appears', async () => {
+  test('09 - Sum Insured entry triggers premium calculation', async () => {
     const siField = page.locator('input[id*="SumInsured"]').first();
     await siField.scrollIntoViewIfNeeded();
     await siField.click();
@@ -118,12 +135,11 @@ test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) 
     }
     await page.keyboard.press('Tab');
     await page.waitForTimeout(3000);
-
-    const hasPremium = await page.evaluate(() => document.body.innerText.includes('Total'));
-    expect(hasPremium, 'No premium total appeared after entering Sum Insured').toBe(true);
+    const hasPremium = await page.evaluate(() => document.body.innerText.includes('$') && document.body.innerText.includes('Total'));
+    expect(hasPremium).toBe(true);
   });
 
-  await test.step('10 - RULE PD-28: Life Cover $50k cap for Age < 17', async () => {
+  test('10 - RULE PD-28: Age < 17 caps Life at $50,000', async () => {
     // Change age to 15
     const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
     await ageInput.click();
@@ -133,7 +149,7 @@ test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) 
     await page.keyboard.press('Tab');
     await page.waitForTimeout(3000);
 
-    // Enter oversized Sum Insured
+    // Re-enter Sum Insured over the cap
     const siField = page.locator('input[id*="SumInsured"]').first();
     await siField.scrollIntoViewIfNeeded();
     await siField.click();
@@ -147,12 +163,11 @@ test('Asteron Quote & Apply - Full Business Rules Validation', async ({ page }) 
     await page.keyboard.press('Tab');
     await page.waitForTimeout(3000);
 
-    // Check for age-band error
     const errors = await page.evaluate(() => {
       const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
       return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
     });
     const hasCapError = errors.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'));
-    expect(hasCapError, `Expected $50k cap error, got: ${errors.join(' | ').substring(0, 200)}`).toBe(true);
+    expect(hasCapError).toBe(true);
   });
 });
