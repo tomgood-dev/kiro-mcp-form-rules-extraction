@@ -1,29 +1,25 @@
 /**
- * Showcase tests — uses Playwright's { page } fixture for auto-screenshots on failure.
- * Each test is independent (logs in fresh) so order doesn't matter.
+ * Showcase — each test logs in and validates one rule.
+ * Uses { page } fixture for screenshots on failure.
  * 
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
 const { test, expect } = require('@playwright/test');
 
-test.setTimeout(120_000);
+test.setTimeout(180_000);
 
-// ─── Helper: login and get to quote form ───────────────────────────────────────
+// ─── Shared helpers ────────────────────────────────────────────────────────────
 
-async function loginAndOpenQuote(page) {
+async function login(page) {
   const BASE_URL = process.env.BASE_URL;
-  const LOGIN_EMAIL = process.env.LOGIN_EMAIL;
-  const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD;
-
-  // Login
   await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
     waitUntil: 'domcontentloaded', timeout: 30000,
   });
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(8000);
 
   if (page.url().includes('_error.html')) {
-    throw new Error(`LOGIN PAGE BLOCKED (error page). URL: ${page.url()}`);
+    throw new Error(`LOGIN PAGE BLOCKED. URL: ${page.url()}`);
   }
 
   const emailField = page.locator('input[type="text"]').first();
@@ -32,21 +28,22 @@ async function loginAndOpenQuote(page) {
   }
 
   await emailField.click();
-  await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
+  await page.keyboard.type(process.env.LOGIN_EMAIL, { delay: 30 });
   await page.locator('input[type="password"]').first().click();
-  await page.keyboard.type(LOGIN_PASSWORD, { delay: 30 });
+  await page.keyboard.type(process.env.LOGIN_PASSWORD, { delay: 30 });
   await page.locator('button:has-text("Log in")').click();
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(15000);
 
   if (page.url().includes('CentralPortalsLogin')) {
     throw new Error(`LOGIN FAILED (still on login page). URL: ${page.url()}`);
   }
+}
 
-  // Navigate to quote list
+async function openNewQuote(page) {
+  const BASE_URL = process.env.BASE_URL;
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
 
-  // Open new quote
   const quoteUrl = await page.evaluate(() => {
     return new Promise((resolve) => {
       window.open = function(url) { resolve(url); };
@@ -67,8 +64,6 @@ async function loginAndOpenQuote(page) {
   }
 }
 
-// ─── Helper: set personal details ──────────────────────────────────────────────
-
 async function setPersonalDetails(page, age = '35') {
   const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
   await ageInput.click();
@@ -79,8 +74,7 @@ async function setPersonalDetails(page, age = '35') {
   await page.waitForTimeout(1000);
 
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('.button-group-item')]
-      .find(b => b.innerText.trim() === 'Male');
+    const btn = [...document.querySelectorAll('.button-group-item')].find(b => b.innerText.trim() === 'Male');
     if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
   });
   await page.waitForTimeout(2000);
@@ -93,9 +87,7 @@ async function setPersonalDetails(page, age = '35') {
   await page.waitForTimeout(2000);
 }
 
-// ─── Helper: fill calc-mask field ──────────────────────────────────────────────
-
-async function fillCalcMask(page, nth, value) {
+async function fillSumInsured(page, nth, value) {
   const field = page.locator('input[id*="SumInsured"]').nth(nth);
   await field.waitFor({ state: 'visible', timeout: 15000 });
   await field.scrollIntoViewIfNeeded();
@@ -103,16 +95,11 @@ async function fillCalcMask(page, nth, value) {
   await page.waitForTimeout(200);
   for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
   await page.waitForTimeout(200);
-  for (const d of value) {
-    await page.keyboard.press(d);
-    await page.waitForTimeout(60);
-  }
+  for (const d of value) { await page.keyboard.press(d); await page.waitForTimeout(60); }
   await page.keyboard.press('Tab');
   await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(2000);
 }
-
-// ─── Helper: activate cover ────────────────────────────────────────────────────
 
 async function activateCover(page, label) {
   await page.evaluate((l) => {
@@ -122,42 +109,42 @@ async function activateCover(page, label) {
   await page.waitForTimeout(3000);
 }
 
-// ─── Helper: get errors ────────────────────────────────────────────────────────
-
 async function getErrors(page) {
   return page.evaluate(() => {
     const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-    return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    return [...new Set(nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim()))];
   });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TESTS — each is fully independent
+// TESTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-test('01 - Login and reach Quote form', async ({ page }) => {
-  await loginAndOpenQuote(page);
-  // If we get here, it worked
+test('01 - Login and open Quote form', async ({ page }) => {
+  await login(page);
+  await openNewQuote(page);
   expect(true).toBe(true);
 });
 
 test('02 - RULE PD-28: Life Cover $50k cap for Age under 17', async ({ page }) => {
-  await loginAndOpenQuote(page);
+  await login(page);
+  await openNewQuote(page);
   await setPersonalDetails(page, '15');
   await activateCover(page, 'Life');
-  await fillCalcMask(page, 0, '999999');
+  await fillSumInsured(page, 0, '999999');
   const errors = await getErrors(page);
   const hasCapError = errors.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'));
   expect(hasCapError).toBe(true);
 });
 
 test('03 - RULE LSC-32: Specific Injury needs companion cover', async ({ page }) => {
-  await loginAndOpenQuote(page);
+  await login(page);
+  await openNewQuote(page);
   await setPersonalDetails(page);
   await page.locator('select[id*="EmploymentStatus_Dropdown"]').first().selectOption({ label: 'Employed' });
   await page.waitForTimeout(2000);
   await activateCover(page, 'Specific Injury');
-  await fillCalcMask(page, 0, '5000');
+  await fillSumInsured(page, 0, '5000');
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
   await page.waitForTimeout(3000);
   const errors = await getErrors(page);
