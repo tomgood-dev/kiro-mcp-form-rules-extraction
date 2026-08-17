@@ -32,7 +32,12 @@ async function login(page) {
   await page.locator('input[type="password"]').first().click();
   await page.keyboard.type(process.env.LOGIN_PASSWORD, { delay: 30 });
   await page.locator('button:has-text("Log in")').click();
-  await page.waitForTimeout(15000);
+  
+  // Poll for redirect (up to 30s) instead of fixed wait
+  for (let i = 0; i < 30; i++) {
+    await page.waitForTimeout(1000);
+    if (!page.url().includes('CentralPortalsLogin')) break;
+  }
 
   if (page.url().includes('CentralPortalsLogin')) {
     throw new Error(`LOGIN FAILED (still on login page). URL: ${page.url()}`);
