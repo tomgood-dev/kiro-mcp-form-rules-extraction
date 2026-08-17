@@ -28,9 +28,9 @@ const { test, expect } = require('@playwright/test');
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
-const LOGIN_EMAIL = process.env.ENV_LOGIN_EMAIL || 'hanno.coetzee+1123@resolutionlife.com.au';
-const LOGIN_PASSWORD = process.env.ENV_LOGIN_PASSWORD || 'P@ssw0rd135';
+const BASE_URL = process.env.BASE_URL;
+const LOGIN_EMAIL = process.env.LOGIN_EMAIL;
+const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD;
 
 // Increase timeout — OutSystems is slow (form load + server round-trips)
 test.setTimeout(240_000);
