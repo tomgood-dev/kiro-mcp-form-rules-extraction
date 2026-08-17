@@ -11,7 +11,7 @@ const {
   openNewQuote,
   setMinimumPersonalDetails,
   waitForSettle,
-} = require('../helpers/quote-helpers');
+} = require('../../helpers/quote-helpers');
 
 let quote;
 
@@ -107,7 +107,7 @@ test.describe('POL-11/POL-12 — Add Life', () => {
 
 test('POL-13: the Premium panel aggregates a combined total across all lives', async () => {
   await setMinimumPersonalDetails(quote);
-  const { activateCover, fillCalcMask, getTotalYearlyPremium } = require('../helpers/quote-helpers');
+  const { activateCover, fillCalcMask, getTotalYearlyPremium } = require('../../helpers/quote-helpers');
   await activateCover(quote, 'Life');
   await fillCalcMask(quote.locator('input[id*="SumInsured"]').first(), '200000');
   await waitForSettle(quote);

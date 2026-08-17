@@ -39,7 +39,7 @@ const {
   clickApply,
   getTotalYearlyPremium,
   getBundlingDiscount,
-} = require('../helpers/quote-helpers');
+} = require('../../helpers/quote-helpers');
 
 // Each test gets its own fresh quote page
 let quote;

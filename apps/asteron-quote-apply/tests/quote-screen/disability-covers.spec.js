@@ -14,7 +14,7 @@ const {
   getBundlingDiscount,
   sumInsuredInput,
   waitForSettle,
-} = require('../helpers/quote-helpers');
+} = require('../../helpers/quote-helpers');
 
 let quote;
 

@@ -1,18 +1,14 @@
 {
-  "name": "playwright-tests",
+  "name": "ai-business-rules-testing",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI-assisted business rules discovery and Playwright test generation for web applications",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "confluence-preview": "node confluence-preview-server.js"
+    "explore": "node tools/server.js",
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "report": "npx playwright show-report"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@playwright/test": "^1.62.1",
-    "marked": "^18.0.9"
+    "@playwright/test": "^1.52.0"
   }
 }

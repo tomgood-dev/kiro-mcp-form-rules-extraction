@@ -1,6 +1,7 @@
 node_modules/
+.env
+apps/*/.env
 test-results/
 playwright-report/
-.env
-*.png
-tests/.auth/
+**/state.json
+*.log

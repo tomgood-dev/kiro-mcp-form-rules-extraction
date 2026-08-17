@@ -1,6 +1,6 @@
 // Verifies: output/confluence-pages/business-rules/quote-screen/kids-cover-and-multi-life/page.md
 const { test, expect } = require('@playwright/test');
-const { openNewQuote, setMinimumPersonalDetails, clickApply, expectErrorContaining, waitForSettle } = require('../helpers/quote-helpers');
+const { openNewQuote, setMinimumPersonalDetails, clickApply, expectErrorContaining, waitForSettle } = require('../../helpers/quote-helpers');
 
 let quote;
 
