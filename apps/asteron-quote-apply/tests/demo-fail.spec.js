@@ -1,5 +1,6 @@
 /**
- * Business Rules Test — PD-28 (intentionally wrong threshold to test failure output)
+ * DEMO: Intentionally failing business rule (fake rule for demonstration)
+ * This test demonstrates what a failed business rule check looks like.
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
@@ -21,7 +22,7 @@ function fail(step, reason, details = '') {
   throw new Error(msg);
 }
 
-test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
+test('DEMO FAIL - Fake Rule XYZ-99: Life Cover should cap at $10,000 (wrong on purpose)', async ({ page }) => {
   const BASE_URL = (process.env.BASE_URL || '').trim();
   const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
   const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
@@ -75,12 +76,12 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
   if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
     fail('New Quote', 'Quote form did not render', page.url());
 
-  // SET PERSONAL DETAILS: Age 15, Male, Occupation AA
+  // SET AGE 35, Male, Occupation AA
   const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
   await ageInput.click();
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Delete');
-  await page.keyboard.type('15', { delay: 40 });
+  await page.keyboard.type('35', { delay: 40 });
   await page.keyboard.press('Tab');
   await page.waitForTimeout(1000);
 
@@ -94,40 +95,36 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
   await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
   await page.waitForTimeout(2000);
 
-  // ACTIVATE LIFE COVER
+  // ACTIVATE LIFE, ENTER $200,000
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
     if (btn) btn.click();
   });
   await page.waitForTimeout(3000);
 
-  // ENTER SUM INSURED $999,999 (exceeds $50k cap for under-17)
   const siField = page.locator('input[id*="SumInsured"]').first();
-  if (!(await siField.isVisible().catch(() => false)))
-    fail('Life Cover', 'Sum Insured field not visible after activation');
-
   await siField.scrollIntoViewIfNeeded();
   await siField.click();
   await page.waitForTimeout(200);
   for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
   await page.waitForTimeout(200);
-  for (const d of '999999') { await page.keyboard.press(d); await page.waitForTimeout(60); }
+  for (const d of '200000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
   await page.keyboard.press('Tab');
   await page.waitForTimeout(3000);
 
-  // CHECK FOR ERROR
+  // FAKE RULE: Check for a $10,000 cap error that DOESN'T EXIST
+  // This is a made-up rule — the real app has no $10,000 cap for adults
   const errors = await page.evaluate(() => {
     const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
     return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
   });
 
-  // CHECK: App should show $50,000 cap error for under-17
-  const hasCapError = errors.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'));
-  if (!hasCapError) {
+  const hasFakeCapError = errors.some(e => e.includes('10,000'));
+  if (!hasFakeCapError) {
     fail(
-      'Rule PD-28: Life Cover Age-Band Cap',
-      'Expected $50,000 cap error for Age < 17 but did not find it',
-      `Errors found: ${errors.join(' | ').substring(0, 200)}`
+      'Rule XYZ-99: Life Cover $10,000 Cap (FAKE RULE)',
+      'Expected $10,000 cap error but the app does not enforce this rule',
+      `This rule does not exist - it is a demo of what a failed test looks like. Actual errors: ${errors.join(' | ').substring(0, 150) || 'None'}`
     );
   }
 });
