@@ -1,5 +1,5 @@
-/**
- * DEMO step 1: Login + open quote (testing if this file works)
+﻿/**
+ * Premium & Bundling Business Rules (PREM-23/24, PREM-20)
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
@@ -7,7 +7,7 @@ const { test } = require('@playwright/test');
 
 test.setTimeout(180_000);
 
-test('DEMO step 1: login and open quote', async ({ page }) => {
+test('Premium & Bundling Rules (PREM-23/24, PREM-20)', async ({ page }) => {
   try {
     const BASE_URL = (process.env.BASE_URL || '').trim();
     const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
@@ -17,6 +17,7 @@ test('DEMO step 1: login and open quote', async ({ page }) => {
     if (!LOGIN_EMAIL) throw new Error('FAILED: LOGIN_EMAIL not set');
     if (!LOGIN_PASSWORD) throw new Error('FAILED: LOGIN_PASSWORD not set');
 
+    // LOGIN
     await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
       waitUntil: 'domcontentloaded', timeout: 30000,
     });
@@ -61,7 +62,7 @@ test('DEMO step 1: login and open quote', async ({ page }) => {
     if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
       throw new Error('FAILED [Quote]: Form not rendered. URL: ' + page.url());
 
-    // SET AGE 35, MALE, OCC AA
+    // SET PERSONAL DETAILS (Age 35, Male, AA)
     const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
     await ageInput.click();
     await page.keyboard.press('Control+a');
@@ -80,38 +81,101 @@ test('DEMO step 1: login and open quote', async ({ page }) => {
     await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
     await page.waitForTimeout(2000);
 
-    // ACTIVATE LIFE, ENTER $200,000
+    // ========= RULE PREM-23/24: Life $100k + TPD $200k = 15% discount =========
+
+    // Activate Life, set $100,000
     await page.evaluate(() => {
       const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
 
-    const siField = page.locator('input[id*="SumInsured"]').first();
-    await siField.scrollIntoViewIfNeeded();
-    await siField.click();
+    const lifeSI = page.locator('input[id*="SumInsured"]').first();
+    if (!(await lifeSI.isVisible().catch(() => false)))
+      throw new Error('FAILED [PREM]: Life Sum Insured not visible');
+    await lifeSI.scrollIntoViewIfNeeded();
+    await lifeSI.click();
+    await page.waitForTimeout(200);
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
+    await page.waitForTimeout(200);
+    for (const d of '100000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    // Activate TPD, set $200,000
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'TPD');
+      if (btn) btn.click();
+    });
+    await page.waitForTimeout(3000);
+
+    const tpdSI = page.locator('input[id*="SumInsured"]').nth(1);
+    if (!(await tpdSI.isVisible().catch(() => false)))
+      throw new Error('FAILED [PREM]: TPD Sum Insured not visible');
+    await tpdSI.scrollIntoViewIfNeeded();
+    await tpdSI.click();
     await page.waitForTimeout(200);
     for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
     await page.waitForTimeout(200);
     for (const d of '200000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
     await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    // Check: 2 covers = 15%
+    const discount1 = await page.evaluate(() => {
+      const text = document.body.innerText;
+      const idx = text.indexOf('Bundling Discounts');
+      if (idx === -1) return null;
+      const chunk = text.slice(idx, idx + 60);
+      const line = chunk.split('\n')[1];
+      return line ? line.trim() : null;
+    });
+    if (!discount1 || !discount1.includes('15%'))
+      throw new Error(`FAILED [Rule PREM-23/24]: Expected 15% discount with 2 covers. Got: "${discount1 || 'not found'}"`);
+
+    // ========= RULE PREM-20: Add 3rd cover = 20% discount =========
+
+    // Activate Trauma, set $100,000
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Trauma');
+      if (btn) btn.click();
+    });
     await page.waitForTimeout(3000);
 
-    // FAKE RULE XYZ-99: Check for $10,000 cap (DOES NOT EXIST)
-    const errors = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
-    });
-
-    if (!errors.some(e => e.includes('10,000')))
-      throw new Error('FAILED [Rule XYZ-99 FAKE]: Expected $10,000 cap error. This rule does not exist - intentional demo fail. Actual errors: ' + (errors.join(' | ').substring(0, 150) || 'None'));
-
-    await page.locator('button:has-text("Sign out")').click().catch(() => {});
+    const traumaSI = page.locator('input[id*="SumInsured"]').nth(2);
+    if (!(await traumaSI.isVisible().catch(() => false)))
+      throw new Error('FAILED [PREM-20]: Trauma Sum Insured not visible (3rd cover)');
+    await traumaSI.scrollIntoViewIfNeeded();
+    await traumaSI.click();
+    await page.waitForTimeout(200);
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
+    await page.waitForTimeout(200);
+    for (const d of '100000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
     await page.waitForTimeout(2000);
+
+    // Check: 3 covers = 20%
+    const discount2 = await page.evaluate(() => {
+      const text = document.body.innerText;
+      const idx = text.indexOf('Bundling Discounts');
+      if (idx === -1) return null;
+      const chunk = text.slice(idx, idx + 60);
+      const line = chunk.split('\n')[1];
+      return line ? line.trim() : null;
+    });
+    if (!discount2 || !discount2.includes('20%'))
+      throw new Error(`FAILED [Rule PREM-20]: Expected 20% discount with 3 covers. Got: "${discount2 || 'not found'}"`);
 
   } catch (error) {
     await page.locator('button:has-text("Sign out")').click().catch(() => {});
     await page.waitForTimeout(2000);
     throw new Error(error.message);
   }
+
+  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.waitForTimeout(2000);
 });
+

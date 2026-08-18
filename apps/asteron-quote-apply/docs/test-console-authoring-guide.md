@@ -177,12 +177,52 @@ await page.waitForTimeout(2000);
 Standard Playwright `.click()` does not trigger OutSystems XHR on cover buttons. Use `evaluate`:
 
 ```javascript
-await page.evaluate(() => {
-  const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
+await page.evaluate(function() {
+  var btn = Array.from(document.querySelectorAll('button')).find(function(b) {
+    return b.innerText.trim().split('\n')[0] === 'Life';
+  });
   if (btn) btn.click();
 });
 await page.waitForTimeout(3000);
 ```
+
+---
+
+## CRITICAL: ES5 Syntax Inside page.evaluate()
+
+The Test Console's environment crashes on ES6+ syntax inside `page.evaluate()` blocks.
+Always use ES5 inside evaluate. Modern syntax is fine OUTSIDE evaluate.
+
+```javascript
+// GOOD (works on Test Console)
+await page.evaluate(function() {
+  var buttons = Array.from(document.querySelectorAll('button'));
+  var btn = buttons.find(function(b) { return b.innerText.trim() === 'Life'; });
+  if (btn) btn.click();
+});
+
+// BAD (crashes Test Console instantly)
+await page.evaluate(() => {
+  const buttons = [...document.querySelectorAll('button')];
+  const btn = buttons.find(b => b.innerText.trim() === 'Life');
+  if (btn) btn.click();
+});
+```
+
+### Avoid inside page.evaluate():
+| Bad (ES6+) | Good (ES5) |
+|------------|------------|
+| `() => {}` | `function() {}` |
+| `[...nodeList]` | `Array.from(nodeList)` |
+| `` `text ${var}` `` | `'text ' + var` |
+| `const` / `let` | `var` |
+| `obj?.prop` | `obj && obj.prop` |
+| `for (const x of arr)` | `for (var i = 0; i < arr.length; i++)` |
+| `180_000` | `180000` |
+
+### Also ensure:
+- No UTF-8 BOM in file (use UTF8Encoding without BOM when writing programmatically)
+- No unicode box-drawing characters in comments
 
 ---
 
@@ -230,6 +270,11 @@ expect(condition).toBe(true);
 | Updating a file with the same name | Test Console caches the old version |
 | Screenshots from `expect()` failures | Not rendered inline (only timeout errors show screenshots) |
 | `chromium.launch()` (manual browser) | Bypasses the fixture system, screenshots don't work |
+| ES6 inside `page.evaluate()` | Arrow functions, spread operators, template literals CRASH the runner |
+| `for...of` loops inside `page.evaluate()` | May crash — use indexed `for` loops |
+| Optional chaining `?.` inside `page.evaluate()` | May crash — use explicit null checks |
+| Numeric separators (`180_000`) | May crash — use `180000` |
+| UTF-8 BOM in file | Causes instant 3-second parse failure |
 
 ### Things that DO work
 

@@ -27,7 +27,7 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
       throw new Error('FAILED [Login]: Error page. URL: ' + page.url());
 
     const emailField = page.locator('input[type="text"]').first();
-    if (!(await emailField.isVisible().catch(() => false)))
+    if (!(await emailField.isVisible().catch(function() { return false; })))
       throw new Error('FAILED [Login]: Form not rendered. URL: ' + page.url());
 
     await emailField.click();
@@ -47,10 +47,10 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000);
 
-    const quoteUrl = await page.evaluate(() => {
+    const quoteUrl = await page.evaluate(function() {
       return new Promise((resolve) => {
         window.open = function(url) { resolve(url); };
-        const link = [...document.querySelectorAll('a')].find(a => a.innerText.trim() === 'New Quote');
+        const link = Array.from(document.querySelectorAll('a')).find(function(a) { return a.innerText.trim() === 'New Quote');
         if (link) link.click();
         setTimeout(() => resolve(null), 3000);
       });
@@ -59,7 +59,7 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     else await page.goto(`${BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(5000);
 
-    if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
+    if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(function() { return false; })))
       throw new Error('FAILED [Quote]: Form not rendered. URL: ' + page.url());
 
     // SET PERSONAL DETAILS
@@ -71,13 +71,13 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.keyboard.press('Tab');
     await page.waitForTimeout(1000);
 
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('.button-group-item')].find(b => b.innerText.trim() === 'Male');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('.button-group-item')).find(function(b) { return b.innerText.trim() === 'Male');
       if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
     });
     await page.waitForTimeout(2000);
 
-    await page.waitForFunction(() => !document.querySelector('select[id*="OccupationCode_Dropdown"]')?.disabled, { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => !document.querySelector('select[id*="OccupationCode_Dropdown"]')?.disabled, { timeout: 10000 }).catch(function() {});
     await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
     await page.waitForTimeout(2000);
 
@@ -85,15 +85,15 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(2000);
 
     // ACTIVATE SPECIFIC INJURY
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Specific Injury');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Specific Injury');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
 
     // ENTER SUM INSURED $5,000
     const siField = page.locator('input[id*="SumInsured"]').first();
-    if (!(await siField.isVisible().catch(() => false)))
+    if (!(await siField.isVisible().catch(function() { return false; })))
       throw new Error('FAILED [LSC-32]: Sum Insured field not visible');
 
     await siField.scrollIntoViewIfNeeded();
@@ -110,31 +110,31 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(3000);
 
     // CHECK FOR COMPANION COVER ERROR
-    const errors = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    const errors = await page.evaluate(function() {
+      const nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]'));
+      return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0).map(function(n) { return n.innerText.trim());
     });
-    if (!errors.some(e => e.includes('Specific Injury Lump Sum requires')))
+    if (!errors.some(function(e) { return e.includes('Specific Injury Lump Sum requires')))
       throw new Error(`FAILED [Rule LSC-32]: Expected companion-cover error. Got: ${errors.join(' | ').substring(0, 200) || 'None'}`);
 
-    // ═══ RULE LSC-19: Major Trauma 300% cap ═══
+    // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RULE LSC-19: Major Trauma 300% cap Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
     // Remove Specific Injury
-    await page.evaluate(() => {
-      [...document.querySelectorAll('a')].filter(a => a.innerText.trim() === 'Remove').forEach(l => l.click());
+    await page.evaluate(function() {
+      Array.from(document.querySelectorAll('a')).filter(function(a) { return a.innerText.trim() === 'Remove').forEach(l => l.click());
     });
     await page.waitForTimeout(3000);
 
     // Activate Trauma
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Trauma');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Trauma');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
 
     // Enter Trauma SI = $20,000
     const traumaSI = page.locator('input[id*="SumInsured"]').first();
-    if (!(await traumaSI.isVisible().catch(() => false)))
+    if (!(await traumaSI.isVisible().catch(function() { return false; })))
       throw new Error('FAILED [LSC-19]: Trauma Sum Insured not visible');
 
     await traumaSI.scrollIntoViewIfNeeded();
@@ -144,19 +144,19 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(200);
     for (const d of '20000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
     await page.keyboard.press('Tab');
-    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
     await page.waitForTimeout(2000);
 
     // Activate Major Trauma
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Major Trauma');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Major Trauma');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
 
     // Enter Major Trauma SI = $60,001 (exceeds 300% of $20k)
     const majorSI = page.locator('input[id*="SumInsured"]').nth(1);
-    if (!(await majorSI.isVisible().catch(() => false)))
+    if (!(await majorSI.isVisible().catch(function() { return false; })))
       throw new Error('FAILED [LSC-19]: Major Trauma Sum Insured not visible');
 
     await majorSI.scrollIntoViewIfNeeded();
@@ -166,18 +166,18 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(200);
     for (const d of '60001') { await page.keyboard.press(d); await page.waitForTimeout(60); }
     await page.keyboard.press('Tab');
-    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
     await page.waitForTimeout(2000);
 
     // Check for 300% cap error
-    const errors2 = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    const errors2 = await page.evaluate(function() {
+      const nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]'));
+      return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0).map(function(n) { return n.innerText.trim());
     });
-    if (!errors2.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit')))
+    if (!errors2.some(function(e) { return e.includes('maximum Sum Insured for Major Trauma Benefit')))
       throw new Error(`FAILED [Rule LSC-19]: Expected 300% cap error. Got: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
 
-    // ═══ RULE LSC-20: Major Trauma at $25k+ TRC — only $2M global ceiling ═══
+    // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RULE LSC-20: Major Trauma at $25k+ TRC Ã¢â‚¬â€ only $2M global ceiling Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
     // Change Trauma SI to $25,000 (at threshold)
     await traumaSI.scrollIntoViewIfNeeded();
     await traumaSI.click();
@@ -186,7 +186,7 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(200);
     for (const d of '25000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
     await page.keyboard.press('Tab');
-    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
     await page.waitForTimeout(2000);
 
     // Change Major Trauma SI to $1,975,001 (exceeds $2M global: $25k + $1,975,001 > $2M)
@@ -197,27 +197,27 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     await page.waitForTimeout(200);
     for (const d of '1975001') { await page.keyboard.press(d); await page.waitForTimeout(60); }
     await page.keyboard.press('Tab');
-    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
     await page.waitForTimeout(2000);
 
-    const errors3 = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    const errors3 = await page.evaluate(function() {
+      const nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]'));
+      return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0).map(function(n) { return n.innerText.trim());
     });
     // Should NOT have the 300% error (no percentage cap at $25k+)
-    const has300Error = errors3.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit based on'));
+    const has300Error = errors3.some(function(e) { return e.includes('maximum Sum Insured for Major Trauma Benefit based on'));
     if (has300Error)
-      throw new Error('FAILED [Rule LSC-20]: Got 300% cap error at TRC=$25k — should only have global $2M cap');
+      throw new Error('FAILED [Rule LSC-20]: Got 300% cap error at TRC=$25k Ã¢â‚¬â€ should only have global $2M cap');
     // Should have the global $2M cap error
-    if (!errors3.some(e => e.includes('maximum total Sum Insured per life for Trauma Recovery Cover')))
+    if (!errors3.some(function(e) { return e.includes('maximum total Sum Insured per life for Trauma Recovery Cover')))
       throw new Error(`FAILED [Rule LSC-20]: Expected $2M global cap error. Got: ${errors3.join(' | ').substring(0, 200) || 'None'}`);
 
   } catch (error) {
-    await page.locator('button:has-text("Sign out")').click().catch(() => {});
+    await page.locator('button:has-text("Sign out")').click().catch(function() {});
     await page.waitForTimeout(2000);
     throw new Error(error.message);
   }
 
-  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.locator('button:has-text("Sign out")').click().catch(function() {});
   await page.waitForTimeout(2000);
 });

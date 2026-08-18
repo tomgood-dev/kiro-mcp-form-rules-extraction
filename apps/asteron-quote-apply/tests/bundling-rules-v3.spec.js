@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Premium & Bundling Business Rules (PREM-23/24, PREM-20)
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */

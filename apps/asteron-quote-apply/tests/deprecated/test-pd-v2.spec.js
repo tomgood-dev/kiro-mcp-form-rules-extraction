@@ -31,7 +31,7 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
       throw new Error(`FAILED [Login Page]: IP not whitelisted - got error page. Outbound IP: ${outboundIP}. URL: ${page.url()}`);
 
     const emailField = page.locator('input[type="text"]').first();
-    if (!(await emailField.isVisible().catch(() => false)))
+    if (!(await emailField.isVisible().catch(function() { return false; })))
       throw new Error(`FAILED [Login Page]: Login form did not render. Outbound IP: ${outboundIP}. URL: ${page.url()}`);
 
     await emailField.click();
@@ -56,10 +56,10 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     if (page.url().includes('_error.html'))
       throw new Error('FAILED [Quote List]: Got error page. URL: ' + page.url());
 
-    const quoteUrl = await page.evaluate(() => {
+    const quoteUrl = await page.evaluate(function() {
       return new Promise((resolve) => {
         window.open = function(url) { resolve(url); };
-        const link = [...document.querySelectorAll('a')].find(a => a.innerText.trim() === 'New Quote');
+        const link = Array.from(document.querySelectorAll('a')).find(function(a) { return a.innerText.trim() === 'New Quote');
         if (link) link.click();
         setTimeout(() => resolve(null), 3000);
       });
@@ -68,7 +68,7 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     else await page.goto(`${BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(5000);
 
-    if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
+    if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(function() { return false; })))
       throw new Error('FAILED [New Quote]: Quote form did not render. URL: ' + page.url());
 
     // SET AGE 15, MALE, OCC AA
@@ -80,25 +80,25 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     await page.keyboard.press('Tab');
     await page.waitForTimeout(1000);
 
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('.button-group-item')].find(b => b.innerText.trim() === 'Male');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('.button-group-item')).find(function(b) { return b.innerText.trim() === 'Male');
       if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
     });
     await page.waitForTimeout(2000);
 
-    await page.waitForFunction(() => !document.querySelector('select[id*="OccupationCode_Dropdown"]')?.disabled, { timeout: 10000 }).catch(() => {});
+    await page.waitForFunction(() => !document.querySelector('select[id*="OccupationCode_Dropdown"]')?.disabled, { timeout: 10000 }).catch(function() {});
     await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
     await page.waitForTimeout(2000);
 
     // ACTIVATE LIFE, ENTER $999,999
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
+    await page.evaluate(function() {
+      const btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Life');
       if (btn) btn.click();
     });
     await page.waitForTimeout(3000);
 
     const siField = page.locator('input[id*="SumInsured"]').first();
-    if (!(await siField.isVisible().catch(() => false)))
+    if (!(await siField.isVisible().catch(function() { return false; })))
       throw new Error('FAILED [Life Cover]: Sum Insured field not visible after activation');
 
     await siField.scrollIntoViewIfNeeded();
@@ -111,17 +111,17 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     await page.waitForTimeout(3000);
 
     // CHECK FOR $50k CAP ERROR
-    const errors = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    const errors = await page.evaluate(function() {
+      const nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]'));
+      return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0).map(function(n) { return n.innerText.trim());
     });
 
-    const hasCapError = errors.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'));
+    const hasCapError = errors.some(function(e) { return e.includes('50,000') || e.includes('under Age Next Birthday 17'));
     if (!hasCapError) {
       throw new Error(`FAILED [Rule PD-28]: Expected $50,000 cap error for Age < 17. Errors found: ${errors.join(' | ').substring(0, 200) || 'None'}`);
     }
 
-    // ═══ RULE PD-11: Age must be between 11 and 75 (test age 76 rejected) ═══
+    // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â RULE PD-11: Age must be between 11 and 75 (test age 76 rejected) Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
     await ageInput.click();
     await page.keyboard.press('Control+a');
     await page.keyboard.press('Delete');
@@ -129,24 +129,24 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     await page.keyboard.press('Tab');
     await page.waitForTimeout(3000);
 
-    const errors2 = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"], [class*="validation"]')];
-      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    const errors2 = await page.evaluate(function() {
+      const nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"], [class*="validation"]'));
+      return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0).map(function(n) { return n.innerText.trim());
     });
 
-    const hasAgeError = errors2.some(e => e.includes('between 11 and 75') || e.includes('11 and 75'));
+    const hasAgeError = errors2.some(function(e) { return e.includes('between 11 and 75') || e.includes('11 and 75'));
     if (!hasAgeError) {
       throw new Error(`FAILED [Rule PD-11]: Expected age range error for age 76. Errors found: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
     }
 
   } catch (error) {
     // Sign out before re-throwing
-    await page.locator('button:has-text("Sign out")').click().catch(() => {});
+    await page.locator('button:has-text("Sign out")').click().catch(function() {});
     await page.waitForTimeout(2000);
     throw new Error(error.message);
   }
 
   // Sign out after successful test
-  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.locator('button:has-text("Sign out")').click().catch(function() {});
   await page.waitForTimeout(2000);
 });
