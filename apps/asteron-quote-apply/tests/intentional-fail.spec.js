@@ -1,14 +1,13 @@
 /**
- * Intentional failure — logs in, reaches quote form, then fails on purpose.
- * Used to test that screenshots show inline on failure.
+ * Test: fails via Playwright timeout (not expect) to check if screenshot shows inline.
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
-const { test, expect } = require('@playwright/test');
+const { test } = require('@playwright/test');
 
-test.setTimeout(180_000);
+test.setTimeout(120_000);
 
-test('INTENTIONAL FAIL: Login succeeds then fail to show screenshot', async ({ page }) => {
+test('SCREENSHOT TEST: Fail via timeout after reaching quote page', async ({ page }) => {
   const BASE_URL = (process.env.BASE_URL || '').trim();
   const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
   const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
@@ -29,10 +28,9 @@ test('INTENTIONAL FAIL: Login succeeds then fail to show screenshot', async ({ p
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
 
-  // Navigate to quote form
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
 
-  // Intentionally fail so we can see the screenshot
-  expect(false, 'INTENTIONAL FAIL - this screenshot should show the Quote & Apply list page').toBe(true);
+  // Fail via timeout - try to click an element that doesn't exist
+  await page.locator('button:has-text("THIS_DOES_NOT_EXIST")').click({ timeout: 5000 });
 });
