@@ -177,6 +177,41 @@ test('LSC-32: Specific Injury requires companion cover', async ({ page }) => {
     if (!errors2.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit')))
       throw new Error(`FAILED [Rule LSC-19]: Expected 300% cap error. Got: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
 
+    // ═══ RULE LSC-20: Major Trauma at $25k+ TRC — only $2M global ceiling ═══
+    // Change Trauma SI to $25,000 (at threshold)
+    await traumaSI.scrollIntoViewIfNeeded();
+    await traumaSI.click();
+    await page.waitForTimeout(200);
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
+    await page.waitForTimeout(200);
+    for (const d of '25000') { await page.keyboard.press(d); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    // Change Major Trauma SI to $1,975,001 (exceeds $2M global: $25k + $1,975,001 > $2M)
+    await majorSI.scrollIntoViewIfNeeded();
+    await majorSI.click();
+    await page.waitForTimeout(200);
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Backspace');
+    await page.waitForTimeout(200);
+    for (const d of '1975001') { await page.keyboard.press(d); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    const errors3 = await page.evaluate(() => {
+      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
+      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    });
+    // Should NOT have the 300% error (no percentage cap at $25k+)
+    const has300Error = errors3.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit based on'));
+    if (has300Error)
+      throw new Error('FAILED [Rule LSC-20]: Got 300% cap error at TRC=$25k — should only have global $2M cap');
+    // Should have the global $2M cap error
+    if (!errors3.some(e => e.includes('maximum total Sum Insured per life for Trauma Recovery Cover')))
+      throw new Error(`FAILED [Rule LSC-20]: Expected $2M global cap error. Got: ${errors3.join(' | ').substring(0, 200) || 'None'}`);
+
   } catch (error) {
     await page.locator('button:has-text("Sign out")').click().catch(() => {});
     await page.waitForTimeout(2000);
