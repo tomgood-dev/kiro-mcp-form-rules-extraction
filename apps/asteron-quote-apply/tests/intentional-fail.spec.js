@@ -1,36 +1,30 @@
 /**
- * Test: fails via Playwright timeout (not expect) to check if screenshot shows inline.
+ * Failure modes test — tests different failure types to see how the Test Console renders each.
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
-const { test } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 test.setTimeout(120_000);
 
-test('SCREENSHOT TEST: Fail via timeout after reaching quote page', async ({ page }) => {
+test('FAIL MODE 1: Timeout on nonexistent element (should show screenshot)', async ({ page }) => {
   const BASE_URL = (process.env.BASE_URL || '').trim();
-  const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
-  const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
-
-  await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
-    waitUntil: 'domcontentloaded', timeout: 30000,
-  });
-  await page.waitForTimeout(5000);
-
-  await page.locator('input[type="text"]').first().click();
-  await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
-  await page.locator('input[type="password"]').first().click();
-  await page.keyboard.type(LOGIN_PASSWORD, { delay: 30 });
-  await page.locator('button:has-text("Log in")').click();
-
-  for (let i = 0; i < 30; i++) {
-    await page.waitForTimeout(1000);
-    if (!page.url().includes('CentralPortalsLogin')) break;
-  }
-
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
+  // This will timeout and should show a screenshot of the current page
+  await page.locator('text=RULE FAILED: This element does not exist on the page').click({ timeout: 5000 });
+});
 
-  // Fail via timeout - try to click an element that doesn't exist
-  await page.locator('button:has-text("THIS_DOES_NOT_EXIST")').click({ timeout: 5000 });
+test('FAIL MODE 2: expect() assertion (may not show screenshot)', async ({ page }) => {
+  const BASE_URL = (process.env.BASE_URL || '').trim();
+  await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForTimeout(3000);
+  expect(false, 'This is an expect failure - does screenshot show?').toBe(true);
+});
+
+test('FAIL MODE 3: throw Error (may not show screenshot)', async ({ page }) => {
+  const BASE_URL = (process.env.BASE_URL || '').trim();
+  await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForTimeout(3000);
+  throw new Error('This is a throw failure - does screenshot show?');
 });
