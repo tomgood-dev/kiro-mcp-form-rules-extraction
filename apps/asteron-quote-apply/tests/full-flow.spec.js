@@ -1,6 +1,5 @@
 /**
- * Full flow test with screenshot-triggering assertions.
- * All assertions use a timeout-based pattern so failures show inline screenshots.
+ * Full flow: Login → Quote → Life Cover → Premium
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
@@ -8,11 +7,18 @@ const { test } = require('@playwright/test');
 
 test.setTimeout(180_000);
 
-// Helper: fails with a descriptive timeout that triggers an inline screenshot
-async function assertOrScreenshot(page, condition, message) {
-  if (!condition) {
-    await page.locator(`text=${message}`).click({ timeout: 3000 });
-  }
+function fail(step, reason, details = '') {
+  const msg = [
+    '',
+    '╔══════════════════════════════════════════════════════════════╗',
+    `║  STEP FAILED: ${step}`,
+    '╠══════════════════════════════════════════════════════════════╣',
+    `║  Reason: ${reason}`,
+    details ? `║  Details: ${details}` : null,
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+  ].filter(Boolean).join('\n');
+  throw new Error(msg);
 }
 
 test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) => {
@@ -20,21 +26,24 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
   const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
   const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
 
-  if (!BASE_URL || !LOGIN_EMAIL || !LOGIN_PASSWORD) {
-    await page.locator('text=ENV VARS MISSING: BASE_URL, LOGIN_EMAIL, or LOGIN_PASSWORD not set').click({ timeout: 1000 });
-  }
+  if (!BASE_URL) fail('Environment', 'BASE_URL is not set');
+  if (!LOGIN_EMAIL) fail('Environment', 'LOGIN_EMAIL is not set');
+  if (!LOGIN_PASSWORD) fail('Environment', 'LOGIN_PASSWORD is not set');
 
-  // LOGIN
+  // Step 1: Login page
   await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
     waitUntil: 'domcontentloaded', timeout: 30000,
   });
   await page.waitForTimeout(5000);
 
-  await assertOrScreenshot(page, !page.url().includes('_error.html'), 'FAILED: Login page blocked by IP whitelist');
+  if (page.url().includes('_error.html'))
+    fail('Login Page', 'IP not whitelisted - got error page', page.url());
 
   const emailField = page.locator('input[type="text"]').first();
-  await assertOrScreenshot(page, await emailField.isVisible().catch(() => false), 'FAILED: Login form did not render');
+  if (!(await emailField.isVisible().catch(() => false)))
+    fail('Login Page', 'Login form did not render within 5 seconds', page.url());
 
+  // Step 2: Enter credentials
   await emailField.click();
   await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
   await page.locator('input[type="password"]').first().click();
@@ -45,14 +54,18 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  await assertOrScreenshot(page, !page.url().includes('CentralPortalsLogin'), 'FAILED: Login did not succeed after 30s');
 
-  // QUOTE LIST
+  if (page.url().includes('CentralPortalsLogin'))
+    fail('Login', 'Credentials rejected or login timed out (30s)', `Email: ${LOGIN_EMAIL}`);
+
+  // Step 3: Quote list
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
-  await assertOrScreenshot(page, !page.url().includes('_error.html'), 'FAILED: QuoteAndApply page blocked');
 
-  // NEW QUOTE
+  if (page.url().includes('_error.html'))
+    fail('Quote List', 'QuoteAndApply page blocked', page.url());
+
+  // Step 4: New Quote
   const quoteUrl = await page.evaluate(() => {
     return new Promise((resolve) => {
       window.open = function(url) { resolve(url); };
@@ -65,9 +78,10 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
   else await page.goto(`${BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(5000);
 
-  await assertOrScreenshot(page, await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false), 'FAILED: Quote form did not render');
+  if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
+    fail('New Quote', 'Quote form did not render - Age field not visible', page.url());
 
-  // PERSONAL DETAILS
+  // Step 5: Personal details
   const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
   await ageInput.click();
   await page.keyboard.press('Control+a');
@@ -86,7 +100,7 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
   await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
   await page.waitForTimeout(2000);
 
-  // ACTIVATE LIFE COVER
+  // Step 6: Activate Life cover
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
     if (btn) btn.click();
@@ -94,9 +108,10 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
   await page.waitForTimeout(3000);
 
   const siField = page.locator('input[id*="SumInsured"]').first();
-  await assertOrScreenshot(page, await siField.isVisible().catch(() => false), 'FAILED: Life cover Sum Insured field not visible');
+  if (!(await siField.isVisible().catch(() => false)))
+    fail('Life Cover', 'Sum Insured field not visible after clicking Life button');
 
-  // ENTER SUM INSURED
+  // Step 7: Enter Sum Insured
   await siField.scrollIntoViewIfNeeded();
   await siField.click();
   await page.waitForTimeout(200);
@@ -107,5 +122,6 @@ test('Full flow: Login → Quote → Life Cover → Premium', async ({ page }) =
   await page.waitForTimeout(3000);
 
   const hasPremium = await page.evaluate(() => document.body.innerText.includes('$') && document.body.innerText.includes('Total'));
-  await assertOrScreenshot(page, hasPremium, 'FAILED: No premium appeared after entering Sum Insured');
+  if (!hasPremium)
+    fail('Premium', 'No premium total appeared after entering $200,000 Sum Insured');
 });
