@@ -54,8 +54,10 @@ test('DEMO FAIL - Fake Rule XYZ-99: Life Cover should cap at $10,000 (wrong on p
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  if (page.url().includes('CentralPortalsLogin'))
-    fail('Login', 'Credentials rejected or login timed out', `Email: ${LOGIN_EMAIL}`);
+  if (page.url().includes('CentralPortalsLogin')) {
+      const pageText = await page.evaluate(() => document.body.innerText.substring(0, 150).replace(/\n/g, ' '));
+      fail('Login', 'Credentials rejected or timed out', `Email: ${LOGIN_EMAIL}. Page shows: ${pageText}`);
+    }
 
   // OPEN NEW QUOTE
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -128,3 +130,4 @@ test('DEMO FAIL - Fake Rule XYZ-99: Life Cover should cap at $10,000 (wrong on p
     );
   }
 });
+

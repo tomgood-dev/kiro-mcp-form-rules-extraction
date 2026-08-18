@@ -53,8 +53,10 @@ test('Lump Sum Cover Rules (LSC-32, LSC-19)', async ({ page }) => {
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  if (page.url().includes('CentralPortalsLogin'))
-    fail('Login', 'Credentials rejected or login timed out', `Email: ${LOGIN_EMAIL}`);
+  if (page.url().includes('CentralPortalsLogin')) {
+      const pageText = await page.evaluate(() => document.body.innerText.substring(0, 150).replace(/\n/g, ' '));
+      fail('Login', 'Credentials rejected or timed out', `Email: ${LOGIN_EMAIL}. Page shows: ${pageText}`);
+    }
 
   // OPEN NEW QUOTE
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -185,3 +187,4 @@ test('Lump Sum Cover Rules (LSC-32, LSC-19)', async ({ page }) => {
   if (!errors2.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit')))
     fail('Rule LSC-19: Major Trauma 300% Cap', 'Expected 300% cap error (TRC=$20k, Major=$60,001)', `Errors found: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
 });
+

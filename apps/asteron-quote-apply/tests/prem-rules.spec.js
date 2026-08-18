@@ -53,8 +53,10 @@ test('Premium & Bundling Rules (PREM-23/24)', async ({ page }) => {
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  if (page.url().includes('CentralPortalsLogin'))
-    fail('Login', 'Credentials rejected or login timed out', `Email: ${LOGIN_EMAIL}`);
+  if (page.url().includes('CentralPortalsLogin')) {
+      const pageText = await page.evaluate(() => document.body.innerText.substring(0, 150).replace(/\n/g, ' '));
+      fail('Login', 'Credentials rejected or timed out', `Email: ${LOGIN_EMAIL}. Page shows: ${pageText}`);
+    }
 
   // OPEN NEW QUOTE
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -151,3 +153,4 @@ test('Premium & Bundling Rules (PREM-23/24)', async ({ page }) => {
   if (!discount || !discount.includes('15%'))
     fail('Rule PREM-23/24: Bundling Discount Threshold', 'Expected 15% bundling discount with Life $100k + TPD $200k', `Got: "${discount || 'null - Bundling Discounts section not found'}"`);
 });
+
