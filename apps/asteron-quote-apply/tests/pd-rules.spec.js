@@ -17,6 +17,10 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     if (!LOGIN_EMAIL) throw new Error('FAILED: LOGIN_EMAIL environment variable is not set');
     if (!LOGIN_PASSWORD) throw new Error('FAILED: LOGIN_PASSWORD environment variable is not set');
 
+    // CHECK IP ADDRESS
+    await page.goto('https://api.ipify.org');
+    const outboundIP = await page.locator('body').innerText();
+
     // LOGIN
     await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
       waitUntil: 'domcontentloaded', timeout: 30000,
@@ -24,11 +28,11 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     await page.waitForTimeout(5000);
 
     if (page.url().includes('_error.html'))
-      throw new Error('FAILED [Login Page]: IP not whitelisted - got error page. URL: ' + page.url());
+      throw new Error(`FAILED [Login Page]: IP not whitelisted - got error page. Outbound IP: ${outboundIP}. URL: ${page.url()}`);
 
     const emailField = page.locator('input[type="text"]').first();
     if (!(await emailField.isVisible().catch(() => false)))
-      throw new Error('FAILED [Login Page]: Login form did not render. URL: ' + page.url());
+      throw new Error(`FAILED [Login Page]: Login form did not render. Outbound IP: ${outboundIP}. URL: ${page.url()}`);
 
     await emailField.click();
     await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
@@ -42,7 +46,7 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     }
     if (page.url().includes('CentralPortalsLogin')) {
       const pageText = await page.evaluate(() => document.body.innerText.substring(0, 150).replace(/\n/g, ' '));
-      throw new Error(`FAILED [Login]: Credentials rejected or timed out. Email: ${LOGIN_EMAIL}. Page shows: ${pageText}`);
+      throw new Error(`FAILED [Login]: Credentials rejected or timed out. IP: ${outboundIP}. Email: ${LOGIN_EMAIL}. Page shows: ${pageText}`);
     }
 
     // OPEN NEW QUOTE
