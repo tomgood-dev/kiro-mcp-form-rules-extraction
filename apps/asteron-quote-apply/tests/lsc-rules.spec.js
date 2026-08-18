@@ -186,5 +186,9 @@ test('Lump Sum Cover Rules (LSC-32, LSC-19)', async ({ page }) => {
   });
   if (!errors2.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit')))
     fail('Rule LSC-19: Major Trauma 300% Cap', 'Expected 300% cap error (TRC=$20k, Major=$60,001)', `Errors found: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
+
+  // Sign out after test
+  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.waitForTimeout(2000);
 });
 

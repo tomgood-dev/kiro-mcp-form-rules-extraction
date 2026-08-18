@@ -152,5 +152,9 @@ test('Premium & Bundling Rules (PREM-23/24)', async ({ page }) => {
 
   if (!discount || !discount.includes('15%'))
     fail('Rule PREM-23/24: Bundling Discount Threshold', 'Expected 15% bundling discount with Life $100k + TPD $200k', `Got: "${discount || 'null - Bundling Discounts section not found'}"`);
+
+  // Sign out after test
+  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.waitForTimeout(2000);
 });
 

@@ -118,7 +118,13 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
     }
 
   } catch (error) {
-    // Re-throw to ensure the Test Console sees the message
+    // Sign out before re-throwing
+    await page.locator('button:has-text("Sign out")').click().catch(() => {});
+    await page.waitForTimeout(2000);
     throw new Error(error.message);
   }
+
+  // Sign out after successful test
+  await page.locator('button:has-text("Sign out")').click().catch(() => {});
+  await page.waitForTimeout(2000);
 });
