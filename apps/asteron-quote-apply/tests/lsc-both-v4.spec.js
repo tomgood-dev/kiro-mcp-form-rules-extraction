@@ -105,6 +105,32 @@ test('LSC-19: Major Trauma capped at 300% of TRC', async ({ page }) => {
     if (!errors.some(function(e) { return e.indexOf('maximum Sum Insured for Major Trauma Benefit') !== -1; }))
       throw new Error('FAILED [LSC-19]: Expected 300% cap error. Got: ' + errors.join(' | ').substring(0, 200));
 
+    // LSC-20 placeholder - just confirm we can keep going
+    await page.waitForTimeout(1000);
+
+    // --- LSC-20: Change Trauma to $25k ---
+    await traumaSI.scrollIntoViewIfNeeded(); await traumaSI.click(); await page.waitForTimeout(200);
+    for (var r2 = 0; r2 < 12; r2++) await page.keyboard.press('Backspace'); await page.waitForTimeout(200);
+    var d3 = '25000'; for (var s2 = 0; s2 < d3.length; s2++) { await page.keyboard.press(d3[s2]); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
+    await page.waitForTimeout(2000);
+
+    // Change Major Trauma to $1,975,001
+    await majorSI.scrollIntoViewIfNeeded(); await majorSI.click(); await page.waitForTimeout(200);
+    for (var t2 = 0; t2 < 12; t2++) await page.keyboard.press('Backspace'); await page.waitForTimeout(200);
+    var d4 = '1975001'; for (var u2 = 0; u2 < d4.length; u2++) { await page.keyboard.press(d4[u2]); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab');
+    await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
+    await page.waitForTimeout(2000);
+
+    // Check: no 300% error, only $2M cap
+    var errors3 = await page.evaluate(function() { var nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')); return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0; }).map(function(n) { return n.innerText.trim(); }); });
+    var has300 = errors3.some(function(e) { return e.indexOf('maximum Sum Insured for Major Trauma Benefit based on') !== -1; });
+    if (has300) throw new Error('FAILED [LSC-20]: Got 300% error at $25k TRC - should only have $2M cap');
+    var has2M = errors3.some(function(e) { return e.indexOf('maximum total Sum Insured per life for Trauma Recovery Cover') !== -1; });
+    if (!has2M) throw new Error('FAILED [LSC-20]: Expected $2M global cap error. Got: ' + errors3.join(' | ').substring(0, 200));
+
   } catch (error) {
     await page.locator('button:has-text("Sign out")').click().catch(function() {});
     await page.waitForTimeout(2000);
