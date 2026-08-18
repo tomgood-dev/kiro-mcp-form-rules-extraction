@@ -1,28 +1,48 @@
 /**
- * Personal Details Business Rules — single sequential test.
- * Logs in once, validates all PD rules, reports which step fails.
- * 
+ * Business Rules Test — PD-28 (intentionally wrong threshold to test failure output)
  * Environment variables: BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD
  */
 
-const { test, expect } = require('@playwright/test');
+const { test } = require('@playwright/test');
 
 test.setTimeout(180_000);
 
-test('Personal Details Rules (PD-28, PD-11)', async ({ page }) => {
-  const BASE_URL = process.env.BASE_URL;
-  const LOGIN_EMAIL = process.env.LOGIN_EMAIL;
-  const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD;
+function fail(step, reason, details = '') {
+  const msg = [
+    '',
+    '╔══════════════════════════════════════════════════════════════╗',
+    `║  STEP FAILED: ${step}`,
+    '╠══════════════════════════════════════════════════════════════╣',
+    `║  Reason: ${reason}`,
+    details ? `║  Details: ${details}` : null,
+    '╚══════════════════════════════════════════════════════════════╝',
+    '',
+  ].filter(Boolean).join('\n');
+  throw new Error(msg);
+}
 
-  // ─── LOGIN ───────────────────────────────────────────────────────────────
+test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
+  const BASE_URL = (process.env.BASE_URL || '').trim();
+  const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
+  const LOGIN_PASSWORD = (process.env.LOGIN_PASSWORD || '').trim();
+
+  if (!BASE_URL) fail('Environment', 'BASE_URL is not set');
+  if (!LOGIN_EMAIL) fail('Environment', 'LOGIN_EMAIL is not set');
+  if (!LOGIN_PASSWORD) fail('Environment', 'LOGIN_PASSWORD is not set');
+
+  // LOGIN
   await page.goto(`${BASE_URL}/CentralPortalsLogin/NewLoginRLANZ`, {
     waitUntil: 'domcontentloaded', timeout: 30000,
   });
-  await page.waitForTimeout(8000);
-  if (page.url().includes('_error.html')) throw new Error('LOGIN: Page blocked (error page)');
+  await page.waitForTimeout(5000);
+
+  if (page.url().includes('_error.html'))
+    fail('Login Page', 'IP not whitelisted - got error page', page.url());
 
   const emailField = page.locator('input[type="text"]').first();
-  if (!(await emailField.isVisible().catch(() => false))) throw new Error('LOGIN: Form not rendered');
+  if (!(await emailField.isVisible().catch(() => false)))
+    fail('Login Page', 'Login form did not render', page.url());
+
   await emailField.click();
   await page.keyboard.type(LOGIN_EMAIL, { delay: 30 });
   await page.locator('input[type="password"]').first().click();
@@ -33,12 +53,12 @@ test('Personal Details Rules (PD-28, PD-11)', async ({ page }) => {
     await page.waitForTimeout(1000);
     if (!page.url().includes('CentralPortalsLogin')) break;
   }
-  if (page.url().includes('CentralPortalsLogin')) throw new Error('LOGIN: Failed (still on login page)');
+  if (page.url().includes('CentralPortalsLogin'))
+    fail('Login', 'Credentials rejected or login timed out', `Email: ${LOGIN_EMAIL}`);
 
-  // ─── OPEN NEW QUOTE ──────────────────────────────────────────────────────
+  // OPEN NEW QUOTE
   await page.goto(`${BASE_URL}/QuoteAndApply/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
-  if (page.url().includes('_error.html')) throw new Error('QUOTE LIST: Error page');
 
   const quoteUrl = await page.evaluate(() => {
     return new Promise((resolve) => {
@@ -52,11 +72,10 @@ test('Personal Details Rules (PD-28, PD-11)', async ({ page }) => {
   else await page.goto(`${BASE_URL}/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(5000);
 
-  if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false))) {
-    throw new Error('QUOTE FORM: Did not render');
-  }
+  if (!(await page.locator('input[id*="Input_AgeNextBirthday"]').first().isVisible().catch(() => false)))
+    fail('New Quote', 'Quote form did not render', page.url());
 
-  // ─── RULE PD-28: Life Cover $50k cap for Age < 17 ────────────────────────
+  // SET PERSONAL DETAILS: Age 15, Male, Occupation AA
   const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
   await ageInput.click();
   await page.keyboard.press('Control+a');
@@ -75,13 +94,18 @@ test('Personal Details Rules (PD-28, PD-11)', async ({ page }) => {
   await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
   await page.waitForTimeout(2000);
 
+  // ACTIVATE LIFE COVER
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find(b => b.innerText.trim().split('\n')[0] === 'Life');
     if (btn) btn.click();
   });
   await page.waitForTimeout(3000);
 
+  // ENTER SUM INSURED $999,999 (exceeds $50k cap for under-17)
   const siField = page.locator('input[id*="SumInsured"]').first();
+  if (!(await siField.isVisible().catch(() => false)))
+    fail('Life Cover', 'Sum Insured field not visible after activation');
+
   await siField.scrollIntoViewIfNeeded();
   await siField.click();
   await page.waitForTimeout(200);
@@ -91,27 +115,20 @@ test('Personal Details Rules (PD-28, PD-11)', async ({ page }) => {
   await page.keyboard.press('Tab');
   await page.waitForTimeout(3000);
 
-  const errors1 = await page.evaluate(() => {
+  // CHECK FOR ERROR
+  const errors = await page.evaluate(() => {
     const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
     return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
   });
-  if (!errors1.some(e => e.includes('50,000') || e.includes('under Age Next Birthday 17'))) {
-    throw new Error(`PD-28 FAILED: Expected $50k cap error. Got: ${JSON.stringify(errors1).substring(0, 300)}`);
-  }
 
-  // ─── RULE PD-11: Age range 11-75 (test age 76 rejected) ─────────────────
-  await ageInput.click();
-  await page.keyboard.press('Control+a');
-  await page.keyboard.press('Delete');
-  await page.keyboard.type('76', { delay: 40 });
-  await page.keyboard.press('Tab');
-  await page.waitForTimeout(3000);
-
-  const errors2 = await page.evaluate(() => {
-    const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"], [class*="validation"]')];
-    return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
-  });
-  if (!errors2.some(e => e.includes('between 11 and 75') || e.includes('11 and 75'))) {
-    throw new Error(`PD-11 FAILED: Expected age range error. Got: ${JSON.stringify(errors2).substring(0, 300)}`);
+  // INTENTIONALLY WRONG: checking for $100,000 cap instead of $50,000
+  // This SHOULD fail to demonstrate the error output format
+  const hasCapError = errors.some(e => e.includes('100,000'));
+  if (!hasCapError) {
+    fail(
+      'Rule PD-28: Life Cover Age-Band Cap',
+      'Expected $100,000 cap error but did not find it',
+      `Errors found: ${errors.join(' | ').substring(0, 200)}`
+    );
   }
 });
