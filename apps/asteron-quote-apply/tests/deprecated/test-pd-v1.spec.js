@@ -121,6 +121,24 @@ test('Business Rule PD-28: Life Cover age-band cap', async ({ page }) => {
       throw new Error(`FAILED [Rule PD-28]: Expected $50,000 cap error for Age < 17. Errors found: ${errors.join(' | ').substring(0, 200) || 'None'}`);
     }
 
+    // ═══ RULE PD-11: Age must be between 11 and 75 (test age 76 rejected) ═══
+    await ageInput.click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.press('Delete');
+    await page.keyboard.type('76', { delay: 40 });
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(3000);
+
+    const errors2 = await page.evaluate(() => {
+      const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"], [class*="validation"]')];
+      return nodes.filter(n => n.innerText && n.getBoundingClientRect().width > 0).map(n => n.innerText.trim());
+    });
+
+    const hasAgeError = errors2.some(e => e.includes('between 11 and 75') || e.includes('11 and 75'));
+    if (!hasAgeError) {
+      throw new Error(`FAILED [Rule PD-11]: Expected age range error for age 76. Errors found: ${errors2.join(' | ').substring(0, 200) || 'None'}`);
+    }
+
   } catch (error) {
     // Sign out before re-throwing
     await page.locator('button:has-text("Sign out")').click().catch(() => {});
