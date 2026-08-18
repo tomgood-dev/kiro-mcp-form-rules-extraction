@@ -298,6 +298,31 @@ The Test Console caches uploaded scripts by filename. If you update a script and
 test-pd-v1.spec.js  →  test-pd-v2.spec.js  →  test-pd-v3.spec.js
 ```
 
+### The Combined File Problem (Unresolved)
+
+When combining multiple business rule sections into a single test file, the Test Console may reject the file with an instant 3-second "Assertion failed" — even though:
+- The file passes `node --check` locally
+- The file runs perfectly on the Amazon Workspace
+- The file has no BOM, no unicode, no ES6 in evaluate blocks
+- The individual rule sections pass when in separate files
+- File size is NOT the issue (10KB files with simple content pass)
+- Await count is NOT the issue (75+ awaits pass)
+- Line length is NOT the issue
+- Creation method (shell vs write tool) is NOT the issue
+
+**What works:** Building combined files by **incrementally editing a known-working file** — adding code one section at a time, testing after each addition. Each intermediate version passes.
+
+**What fails:** Creating the same combined file from scratch (even with identical content), or rewriting it completely.
+
+**Theory (unconfirmed):** The Test Console may cache/blacklist content by hash, or have a server-side state issue that associates certain content patterns with previous failures. We could not find any byte-level difference between working and non-working files with the same content.
+
+**Practical approach:**
+1. Start with a working file
+2. Add one rule section at a time
+3. Test each version on the Test Console before adding more
+4. Version each step (v1, v2, v3, v4...)
+5. Never rewrite the whole file from scratch — always edit incrementally
+
 ### Single Session Limitation
 
 OutSystems only allows one active login session per user account. If two tests try to log in concurrently with the same credentials, one will be rejected with "incorrect login details."
