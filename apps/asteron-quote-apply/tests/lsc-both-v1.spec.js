@@ -52,6 +52,31 @@ test('LSC-19: Major Trauma capped at 300% of TRC', async ({ page }) => {
     await page.locator('select[id*="OccupationCode_Dropdown"]').first().selectOption('1');
     await page.waitForTimeout(2000);
 
+    // --- LSC-32: Specific Injury requires companion cover ---
+    await page.locator('select[id*="EmploymentStatus_Dropdown"]').first().selectOption({ label: 'Employed' });
+    await page.waitForTimeout(2000);
+
+    await page.evaluate(function() { var btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Specific Injury'; }); if (btn) btn.click(); });
+    await page.waitForTimeout(3000);
+
+    var siField = page.locator('input[id*="SumInsured"]').first();
+    await siField.scrollIntoViewIfNeeded(); await siField.click(); await page.waitForTimeout(200);
+    for (var j2 = 0; j2 < 12; j2++) await page.keyboard.press('Backspace'); await page.waitForTimeout(200);
+    var si1 = '5000'; for (var k2 = 0; k2 < si1.length; k2++) { await page.keyboard.press(si1[k2]); await page.waitForTimeout(60); }
+    await page.keyboard.press('Tab'); await page.waitForTimeout(3000);
+
+    await page.getByRole('button', { name: 'Apply', exact: true }).click();
+    await page.waitForTimeout(3000);
+
+    var errors0 = await page.evaluate(function() { var nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')); return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0; }).map(function(n) { return n.innerText.trim(); }); });
+    if (!errors0.some(function(e) { return e.indexOf('Specific Injury Lump Sum requires') !== -1; }))
+      throw new Error('FAILED [LSC-32]: Expected companion-cover error. Got: ' + errors0.join(' | ').substring(0, 200));
+
+    // Remove Specific Injury before next test
+    await page.evaluate(function() { var links = Array.from(document.querySelectorAll('a')).filter(function(a) { return a.innerText.trim() === 'Remove'; }); links.forEach(function(l) { l.click(); }); });
+    await page.waitForTimeout(3000);
+
+    // --- LSC-19: Major Trauma 300% cap ---
     // Activate Trauma, enter $20,000
     await page.evaluate(function() { var btn = Array.from(document.querySelectorAll('button')).find(function(b) { return b.innerText.trim().split('\n')[0] === 'Trauma'; }); if (btn) btn.click(); });
     await page.waitForTimeout(3000);
