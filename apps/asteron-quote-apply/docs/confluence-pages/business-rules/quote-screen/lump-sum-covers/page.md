@@ -15,7 +15,7 @@ Lump Sum covers pay a one-off sum insured on the relevant event (death, disabili
 
 | Rule ID | Rule |
 |---|---|
-| `LSC-02` | **Needlestick is only available for Occupation Code = AA.** For every other code (AM, A1, A2, B, C, S, U), the Needlestick button is **completely removed from the DOM** — not hidden, not disabled, genuinely absent. This is the strictest occupation gate of any single cover. |
+| `LSC-02` | **Needlestick is only functional for Occupation Code = AA.** For every other code (AM, A1, A2, B, C, S, U), the Needlestick button **remains in the DOM** but clicking it is a no-op — no cover card appears, no Sum Insured dropdown is added. For OCC=AA, clicking activates the cover (adds a SI dropdown and Premium Structure select). *(Corrected 2026-08-19: previously stated the button was "completely removed from the DOM" for non-AA — live testing confirms it remains present but functionally inert.)* |
 | `LSC-03` | Occupation Code = **AM** (Armed Forces) additionally disables **Cancer**, **Accidental Death**, and **Specific Injury** (in addition to Needlestick per `LSC-02`) — leaving only Life, TPD, Trauma, and the Business-only covers available. |
 | `LSC-04` | Occupation Code = **IC** ("Individual Consideration") does not disable any cover, but triggers an underwriting-referral warning on all of them and makes Annual Income effectively required — see [Personal Details — PD-21](../personal-details/page.md). |
 
@@ -88,6 +88,8 @@ Discount bands: $100k–$249k / $250k–$499k / $500k+
 Discount bands: $100k–$249k / $250k+
 
 ### Accidental Death
+
+> **UI button text:** `Acd. Death` (abbreviated on the cover button; full name used in error messages and documentation).
 
 | Rule ID | Field | Type | Options | Default |
 |---|---|---|---|---|
