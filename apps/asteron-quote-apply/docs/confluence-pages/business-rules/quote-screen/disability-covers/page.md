@@ -55,6 +55,7 @@ Disability covers pay an ongoing monthly benefit rather than a lump sum. They ar
 |---|---|
 | `DC-14` | **Agreed Value vs. Agreed Value Plus:** Agreed Value *offsets* other income sources against the benefit; Agreed Value Plus does *not* offset other income. |
 | `DC-15` | **Maximum monthly benefit = 45% × Pre-tax Annual Income ÷ 12, hard-capped at $7,500/month** (Agreed Value Plus basis). The formula applies up to $200,000 income (45% × $200k ÷ 12 = $7,500); above $200k, the cap holds at $7,500 regardless of income level. Confirmed exact: income $150,000 → max $5,625/month; income $200,000 → max $7,500/month; income $320,000 → still $7,500/month (cap applies). Exact error: *"The maximum remaining monthly benefit for Mortgage and Living Cover Agreed Value Plus is $7,500."* *(Corrected 2026-08-19: previously documented as uncapped formula. Live testing at multiple income levels revealed the $7,500 hard cap.)* |
+| `DC-15b` | **Agreed Value variant uses a progressive (tiered) formula — NOT a flat percentage.** The marginal rate decreases as income rises: ~62% on the first ~$70k, ~50% on ~$70k–$200k, declining further above $200k (down to ~23% at $600k). Unlike the Agreed Value Plus variant (which is a simple 45% flat rate), Agreed Value appears to use an actuarial table or multi-tier formula whose exact parameters cannot be fully derived from black-box testing. Observed caps at key income levels: $80k→$4,148/mo, $100k→$5,023/mo, $150k→$7,124/mo, $200k→$9,218/mo, $300k→$13,181/mo, $400k→$15,976/mo. **No hard cap was observed** (unlike Agreed Value Plus's $7,500 cap). Exact error: *"The maximum remaining monthly benefit for Mortgage and Living Cover Agreed Value is $X,XXX."* *(Discovered 2026-08-19 via exhaustive income-level probing.)* |
 
 ## Income Protection
 
@@ -72,7 +73,8 @@ Disability covers pay an ongoing monthly benefit rather than a lump sum. They ar
 | Rule ID | Rule |
 |---|---|
 | `DC-21` | **Maximum monthly benefit is a 3-TIER progressive formula:** Tier 1: 75% of the first $320,000 of annual income. Tier 2: +50% of income between $320,001–$560,000. Tier 3: +20% of income above $560,000. **Product hard cap: $30,000/month** regardless of income level. Formula: `min($30,000, (75% × min(income, $320k) + 50% × max(0, min(income, $560k) - $320k) + 20% × max(0, income - $560k)) ÷ 12)`. Confirmed: income $150,000 → $9,375/month (all tier 1); income $400,000 → $23,333/month (tier 1 + tier 2); income $600,000 → $30,000/month (hard cap). Exact error: *"The maximum remaining monthly benefit for Income Protection benefit is $X,XXX."* Note: the cap of $30,000/month corresponds to the tier 2 boundary ($560k) — tier 3 is effectively made irrelevant by the product cap. *(Corrected in iteration 003 — see changelog)* |
-| `DC-22` | When focused+blurred with nothing typed, this field **auto-defaults to the formula max** from `DC-21` and prices successfully at that value. |
+| `DC-22` | When focused+blurred with nothing typed, this field **auto-defaults to the formula max** from `DC-21` and prices successfully at that value. This auto-default behavior applies to **Loss Of Earnings Plus** (the default Policy Type). |
+| `DC-22b` | **Loss Of Earnings (non-Plus) uses the same cap formula as Plus** — identical maximum values at all income levels tested ($100k→$6,250, $150k→$9,375, $200k→$12,500). The only behavioral difference is that Loss Of Earnings does NOT auto-default the benefit field on focus+blur — it remains at $0 until manually entered. *(Discovered 2026-08-19.)* |
 
 ## Workability
 
