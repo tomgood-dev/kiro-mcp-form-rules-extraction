@@ -54,7 +54,7 @@ Disability covers pay an ongoing monthly benefit rather than a lump sum. They ar
 | Rule ID | Rule |
 |---|---|
 | `DC-14` | **Agreed Value vs. Agreed Value Plus:** Agreed Value *offsets* other income sources against the benefit; Agreed Value Plus does *not* offset other income. |
-| `DC-15` | **Maximum monthly benefit = 45% × Pre-tax Annual Income ÷ 12** (Agreed Value Plus basis). Confirmed exact: income $150,000 → max $5,625/month. Exact error: *"The maximum remaining monthly benefit for Mortgage and Living Cover Agreed Value Plus is $5,625."* |
+| `DC-15` | **Maximum monthly benefit = 45% × Pre-tax Annual Income ÷ 12, hard-capped at $7,500/month** (Agreed Value Plus basis). The formula applies up to $200,000 income (45% × $200k ÷ 12 = $7,500); above $200k, the cap holds at $7,500 regardless of income level. Confirmed exact: income $150,000 → max $5,625/month; income $200,000 → max $7,500/month; income $320,000 → still $7,500/month (cap applies). Exact error: *"The maximum remaining monthly benefit for Mortgage and Living Cover Agreed Value Plus is $7,500."* *(Corrected 2026-08-19: previously documented as uncapped formula. Live testing at multiple income levels revealed the $7,500 hard cap.)* |
 
 ## Income Protection
 

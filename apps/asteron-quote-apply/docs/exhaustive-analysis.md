@@ -87,7 +87,7 @@
 | Trauma + Cancer + MT (combined) | $1 | $2,000,000 | — | Cap error | — | — |
 | Major Trauma (TRC <$25k) | $1 | 300% × TRC | — | Cap error | — | — |
 | IP Monthly Benefit | $1 | Formula-based (max $30k) | — | Cap error | — | Auto-defaults to max |
-| M&L Monthly Benefit | $1 | 45% × income ÷ 12 | — | Cap error | — | Auto-defaults to max |
+| M&L Monthly Benefit | $1 | min($7,500, 45% × income ÷ 12) | — | Cap error | — | Auto-defaults to max |
 | Workability Monthly | $1 | min($10k, 75% × income ÷ 12) | — | Cap error | — | Auto-defaults to max |
 | Business Expenses | $1 | $16,666 | — | Cap error | — | — |
 | Business Disability | $1 | $50,000 | — | Cap error | — | — |
@@ -338,6 +338,7 @@
 | GAP-04 | AM disables Cancer/Acd Death/SI | LSC-03: "additionally disables" | Buttons present for AM; enforcement on activation/apply only | Need to probe activation at AM specifically |
 | GAP-05 | Acd Death button text | Docs say "Accidental Death" | Button text is `Acd. Death` | Tests must use abbreviated text |
 | GAP-06 | **Needlestick AA-only restriction removed** | LSC-02: "only available for OCC=AA" | Needlestick activates for ALL OCC codes (B, AA both confirmed) | **LSC-02 may be completely obsolete** — the restriction appears to have been removed from the current app version. Tests should NOT assert OCC-based Needlestick blocking. |
+| GAP-07 | **M&L has undocumented $7,500/month hard cap** | DC-15: formula stated as `45% × income / 12` with no cap | App caps at $7,500 regardless of income above $200k. Error: "maximum remaining monthly benefit... is $7,500" | DC-15 corrected. Formula is actually `min($7,500, 45% × income / 12)`. |
 
 ### 5.2 Ambiguities in Business Rules (No Clear Spec)
 
@@ -384,6 +385,7 @@
 | NEW-06 | **KID-08 error text confirmed** | *"Please add at least one Personal Insurance Cover before adding Kids Cover"* |
 | NEW-07 | **Needlestick activates for ALL OCCs** | Both OCC=B and OCC=AA successfully activated Needlestick (selects increased from 6→8 in both cases). The AA-only restriction documented in LSC-02 appears to have been removed from the current app version. **This is the most significant discrepancy found.** |
 | NEW-08 | **Bundling: Trauma $25k is the exact threshold** | At Trauma $24,999 + Life + TPD: discount still "None" (Trauma doesn't count). At $25,000: "15% (2 covers)" — confirming Trauma counts at exactly $25k. Note: the "2 covers" text suggests only Life + Trauma counted (TPD field entry issue). |
+| NEW-09 | **M&L has a hard cap of $7,500/month** | Docs previously stated DC-15 formula as `45% × income / 12` with no cap. Live testing at $320k and $400k income confirms the auto-default stays at $7,500 (= 45% × $200k / 12). Error message: *"The maximum remaining monthly benefit for Mortgage and Living Cover Agreed Value Plus is $7,500."* The cap is equivalent to treating income as capped at $200k for M&L purposes. |
 
 ---
 
