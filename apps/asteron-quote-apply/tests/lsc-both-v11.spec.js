@@ -37,11 +37,20 @@ test('LSC full coverage: caps, boundaries, independence, dependencies', async ({
     await page.locator('button:has-text("Log in")').click();
 
     for (var i = 0; i < 30; i++) { await page.waitForTimeout(1000); if (!page.url().includes('CentralPortalsLogin')) break; }
-    if (page.url().includes('CentralPortalsLogin')) throw new Error('FAILED [Login]: Credentials rejected');
+    if (page.url().includes('CentralPortalsLogin')) throw new Error('FAILED [Login]: Credentials rejected or session conflict. Another test may be running.');
+
+    // Verify we actually landed on the dashboard
+    await page.waitForTimeout(2000);
+    if (!page.url().includes('AdviserCentral') && !page.url().includes('QuoteAndApply'))
+      throw new Error('FAILED [Login]: Did not reach dashboard. Possible concurrent session. URL: ' + page.url());
 
     // OPEN NEW QUOTE
     await page.goto(BASE_URL + '/QuoteAndApply/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000);
+
+    // Check we're not redirected back to login
+    if (page.url().includes('Login') || page.url().includes('_error.html'))
+      throw new Error('FAILED [Session]: Redirected to login/error after navigation. Likely concurrent session. URL: ' + page.url());
 
     var quoteUrl = await page.evaluate(function() { return new Promise(function(resolve) { window.open = function(url) { resolve(url); }; var link = Array.from(document.querySelectorAll('a')).find(function(a) { return a.innerText.trim() === 'New Quote'; }); if (link) link.click(); setTimeout(function() { resolve(null); }, 3000); }); });
     if (quoteUrl) await page.goto(quoteUrl, { waitUntil: 'domcontentloaded' });
