@@ -2,6 +2,30 @@
 
 > Steering file for systematically expanding test files to full coverage.
 > Follow this process for every test file that needs multi-persona/exhaustive treatment.
+> **ALL steps are mandatory. Do NOT skip any step or wait to be prompted. Complete them automatically.**
+
+## Critical Rules (do these WITHOUT being asked)
+
+1. **Version numbers must always match** — if the test file is `dc-v3.spec.js`, the documentation MUST be `dc-v3.md`. If you bump the version, rename the doc immediately.
+2. **Deprecate old versions immediately** — when a new version passes locally, move the old file to `deprecated/` before asking the user to upload.
+3. **Write/update test documentation as part of the same workflow** — don't wait to be asked. After a test passes locally, create/update the `.md` file in the same step.
+4. **Update business rules docs in the same workflow** — if a test reveals a discrepancy, update the business rules page AND the exhaustive analysis doc before moving on.
+5. **No "limitations" that are actually testable** — if something CAN be tested, test it. Only list genuine system constraints (e.g. IP Tier 3 masked by $30k cap) as limitations.
+6. **Commit atomically** — one commit per completed test expansion, including: test file, deprecated old version, test documentation, any business rules corrections.
+
+## Completion Checklist (must ALL be done before a test is "finished")
+
+- [ ] Full-coverage test written (all variations, boundaries, personas, independence)
+- [ ] Test passes locally (Edge config)
+- [ ] Old version moved to `deprecated/`
+- [ ] Version bumped (renamed for Test Console cache)
+- [ ] Test documentation `.md` created/updated (filename matches test version)
+- [ ] Documentation covers ALL parts with tables, formulas, personas
+- [ ] Limitations section contains ONLY genuine system constraints
+- [ ] Business rules docs updated if any discrepancies found (with date stamp)
+- [ ] `exhaustive-analysis.md` updated if new GAP/finding
+- [ ] Committed and pushed with descriptive message
+- [ ] User informed of file to upload + expected runtime
 
 ## The Process
 
@@ -115,8 +139,6 @@ Commit message should name the test file, assertion count, and any doc correctio
 
 | Test | Current Assertions | What Needs Adding |
 |------|-------------------|-------------------|
-| `test-pd-v9` | 5 | Multi-persona for each age rule (Female, different OCCs), exact boundaries ($50,001, $250,001) |
-| `bundling-v9` | 5 | Multi-persona, verify thresholds with disability covers counting, different cover combinations |
 | `pol-kid-v1` | 4 | Multi-persona for POL-05, Kids with different SI tiers selected, multiple kids |
 | `dc-v3` | 28 | Add Agreed Value variant tests, Monthly Mortgage cover type, verify formulas hold across those variants |
 
