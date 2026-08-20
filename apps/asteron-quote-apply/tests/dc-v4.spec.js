@@ -10,7 +10,7 @@
 
 const { test } = require('@playwright/test');
 
-test.setTimeout(600000);
+test.setTimeout(720000);
 
 test('DC full coverage: formulas, caps, independence, exclusivity', async ({ page }) => {
   try {
@@ -36,11 +36,20 @@ test('DC full coverage: formulas, caps, independence, exclusivity', async ({ pag
     await page.locator('button:has-text("Log in")').click();
 
     for (var i = 0; i < 30; i++) { await page.waitForTimeout(1000); if (!page.url().includes('CentralPortalsLogin')) break; }
-    if (page.url().includes('CentralPortalsLogin')) throw new Error('FAILED [Login]: Credentials rejected');
+    if (page.url().includes('CentralPortalsLogin')) throw new Error('FAILED [Login]: Credentials rejected or session conflict. Another test may be running.');
+
+    // Verify we actually landed on the dashboard
+    await page.waitForTimeout(2000);
+    if (!page.url().includes('AdviserCentral') && !page.url().includes('QuoteAndApply'))
+      throw new Error('FAILED [Login]: Did not reach dashboard. Possible concurrent session. URL: ' + page.url());
 
     // OPEN NEW QUOTE
     await page.goto(BASE_URL + '/QuoteAndApply/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000);
+
+    // Check we're not redirected back to login
+    if (page.url().includes('Login') || page.url().includes('_error.html'))
+      throw new Error('FAILED [Session]: Redirected to login/error after navigation. Likely concurrent session. URL: ' + page.url());
 
     var quoteUrl = await page.evaluate(function() { return new Promise(function(resolve) { window.open = function(url) { resolve(url); }; var link = Array.from(document.querySelectorAll('a')).find(function(a) { return a.innerText.trim() === 'New Quote'; }); if (link) link.click(); setTimeout(function() { resolve(null); }, 3000); }); });
     if (quoteUrl) await page.goto(quoteUrl, { waitUntil: 'domcontentloaded' });
@@ -78,10 +87,22 @@ test('DC full coverage: formulas, caps, independence, exclusivity', async ({ pag
       await page.waitForTimeout(2000);
     }
 
+    async function enterCalcMask(field, digits) {
+      await field.scrollIntoViewIfNeeded(); await field.click(); await page.waitForTimeout(200);
+      for (var x = 0; x < 12; x++) await page.keyboard.press('Backspace');
+      await page.waitForTimeout(200);
+      for (var y = 0; y < digits.length; y++) { await page.keyboard.press(digits[y]); await page.waitForTimeout(60); }
+      await page.keyboard.press('Tab');
+      await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(function() {});
+      await page.waitForTimeout(2000);
+    }
+
     async function enterIncome(digits) {
       var field = page.locator('input[id*="Input_AnnualIncome"]').first();
       var visible = await field.isVisible().catch(function() { return false; });
       if (!visible) { field = page.locator('input[id*="MaskedInput"]').first(); }
+      // Wait for field to become visible (employment status may still be rendering)
+      await field.waitFor({ state: 'visible', timeout: 10000 }).catch(function() {});
       await field.scrollIntoViewIfNeeded();
       await field.click();
       await page.waitForTimeout(200);
@@ -257,6 +278,122 @@ test('DC full coverage: formulas, caps, independence, exclusivity', async ({ pag
     var exclErrors = await getErrors();
     if (!exclErrors.some(function(e) { return e.indexOf('not available to be taken in conjunction') !== -1; }))
       throw new Error('FAILED [DC-28 Exclusivity]: Expected error for Workability + M&L (age 50, Male, B, $120k). Got: ' + exclErrors.join(' | ').substring(0, 200));
+
+    await removeAllCovers();
+
+    // ════════════════════════════════════════════════════════════════
+    // PART 4: M&L AGREED VALUE VARIANT (DC-15b)
+    // Progressive formula with observed caps at known income levels
+    // ════════════════════════════════════════════════════════════════
+
+    // Reset persona cleanly for Part 4
+    await removeAllCovers();
+    await page.waitForTimeout(2000);
+    await setAge('35');
+    await setGender('Male');
+    await setOCC('1');
+    await setEmployment('Employed');
+
+    var avTests = [
+      { income: '100000', expectedCap: '5,023', desc: '$100k' },
+      { income: '150000', expectedCap: '7,124', desc: '$150k' },
+      { income: '200000', expectedCap: '9,218', desc: '$200k' }
+    ];
+
+    for (var av = 0; av < avTests.length; av++) {
+      var avt = avTests[av];
+      await enterIncome(avt.income);
+
+      await activateCover('Mortgage & Living');
+      await page.waitForTimeout(1000);
+
+      // Switch to Agreed Value
+      var offsetDd = page.locator('select[id*="MLCOffsetBenefit"]').first();
+      await offsetDd.selectOption({ label: 'Agreed Value' });
+      await page.waitForTimeout(2000);
+
+      // Enter a value above the cap to trigger error
+      var avSI = page.locator('input[id*="Input_SumInsured"]').first();
+      await enterCalcMask(avSI, '50000');
+
+      var avErrors = await getErrors();
+      var avCapErr = avErrors.find(function(e) { return e.indexOf('maximum') !== -1 && e.indexOf('Mortgage') !== -1; });
+      if (!avCapErr)
+        throw new Error('FAILED [DC-15b AV ' + avt.desc + ']: Expected M&L Agreed Value cap error at $50k. Got: ' + avErrors.join(' | ').substring(0, 200));
+
+      // Verify the cap matches our observed value
+      if (avCapErr.indexOf(avt.expectedCap) === -1)
+        throw new Error('FAILED [DC-15b AV ' + avt.desc + ']: Expected cap $' + avt.expectedCap + ' in error. Got: ' + avCapErr.substring(0, 150));
+
+      await removeAllCovers();
+      await page.waitForTimeout(1000);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PART 5: IP LOSS OF EARNINGS (DC-22b)
+    // Same caps as Loss of Earnings Plus — confirm at 2 income levels
+    // ════════════════════════════════════════════════════════════════
+
+    var loeTests = [
+      { income: '100000', expectedCap: '6,250', desc: '$100k' },
+      { income: '150000', expectedCap: '9,375', desc: '$150k' }
+    ];
+
+    for (var loe = 0; loe < loeTests.length; loe++) {
+      var lt = loeTests[loe];
+      await enterIncome(lt.income);
+
+      await activateCover('Income Protection');
+
+      // Switch to Loss Of Earnings (non-Plus)
+      await page.evaluate(function() {
+        var sels = Array.from(document.querySelectorAll('select'));
+        var ipDd = sels.find(function(s) { return Array.from(s.options).some(function(o) { return o.text === 'Loss Of Earnings Plus'; }); });
+        if (ipDd) {
+          var opt = Array.from(ipDd.options).find(function(o) { return o.text === 'Loss Of Earnings'; });
+          if (opt) { ipDd.value = opt.value; ipDd.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+      });
+      await page.waitForTimeout(3000);
+
+      // Enter value above cap
+      var loeSI = page.locator('input[id*="Input_SumInsured"]').first();
+      await enterCalcMask(loeSI, '50000');
+
+      var loeErrors = await getErrors();
+      var loeCapErr = loeErrors.find(function(e) { return e.indexOf('maximum') !== -1 && e.indexOf('Income Protection') !== -1; });
+      if (!loeCapErr)
+        throw new Error('FAILED [DC-22b LoE ' + lt.desc + ']: Expected IP cap error. Got: ' + loeErrors.join(' | ').substring(0, 200));
+
+      if (loeCapErr.indexOf(lt.expectedCap) === -1)
+        throw new Error('FAILED [DC-22b LoE ' + lt.desc + ']: Expected cap $' + lt.expectedCap + ' (same as Plus). Got: ' + loeCapErr.substring(0, 150));
+
+      await removeAllCovers();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PART 6: M&L MONTHLY MORTGAGE COVER TYPE
+    // Requires a "mortgage repayment" field — confirm the prompt appears
+    // ════════════════════════════════════════════════════════════════
+
+    await enterIncome('150000');
+    await activateCover('Mortgage & Living');
+
+    // Switch to Monthly Mortgage cover type
+    var ctDd = page.locator('select[id*="Dropdown3"]').first();
+    await ctDd.selectOption({ label: 'Monthly Mortgage' });
+    await page.waitForTimeout(3000);
+
+    // Try to enter a value — should get "enter monthly mortgage repayment" prompt
+    var mmSI = page.locator('input[id*="Input_SumInsured"]').first();
+    await enterCalcMask(mmSI, '5000');
+
+    var mmErrors = await getErrors();
+    var hasMortgagePrompt = mmErrors.some(function(e) { return e.indexOf('monthly mortgage repayment') !== -1; });
+    if (!hasMortgagePrompt)
+      throw new Error('FAILED [DC Monthly Mortgage]: Expected "monthly mortgage repayment" prompt. Got: ' + mmErrors.join(' | ').substring(0, 200));
+
+    await removeAllCovers();
 
   } catch (error) {
     await page.locator('button:has-text("Sign out")').click().catch(function() {});
