@@ -11,20 +11,30 @@ Reverse-engineered business rules and Playwright tests for the Asteron Life Quot
 
 ```bash
 # From project root
-npx playwright test apps/asteron-quote-apply/tests/showcase-business-rules-standalone.spec.js --headed
+npx playwright test apps/asteron-quote-apply/tests/quote-screen/showcase-business-rules.spec.js --headed
+
+# Local Windows machine (Chromium blocked, use Edge config)
+node node_modules/@playwright/test/cli.js test apps/asteron-quote-apply/tests/<file>.spec.js --reporter=line --config=playwright.edge.config.js
 ```
 
-The standalone file is self-contained (login + helpers + tests in one file). No external setup needed beyond credentials.
+Each test in `tests/*.spec.js` is self-contained (login + one `test()` per file, ES5 inside
+`page.evaluate()`) — see `.kiro/steering/test-expansion-process.md` for why and the full
+authoring process.
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `tests/showcase-business-rules-standalone.spec.js` | 6 verified tests — ready to upload to OutSystems Test Suite |
-| `tests/network-diagnostic.spec.js` | Connectivity diagnostic tool |
-| `tests/quote-screen/*.spec.js` | Full suite (51 tests, some need selector fixes) |
+| `tests/*.spec.js` (e.g. `test-pd-v12`, `lsc-both-v11`, `dc-v5`, `bundling-v12`, `pol-kid-v3`, `comm-cat-v1`) | Current, live full-coverage business rule tests |
+| `tests/ip-check.spec.js`, `tests/connection-test.spec.js` | Connectivity diagnostics |
+| `tests/deprecated/` | Superseded versions, kept for history |
+| `tests/quote-screen/*.spec.js` | Original per-topic modular suite |
+| `probes/probe-*.js` | Throwaway/retained investigation scripts (run directly with `node`, not via Playwright Test) — see `.kiro/steering/test-expansion-process.md` "Probe & Interaction Safety" before writing new ones |
 | `helpers/quote-helpers.js` | OutSystems interaction patterns (calc-mask, button groups, etc.) |
-| `docs/` | Business rules documentation + changelog |
+| `docs/confluence-pages/business-rules/` | Canonical business rules documentation |
+| `docs/confluence-pages/test-documentation/` | One `.md` per test file (version-matched) |
+| `docs/user-stories/` | Source Jira/Confluence user stories tested in acceptance-criteria mode |
+| `docs/exhaustive-analysis.md` | Full boundary/validation analysis |
 
 ## OutSystems Interaction Patterns
 

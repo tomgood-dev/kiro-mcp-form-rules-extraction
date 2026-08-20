@@ -1,4 +1,4 @@
-// Verifies: output/confluence-pages/business-rules/quote-screen/lump-sum-covers/page.md
+// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/lump-sum-covers/page.md
 const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,

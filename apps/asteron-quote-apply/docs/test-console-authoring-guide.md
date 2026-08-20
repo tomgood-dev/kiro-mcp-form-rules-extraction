@@ -18,6 +18,20 @@ Everything we learned about writing Playwright tests that work on the OutSystems
 | Sign out after each test | Releases the server-side session for the next test |
 | Environment variables | Set `BASE_URL`, `LOGIN_EMAIL`, `LOGIN_PASSWORD` per test entry |
 | 180s timeout minimum | OutSystems is slow — login + form load + interactions takes 40-100s |
+| No `page.mouse.wheel()`/raw `dispatchEvent` without a self-verifying assertion | See "Probe & Interaction Safety" below — a stray interaction can produce a false reading that looks exactly like a real bug |
+
+---
+
+## Probe & Interaction Safety
+
+Before writing a probe script or a test that changes a field via anything other than
+`locator.selectOption()`/`.fill()`/`.click()`, read `.kiro/steering/test-expansion-process.md`'s
+"Probe & Interaction Safety" section in full. Short version: `page.mouse.wheel()` and unscoped
+`page.keyboard.press()` depend on ambient cursor/focus position and can silently mutate the wrong
+element; raw `dispatchEvent()` value changes must always be followed by an assertion that could
+only be true if the app's own reactive state genuinely updated, not a passive attribute read. A
+2026-08-20 investigation found and retracted a false-positive "defect" caused by exactly this —
+full trail in `docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md`.
 
 ---
 
@@ -405,7 +419,7 @@ ip-check.spec.js            — Diagnostic (no version needed)
 
 ## Complete Working Example
 
-See `test-pd-v1.spec.js` for a full working test that:
+See `test-pd-v12.spec.js` (current version — `test-pd-v1.spec.js` is now in `tests/deprecated/`) for a full working test that:
 1. Validates environment variables
 2. Logs in with polling
 3. Opens a new quote

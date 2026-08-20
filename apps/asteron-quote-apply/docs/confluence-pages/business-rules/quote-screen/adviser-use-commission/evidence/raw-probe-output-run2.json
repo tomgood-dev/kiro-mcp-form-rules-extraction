@@ -1,0 +1,24 @@
+{
+  "capturedAt": "2026-08-20T04:40:35.074Z",
+  "baseUrl": "https://outsystems-dev.asteronlife.co.nz",
+  "account": "hanno.coetzee+1123@resolutionlife.com.au",
+  "persona": "Age 35, Male, OCC AA, Life cover $500,000",
+  "finding1_updateButton": {
+    "disabled": true,
+    "className": "btn ThemeGrid_MarginGutter",
+    "outerHTML": "<button data-button=\"\" class=\"btn ThemeGrid_MarginGutter\" type=\"button\" disabled=\"\">Update</button>"
+  },
+  "finding2_icRcAt7_5pct": {
+    "id": "b25-b18-l3-3824_0-b6-Dropdown2",
+    "options": [
+      "Please Select",
+      "IC-100%, RC-50%",
+      "IC-25%, RC-100%",
+      "IC-50%, RC-100%",
+      "IC-75%, RC-100%",
+      "IC-100%, RC-100%"
+    ],
+    "selectedIndex": 5,
+    "selectedText": "IC-100%, RC-100%"
+  }
+}

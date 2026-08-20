@@ -25,7 +25,7 @@
 | `PREM-12` | Shows **$0.00** for any cover with no (or an invalid) Sum Insured/Monthly Benefit entered. |
 | `PREM-13` | Updates live, no page reload. |
 | `PREM-14` | Total aggregates across **all lives** on the quote (see [Policy Structure — POL-13](../policy-structure/page.md)). |
-| `PREM-15` | Adviser Use and Loadings buttons appear but are effectively inert until a valid, priced quote exists. |
+| `PREM-15` | Adviser Use and Loadings buttons appear but are effectively inert until a valid, priced quote exists. *(Corrected 2026-08-20: once a valid priced quote exists, Adviser Use is fully functional — it opens a "Commissions" modal covering agency-wide commission-category defaults and per-cover IC/RC selection. See [Adviser Use / Commission Category](../adviser-use-commission/page.md).)* |
 
 ## Payment frequency — conversion formula confirmed
 

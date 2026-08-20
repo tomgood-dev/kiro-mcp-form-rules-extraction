@@ -56,6 +56,7 @@ Per-life minimum, inferred from the above and from `PD-*`: Gender selected, Age 
 | `VAL-24` | *"The minimum premium is $240.00 per year per Life insured"* | Total premium for a life is below $240/year (e.g. a zombie unfilled cover per `LSC-40`) | Inline banner |
 | `VAL-25` | *(per-cover max-value errors)* | See the exact wording for each cover on [Lump Sum Covers](../lump-sum-covers/page.md) and [Disability Covers](../disability-covers/page.md) | Inline |
 | `VAL-26` | *(per-cover occupation-availability errors)* | See [Lump Sum Covers](../lump-sum-covers/page.md) and [Disability Covers](../disability-covers/page.md) | Inline |
+| `VAL-32` | *(Flexi Rate / commission-category messages, e.g. "Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected", "Please select IC/RC in Adviser Use for all policies")* | See [Adviser Use / Commission Category](../adviser-use-commission/page.md) | Inline / Adviser Use modal |
 
 ## Validation timing
 

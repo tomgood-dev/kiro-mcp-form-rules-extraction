@@ -29,6 +29,7 @@
 | [Disability Covers](quote-screen/disability-covers/page.md) | `DC-` | Mortgage & Living, Income Protection, Workability, Business Expenses, Business Disability, Farmers Disability |
 | [Kids Cover](quote-screen/kids-cover-and-multi-life/page.md) | `KID-` | Kids Cover fields, limits, and per-kid behavior |
 | [Premium & Bundling](quote-screen/premium-and-bundling/page.md) | `PREM-` | Premium calculation triggers, payment frequency conversion, bundling discounts |
+| [Adviser Use / Commission Category](quote-screen/adviser-use-commission/page.md) | `ADV-` | The "Commissions" modal — agency-wide default commission category, Flexi Rate ↔ commission interactions, IC/RC selection. Tested in **acceptance-criteria mode** against a written user story (Jira ACB-13175) rather than reverse-engineered — see `.kiro/steering/test-expansion-process.md` |
 | [Validation & Navigation](quote-screen/validation-and-navigation/page.md) | `VAL-` | Full error-message catalog, Save/Save as New/Close/View PDF/Apply button behavior, the Apply→Client-summary transition |
 
 ### Apply Flow (`apply-flow/`)
@@ -51,10 +52,11 @@
 | Prefix | Page | Prefix | Page |
 |---|---|---|---|
 | `PD` | Personal Details | `PREM` | Premium & Bundling |
-| `POL` | Policy Structure | `VAL` | Validation & Navigation |
-| `LSC` | Lump Sum Covers | `CD` | Client Details & Duty of Disclosure |
-| `DC` | Disability Covers | `IFT` | Insurance, Financial & Tele Interview |
-| `KID` | Kids Cover | `PS` | Personal Statement |
+| `POL` | Policy Structure | `ADV` | Adviser Use / Commission Category |
+| `LSC` | Lump Sum Covers | `VAL` | Validation & Navigation |
+| `DC` | Disability Covers | `CD` | Client Details & Duty of Disclosure |
+| `KID` | Kids Cover | `IFT` | Insurance, Financial & Tele Interview |
+| | | `PS` | Personal Statement |
 | | | `SUM` | Summary & Payment |
 
 ---

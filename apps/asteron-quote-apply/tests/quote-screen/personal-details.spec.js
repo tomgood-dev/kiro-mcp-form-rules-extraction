@@ -1,4 +1,4 @@
-// Verifies: output/confluence-pages/business-rules/quote-screen/personal-details/page.md
+// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/personal-details/page.md
 const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,

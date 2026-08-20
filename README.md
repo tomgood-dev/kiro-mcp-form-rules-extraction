@@ -110,26 +110,35 @@ Where `commands.json` is an array:
 ```
 ├── README.md
 ├── package.json
-├── playwright.config.js
+├── playwright.config.js         # Generic/CI config (Chromium)
+├── playwright.edge.config.js    # Local config (Edge — use when Chromium is blocked)
 ├── .env.example
 │
 ├── apps/                        # One folder per target application
 │   └── asteron-quote-apply/     # Worked example (insurance form)
 │       ├── tests/               # Generated Playwright test files
+│       ├── probes/              # App-specific throwaway/retained investigation scripts
 │       ├── helpers/             # App-specific interaction patterns
 │       ├── global-setup.js      # Login automation
+│       ├── test-results/        # Generated: per-test artifacts (gitignored)
+│       ├── playwright-report/   # Generated: HTML report (gitignored)
 │       └── docs/                # Discovered business rules
 │           └── exhaustive-analysis.md  # Full boundary/validation analysis
 │
-├── tools/                       # Reusable exploration server + helpers
+├── tools/                       # Generic, reusable, app-agnostic exploration tooling
 │   ├── server.js                # HTTP browser command server
 │   ├── batch.js                 # Batch command runner
 │   ├── cmd.js                   # Quick single command
-│   ├── run.js                   # File-based command
-│   └── probe-*.js               # Headless probing scripts (for rule verification)
+│   └── run.js                   # File-based command
 │
-└── sessions/                    # Session notes (working context)
+├── sessions/                    # Session notes (working context), chronological
+│
+└── archive/                     # Superseded material — early iterations, legacy scripts
 ```
+
+Each app's own `probes/` folder holds throwaway or retained investigation scripts specific to
+that app (hardcoded URL/credentials/selectors) — separate from the generic `tools/` above,
+which is meant to work with any app you point it at.
 
 ## Handling Different App Types
 
@@ -159,17 +168,21 @@ Log in manually in the headed browser, then the AI drives from there.
 
 ## Included Example
 
-`apps/asteron-quote-apply/` contains a complete worked example — 23 verified business rules across 5 test files, reverse-engineered from a live OutSystems insurance application with zero source code access:
+`apps/asteron-quote-apply/` contains a complete worked example, reverse-engineered from a live
+OutSystems insurance application with zero source code access. Current live test files (see
+`apps/asteron-quote-apply/docs/confluence-pages/test-documentation/` for full per-file docs —
+older versions referenced by number are in `apps/asteron-quote-apply/tests/deprecated/`):
 
 | File | Rules Tested |
 |------|-------------|
-| `test-pd-v9` | Age boundaries (11–75), Life $50k cap under-17, TPD min age, TPD $250k cap (17-21), Acd Death max age 70 |
-| `lsc-both-v8` | Specific Injury companion requirement, Major Trauma 300% cap, $2M combined ceiling, TPD $5M max, Acd Death $1M max |
-| `bundling-v9` | Bundling "None"/15%/20% thresholds, Trauma $25k minimum, uncommitted covers don't count |
-| `dc-v1` | M&L formula (45%), IP formula (75% tiered), Workability formula + $10k cap, Workability exclusivity |
-| `pol-kid-v1` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
+| `test-pd-v12` | Age boundaries (11–75), Life $50k cap under-17, TPD min age, TPD $250k cap (17-21), Acd Death max age 70 |
+| `lsc-both-v11` | Specific Injury companion requirement, Major Trauma 300% cap, $2M combined ceiling, TPD $5M max, Acd Death $1M max |
+| `bundling-v12` | Bundling "None"/15%/20% thresholds, Trauma $25k minimum, uncommitted covers don't count |
+| `dc-v5` | M&L/IP/Workability formulas, Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type |
+| `pol-kid-v3` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
+| `comm-cat-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
 
-These tests run against the live dev environment and pass consistently (~1-3 min each).
+These tests run against the live dev environment and pass consistently (~1-4 min each).
 
 An exhaustive boundary analysis document (`apps/asteron-quote-apply/docs/exhaustive-analysis.md`) maps all 216 discovered rules to fields, permutations, and test scenarios.
 

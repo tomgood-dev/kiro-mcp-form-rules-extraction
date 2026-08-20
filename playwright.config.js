@@ -16,11 +16,14 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './apps',
+  // Nested under the app, not repo root - only one app exists today; if a second app
+  // is added, this (and playwright.edge.config.js) should become per-app or parameterized.
+  outputDir: './apps/asteron-quote-apply/test-results',
   timeout: 240_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: 0,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [['list'], ['html', { open: 'never', outputFolder: './apps/asteron-quote-apply/playwright-report' }]],
   use: {
     headless: process.env.HEADLESS !== 'false',
     actionTimeout: 15_000,

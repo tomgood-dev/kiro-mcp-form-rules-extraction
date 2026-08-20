@@ -13,7 +13,7 @@ These apply to every cover within the policy they're set on.
 | `POL-01` | Inflation Adjustment Benefit | Checkbox | **On** | On/Off | Adjusts sum insured annually for inflation |
 | `POL-02` | Premium Freeze | Checkbox | Off | On/Off | Locks premiums — no annual increases |
 | `POL-03` | We Pay Your Premiums | Select | None | None / 30 days / 60 days / 90 days | Waives lump sum cover premiums if the insured cannot work >10 hrs/week after the chosen wait period. Tooltip: *"Waives the premiums for all the lump sum cover premiums on the policy after the chosen wait period if the insured is sick or disabled and cannot work for more than 10 hours a week after the chosen waiting period."* Adds a waiver cost to the premium; does not add any sub-fields. |
-| `POL-04` | Flexi Rate | Select | N/A | N/A, then 2.5%–30.0% in 2.5% steps (13 options total) | Reduces the Adviser's commission by the selected percentage and passes that reduction to the client as a premium discount. Tooltip: *"Flexi-rate allows you to discount your clients premium by reducing all or part of the Advisers Initial and/or Renewal Commission."* |
+| `POL-04` | Flexi Rate | Select | N/A | N/A, then 2.5%–30.0% in 2.5% steps (13 options total) | Reduces the Adviser's commission by the selected percentage and passes that reduction to the client as a premium discount. Tooltip: *"Flexi-rate allows you to discount your clients premium by reducing all or part of the Advisers Initial and/or Renewal Commission."* For how this interacts with the agency's default commission category and IC/RC selection, see [Adviser Use / Commission Category](../adviser-use-commission/page.md). |
 
 ### Mutual exclusivity: Inflation Adjustment vs. Premium Freeze
 

@@ -37,6 +37,7 @@ Illustration
 | [Disability Covers](disability-covers/page.md) | Mortgage & Living, Income Protection, Workability, Business Expenses, Business Disability, Farmers Disability |
 | [Kids Cover](kids-cover-and-multi-life/page.md) | Kids Cover fields and limits |
 | [Premium & Bundling](premium-and-bundling/page.md) | Premium triggers, payment frequency, bundling discount |
+| [Adviser Use / Commission Category](adviser-use-commission/page.md) | The "Commissions" modal: agency-wide default commission category, Flexi Rate ↔ commission interactions, IC/RC selection |
 | [Validation & Navigation](validation-and-navigation/page.md) | Full error catalog, footer button behavior, the Apply transition |
 
 ## The most important thing to know before reading further

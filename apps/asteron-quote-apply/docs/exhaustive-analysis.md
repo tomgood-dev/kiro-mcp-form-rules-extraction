@@ -1,7 +1,7 @@
 # Exhaustive Boundary & Validation Analysis — Asteron Connect Quote Screen
 
-**Date:** 2026-08-19  
-**Status:** Complete — All categories probed via live headless Playwright against `outsystems-dev.asteronlife.co.nz`  
+**Date:** 2026-08-19 (Quote Screen core categories); Commission Category area added 2026-08-20  
+**Status:** Complete for the original Quote Screen scope (Personal Details through Kids Cover, Premium & Bundling). Adviser Use / Commission Category (§1.6b) is partial — only the parts confirmed against its source user story so far; the multi-option IC/RC matrix is not yet mapped.  
 **Method:** AI-driven headless Playwright probing (Chromium, headless mode, single-session sequential)
 
 ---
@@ -74,6 +74,25 @@
 | Flexi Rate | `b23-b1-Dropdown_FlexiRate` | select | N/A, 2.5%–30.0% in 2.5% steps (13 opts) | N/A |
 | Payment Frequency | `PaymentFrequencyDropdown` | select | Fortnightly, Monthly, Quarterly, Half Yearly, Yearly | Monthly |
 | Number of Kids | `b23-b14-Dropdown1` | select | 0–9 | 0 |
+
+### 1.6b Adviser Use / Commission Category (added 2026-08-20, see `adviser-use-commission/page.md`)
+
+Opened via the **Adviser Use** button on a valid, priced quote — a "Commissions" modal, not part
+of the main Illustration form. Field IDs include dynamic per-quote path segments (e.g.
+`b25-b18-...`) — locate these by option-set fingerprint, not hardcoded ID, per
+`comm-cat-v1.spec.js`.
+
+| Field | Fingerprint | Type | Options | Default |
+|-------|-------------|------|---------|---------|
+| Default for Agency | Options exactly `[Upfront, Level 30, Spread 20]`, no "Please Select" | select | Upfront, Level 30, Spread 20 | Upfront (first-time) |
+| Select IC/RC (per cover) | First option `"Please Select"`, rest match `/^IC-\d+%, RC-\d+%$/` | select | Varies by Flexi Rate (1 option at N/A, up to 5+ at other rates) | Auto-selected if exactly 1 real option |
+| Select All / per-cover commission category | First option `"Please Select"`, rest are commission category names | select | Please Select, Upfront, Level 30, Spread 20 (subset valid for current IC/RC) | Varies |
+| Update button | `button:has-text("Update")` within the modal | button | — | Disabled until Default-for-Agency selection differs from saved value |
+
+This area was tested in **acceptance-criteria mode** against a written user story (ACB-13175),
+not reverse-engineered from scratch — only the parts confirmed against that spec are documented
+here; the multi-option IC/RC matrix, cross-quote persistence, and STP payload are not yet mapped.
+See `comm-cat-v1.md` for current pass/fail status.
 
 ### 1.7 Boundary Conditions Summary
 
