@@ -5,6 +5,26 @@
 // for the narrative version. Reuse these instead of hand-rolling interactions in
 // spec files; the fragile parts (calc-mask fields, occupation search, the
 // disability-cover commitment trap) are easy to get subtly wrong.
+//
+// The generic OutSystems primitives this file builds on (calc-mask entry, the
+// evaluate()-click-to-avoid-missed-XHR pattern, the vscomp type-ahead widget, the
+// window.open()-capture navigation pattern) live in outsystems-generic-helpers.js -
+// none of that is specific to the Quote screen, so start there if you're building
+// helpers for a different screen (e.g. Apply Flow) or a different OutSystems app.
+// This file only adds the Quote-screen-specific layer on top: what fields exist,
+// what the cover buttons are called, how premium/bundling text is laid out.
+
+const {
+  waitForSettle,
+  fillCalcMask,
+  commitWithoutTyping,
+  getVisibleErrors,
+  expectErrorContaining,
+  clickButtonByLabel,
+  buttonByLabelExists,
+  captureWindowOpenFromLink,
+  selectFromTypeahead,
+} = require('./outsystems-generic-helpers');
 
 /**
  * Opens a brand-new Quote screen and returns the Page it's on.
@@ -19,16 +39,7 @@ async function openNewQuote(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(3000); // Give the SPA time to fully render the quote list
 
-  // Strategy: patch window.open to capture the URL, click New Quote, then navigate
-  const quoteUrl = await page.evaluate(() => {
-    return new Promise((resolve) => {
-      window.open = function(url) { resolve(url); };
-      const link = [...document.querySelectorAll('a')].find(a => a.innerText.trim() === 'New Quote');
-      if (link) link.click();
-      // Fallback if window.open isn't called within 3s
-      setTimeout(() => resolve(null), 3000);
-    });
-  });
+  const quoteUrl = await captureWindowOpenFromLink(page, 'New Quote');
 
   if (quoteUrl) {
     // Navigate to the captured URL
@@ -44,12 +55,6 @@ async function openNewQuote(page) {
     .waitFor({ state: 'visible', timeout: 30000 });
   await waitForSettle(page);
   return page;
-}
-
-/** Waits for the OutSystems "Loading" indicator to clear, plus a short settle buffer. */
-async function waitForSettle(page, ms = 400) {
-  await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
-  await page.waitForTimeout(ms);
 }
 
 /**
@@ -125,52 +130,7 @@ async function setMinimumPersonalDetails(page, opts = {}) {
 
 /** Opens the Occupation type-ahead, types a search string, and clicks the first matching option. */
 async function setOccupation(page, searchText, optionStartsWith) {
-  await page.getByRole('combobox', { name: 'Select an option' }).click();
-  const searchInput = page.locator('.vscomp-search-input');
-  await searchInput.waitFor({ state: 'visible' });
-  await searchInput.fill(searchText);
-  const option = page.locator('.vscomp-option').filter({ hasText: optionStartsWith }).first();
-  await option.waitFor({ state: 'visible' });
-  await option.click();
-}
-
-/**
- * Correctly enters a value into an OutSystems calc-mask field (Sum Insured,
- * Monthly Benefit, Annual Income). A plain `.fill()` corrupts these fields.
- * @param {import('@playwright/test').Locator} locator
- * @param {string} value - digits only, e.g. "200000"
- * @param {import('@playwright/test').Page} [page] - optional explicit page ref (avoids stale locator.page())
- */
-async function fillCalcMask(locator, value, page) {
-  const p = page || locator.page();
-  await locator.scrollIntoViewIfNeeded();
-  await locator.click();
-  await p.waitForTimeout(200);
-  for (let i = 0; i < 12; i++) {
-    await p.keyboard.press('Backspace');
-    await p.waitForTimeout(50);
-  }
-  await p.waitForTimeout(200);
-  for (const digit of String(value).replace(/[^0-9]/g, '')) {
-    await p.keyboard.press(digit);
-    await p.waitForTimeout(60);
-  }
-  await p.waitForTimeout(200);
-  await p.keyboard.press('Tab');
-  // Wait for the value to commit (Loading indicator + settle)
-  await p.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
-  await p.waitForTimeout(2000);
-}
-
-/**
- * "Commits" a Disability cover's benefit field without typing a value, so its
- * income-percentage auto-default takes effect. Merely activating the cover's
- * toggle button is NOT enough — see DC-01/DC-02 in the business rules.
- * @param {import('@playwright/test').Locator} locator
- */
-async function commitWithoutTyping(locator) {
-  await locator.click();
-  await locator.page().keyboard.press('Tab');
+  return selectFromTypeahead(page, 'Select an option', searchText, optionStartsWith);
 }
 
 /**
@@ -182,24 +142,12 @@ async function commitWithoutTyping(locator) {
  * whose visible text starts with the given label.
  */
 async function activateCover(page, buttonLabel) {
-  await page.evaluate((label) => {
-    const btn = [...document.querySelectorAll('button')].find(
-      (b) => b.innerText.trim().split('\n')[0] === label
-    );
-    if (!btn) throw new Error(`Cover button not found: "${label}"`);
-    if (btn.disabled) throw new Error(`Cover button is disabled: "${label}"`);
-    btn.click();
-  }, buttonLabel);
-  await waitForSettle(page);
+  return clickButtonByLabel(page, buttonLabel, 'Cover button');
 }
 
 /** True if a cover button with this exact label exists at all (present vs. removed from DOM). */
 async function coverButtonExists(page, buttonLabel) {
-  return page.evaluate((label) => {
-    return [...document.querySelectorAll('button')].some(
-      (b) => b.innerText.trim().split('\n')[0] === label
-    );
-  }, buttonLabel);
+  return buttonByLabelExists(page, buttonLabel);
 }
 
 /** Removes an active cover card by clicking the "Remove" link nearest its heading text. */
@@ -219,26 +167,6 @@ async function removeAllCoverCards(page) {
     [...document.querySelectorAll('a')].filter((a) => a.innerText.trim() === 'Remove').forEach((a) => a.click());
   });
   await waitForSettle(page);
-}
-
-/** Returns the array of currently-visible validation error strings. */
-async function getVisibleErrors(page) {
-  return page.evaluate(() => {
-    const nodes = [...document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]')];
-    const texts = nodes
-      .filter((n) => n.innerText && n.innerText.trim() && n.getBoundingClientRect().width > 0)
-      .map((n) => n.innerText.trim());
-    return [...new Set(texts)].filter((t) => t !== 'Remove');
-  });
-}
-
-/** Convenience: asserts at least one visible error contains the given substring. */
-async function expectErrorContaining(page, substring) {
-  const errors = await getVisibleErrors(page);
-  const found = errors.some((e) => e.includes(substring));
-  if (!found) {
-    throw new Error(`Expected an error containing "${substring}", got: ${JSON.stringify(errors, null, 2)}`);
-  }
 }
 
 /** Clicks the footer Apply button. */
