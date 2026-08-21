@@ -1,0 +1,2 @@
+[Quote 1, Flexi Rate 7.5% (expect IC-75%, RC-100%)] Select IC/RC: [{"label":"Select IC/RC","options":["Please Select","IC-100%, RC-50%","IC-25%, RC-100%","IC-50%, RC-100%","IC-75%, RC-100%"],"selected":"IC-75%, RC-100%"}]
+[Quote 2 (fresh New Quote, same session), Flexi Rate 12.5% (expect "Please Select" if isolated, IC-75%RC-100% if carried over from Quote 1)] Select IC/RC: [{"label":"Select IC/RC","options":["Please Select","IC-25%, RC-100%","IC-50%, RC-100%","IC-75%, RC-0%","IC-75%, RC-50%"],"selected":"Please Select"}]

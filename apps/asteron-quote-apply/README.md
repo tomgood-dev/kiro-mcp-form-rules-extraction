@@ -25,8 +25,8 @@ authoring process.
 
 | File | Purpose |
 |------|---------|
-| `tests/*.spec.js` (e.g. `test-pd-v12`, `lsc-both-v11`, `dc-v5`, `bundling-v12`, `pol-kid-v3`, `comm-cat-v1`) | Current, live full-coverage business rule tests |
-| `tests/ip-check.spec.js`, `tests/connection-test.spec.js` | Connectivity diagnostics |
+| `tests/*.spec.js` (e.g. `personal-details-age-boundary-rules-v1`, `lump-sum-covers-caps-and-companion-rules-v1`, `disability-covers-formulas-and-caps-v1`, `premium-bundling-discount-thresholds-v1`, `policy-structure-and-kids-cover-rules-v1`, `commission-category-modal-defaults-and-update-button-v1`, `commission-category-flexirate-icrc-examples-v1`) | Current, live full-coverage business rule tests |
+| `tests/outbound-ip-diagnostic-v1.spec.js`, `tests/network-whitelist-connectivity-check-v1.spec.js`, `tests/demo-intentional-fail-smoke-test-v1.spec.js` | Connectivity diagnostics / demo smoke test |
 | `tests/deprecated/` | Superseded versions, kept for history |
 | `tests/quote-screen/*.spec.js` | Original per-topic modular suite |
 | `probes/probe-*.js` | Throwaway/retained investigation scripts (run directly with `node`, not via Playwright Test) — see `.kiro/steering/test-expansion-process.md` "Probe & Interaction Safety" before writing new ones |

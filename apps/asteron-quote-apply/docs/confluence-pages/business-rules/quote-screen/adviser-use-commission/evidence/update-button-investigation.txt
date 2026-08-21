@@ -1,0 +1,104 @@
+Cross-run investigation summary — Update button AND 7.5%/12.5% IC/RC default findings, 2026-08-20
+Both were initially reported as real defects. Both were retracted after further investigation.
+Kept in full, including the wrong initial conclusion, per the Discrepancy Evidence Record
+requirement (test-expansion-process.md) - the investigation itself is the evidence trail, not
+just the final answer. See evidence/01 through evidence/10 for each individual run's raw output.
+
+=========================================================================
+PART 1: UPDATE BUTTON ("always enabled") — retracted in runs 01-04
+=========================================================================
+
+RUN 01 (probe-commission-category.js) — first observation, caused the original false-positive claim
+Update button state BEFORE any change: {"disabled":false,"className":"btn ThemeGrid_MarginGutter"}
+Changed Default-for-Agency select id=b25-b18-Dropdown1 to Spread 20
+Update button state AFTER change: {"disabled":false,"className":"btn ThemeGrid_MarginGutter"}
+
+Sequence of actions BEFORE this check (the likely contaminating step is marked):
+  1. openAdviserUse()
+  2. dumpLabeledSelects() - read-only, no mutation
+  3. page.screenshot()
+  4. page.mouse.wheel(0, 400)   <-- SUSPECT: unintended scroll interaction
+  5. page.waitForTimeout(300)
+  6. page.screenshot()
+  7. (THEN) checked Update button state -> disabled:false
+
+RUN 02 (probe-commission-evidence.js) — second observation, contradicted run 01
+{
+  "disabled": true,
+  "className": "btn ThemeGrid_MarginGutter",
+  "outerHTML": "<button data-button=\"\" class=\"btn ThemeGrid_MarginGutter\" type=\"button\" disabled=\"\">Update</button>"
+}
+Sequence of actions BEFORE this check: openAdviserUse() -> waitForTimeout(500) -> check.
+No scroll, no screenshot in between. Result: disabled=true (matches spec, AC04).
+
+RUN 03 (probe-update-button-timing.js) — controlled repro: zero interaction after opening the
+modal, sampled repeatedly
+Clicked Adviser Use at t=0.
+[t=0.0s] Update button: null
+[t=0.5s through t=12.0s] Update button: {"disabled":true,"hasDisabledAttr":true} at every sample
+
+Conclusion from run 03: with genuinely zero interaction, the button never auto-enables. Rules
+out a timing/async-render explanation, points at run 01's own mouse.wheel(0, 400) call as the
+contaminating step (plausible mechanism: an OS/browser quirk where a wheel event over a focused
+<select> changes its value, which the OutSystems reactive binding then treats as a real change).
+
+RUN 04 (probe-update-button-ac05.js) — confirms AC04 + AC05 + revert, using only Playwright's
+real selectOption() API (never raw dispatchEvent, never mouse.wheel)
+[before any change] Update button: {"disabled":true}
+[immediately after selectOption(Spread 20)] Update button: {"disabled":false}
+[1.5s after selectOption(Spread 20)] Update button: {"disabled":false}
+[after reverting to Upfront (not clicking Update)] Update button: {"disabled":true}
+
+PART 1 CONCLUSION: RETRACTED - false positive from run 01's mouse.wheel() call, not a real
+defect. AC04, AC05, and the revert-to-saved-value behavior are all confirmed correct.
+
+=========================================================================
+PART 2: 7.5%/12.5% IC/RC DEFAULT ("real defect") — ALSO retracted, in runs 06-10
+=========================================================================
+
+RUN 05 (actual test file, tests/comm-cat-v1.spec.js, via the real Playwright Test runner) failed
+Part 5 with: Expected "IC-75%, RC-100%", got "IC-100%, RC-100%". At the time this was believed to
+be the 3rd independent confirmation (after runs 01 and 02) of a genuine defect.
+
+WRONG CONCLUSION DRAWN AT THE TIME (kept here as a record of the mistake, not as current fact):
+"Only the 7.5% Flexi Rate IC/RC default (part of AC10/Example 2) remains a genuine, 3x-reproduced
+discrepancy." This was wrong - runs 01, 02, and 05 ALL shared an undisclosed common flaw: each
+one opened the Adviser Use modal at Flexi Rate N/A (or 30%) FIRST, within the same quote/session,
+before switching to 7.5% and reopening it. None of them were actually independent.
+
+RUN 07 (probe-examples-3-4.js) surfaced the mechanism: testing Example 4 (12.5%) immediately
+after Example 3 (15%) in the same session showed Example 3's own correct default
+(IC-50%, RC-50%) incorrectly carried over and auto-selected for Example 4, where it isn't even
+a documented option. This is the same shape of bug as runs 01/02/05's 7.5% result - a stale
+selection carrying over across a Flexi Rate change within one quote, not a computed default.
+
+RUN 08 (probe-clean-single-flexirate.js, TARGET_FR=7.5%) - fresh browser session, fresh quote,
+Flexi Rate set to 7.5% BEFORE Adviser Use is opened for the first and only time:
+Select IC/RC: {"options":["Please Select","IC-100%, RC-50%","IC-25%, RC-100%","IC-50%, RC-100%","IC-75%, RC-100%"],"selected":"IC-75%, RC-100%"}
+MATCHES THE DOC EXACTLY.
+
+RUN 09 (probe-clean-single-flexirate.js, TARGET_FR=12.5%) - same clean methodology:
+Select IC/RC: {"options":["Please Select","IC-25%, RC-100%","IC-50%, RC-100%","IC-75%, RC-0%","IC-75%, RC-50%"],"selected":"Please Select"}
+MATCHES THE DOC EXACTLY (correctly does not auto-select when multiple UPFRONT options exist).
+
+RUN 10 (probe-fresh-quote-isolation.js) confirmed a fresh "New Quote" navigation - even within
+the SAME browser/login session - is sufficient to reset this state. Quote 1 at 7.5% showed the
+correct IC-75%,RC-100%; Quote 2 (fresh New Quote, same session) at 12.5% showed the correct
+"Please Select" with zero carryover from Quote 1.
+
+PART 2 CONCLUSION: RETRACTED - runs 01/02/05/07 were all contaminated by reusing one quote
+across multiple Flexi Rate values within the same session. Examples 1, 2 (7.5%), 3, and 4 are
+ALL confirmed correctly implemented when each is tested in its own fresh quote. comm-cat-v2.spec.js
+is structured to open a fresh quote per Flexi-Rate scenario to avoid this.
+
+=========================================================================
+OVERALL LESSON
+=========================================================================
+Neither of the two "genuine discrepancies" found this session survived a properly isolated
+re-test. Every part of the Select Default Commission Category feature checked so far (AC01-05,
+AC09-partial, AC11, AC14, and all 4 named IC/RC Examples) is correctly implemented. This is now
+codified in test-expansion-process.md's "Probe & Interaction Safety" section: a stateful
+component whose defaults depend on another field's value must be tested in a genuinely fresh
+session/quote per distinct value - switching the driving field and reopening the same component
+instance is not sufficient isolation, even without any interaction-API mistakes like
+mouse.wheel().

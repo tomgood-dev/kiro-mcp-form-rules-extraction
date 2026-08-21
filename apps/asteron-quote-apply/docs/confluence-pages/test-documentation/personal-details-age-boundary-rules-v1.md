@@ -1,6 +1,6 @@
-# Test: Personal Details — test-pd-v12
+# Test: Personal Details Age Boundary Rules — personal-details-age-boundary-rules-v1
 
-> **Test file:** `test-pd-v12.spec.js`
+> **Test file:** `personal-details-age-boundary-rules-v1.spec.js`
 > **Last run:** 2026-08-20 (local Edge headless) — ~11.5 min
 > **Source:** Reverse-engineering mode (32 assertions total, collapsed to 9 rows below)
 > **Result:** 9/9 passing

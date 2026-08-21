@@ -1,6 +1,6 @@
-# Test: Premium & Bundling — bundling-v12
+# Test: Premium & Bundling Discount Thresholds — premium-bundling-discount-thresholds-v1
 
-> **Test file:** `bundling-v12.spec.js`
+> **Test file:** `premium-bundling-discount-thresholds-v1.spec.js`
 > **Last run:** 2026-08-20 (local Edge headless) — ~8 min
 > **Source:** Reverse-engineering mode (11 assertions total, collapsed to 7 rows below)
 > **Result:** 7/7 passing

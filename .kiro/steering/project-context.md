@@ -29,7 +29,8 @@ extraction — do not produce OutSystems-specific output).
 - `apps/asteron-quote-apply/docs/confluence-pages/business-rules/` — canonical business rules,
   one `page.md` per topic, Rule-ID-prefixed (e.g. `LSC-`, `DC-`, `PREM-`, `ADV-`)
 - `apps/asteron-quote-apply/docs/confluence-pages/test-documentation/` — one `.md` per test
-  file, version-matched (e.g. `dc-v5.spec.js` ↔ `dc-v5.md` — steering doc note: keep these in
+  file, version-matched (e.g. `disability-covers-formulas-and-caps-v1.spec.js` ↔
+  `disability-covers-formulas-and-caps-v1.md` — steering doc note: keep these in
   sync when bumping a version; a version-bump rename is often pure Test Console cache-busting
   with no content change, but still rename the doc immediately, don't let them drift)
 - `apps/asteron-quote-apply/docs/user-stories/` — source Jira/Confluence user stories tested in

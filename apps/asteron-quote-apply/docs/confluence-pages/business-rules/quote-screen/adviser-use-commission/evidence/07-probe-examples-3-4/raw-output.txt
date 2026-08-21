@@ -1,0 +1,15 @@
+--- Example 3: Flexi Rate = 15% ---
+Default for Agency: Upfront
+Select IC/RC: {"options":["Please Select","IC-0%, RC-100%","IC-100%, RC-0%","IC-50%, RC-50%"],"selected":"IC-50%, RC-50%"}
+Select All: {"options":["Please Select","Level 30","Spread 20","Upfront"],"selected":"Please Select"}
+Life Cover: {"options":["Please Select","Upfront","Level 30","Spread 20"],"selected":"Upfront"}
+
+--- Example 4: Flexi Rate = 12.5% (tested immediately after Example 3, same quote/session) ---
+Default for Agency: Upfront
+Select IC/RC: {"options":["Please Select","IC-25%, RC-100%","IC-50%, RC-100%","IC-75%, RC-0%","IC-75%, RC-50%","IC-50%, RC-50%"],"selected":"IC-50%, RC-50%"}
+Select All: {"options":["Please Select"],"selected":"Please Select"}
+Life Cover: {"options":["Please Select"],"selected":"Please Select"}
+
+NOTE: Example 4's Select IC/RC has 5 options, not the 4 documented ones - the extra
+"IC-50%, RC-50%" is exactly Example 3's default, selected here instead of "Please Select".
+This is the carryover artifact - see evidence/08-10 for the clean re-test that overturned it.

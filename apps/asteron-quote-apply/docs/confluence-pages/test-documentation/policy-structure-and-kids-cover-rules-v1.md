@@ -1,6 +1,6 @@
-# Test: Policy Structure & Kids Cover — pol-kid-v3
+# Test: Policy Structure & Kids Cover Rules — policy-structure-and-kids-cover-rules-v1
 
-> **Test file:** `pol-kid-v3.spec.js`
+> **Test file:** `policy-structure-and-kids-cover-rules-v1.spec.js`
 > **Last run:** 2026-08-20 (local Edge headless) — ~2 min
 > **Source:** Reverse-engineering mode (22 assertions total, collapsed to 6 rows below)
 > **Result:** 6/6 passing

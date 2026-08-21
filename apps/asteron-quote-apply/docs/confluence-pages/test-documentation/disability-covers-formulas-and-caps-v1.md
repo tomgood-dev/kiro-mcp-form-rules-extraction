@@ -1,6 +1,6 @@
-# Test: Disability Covers — dc-v5
+# Test: Disability Covers Formulas & Caps — disability-covers-formulas-and-caps-v1
 
-> **Test file:** `dc-v5.spec.js`
+> **Test file:** `disability-covers-formulas-and-caps-v1.spec.js`
 > **Last run:** 2026-08-20 (local Edge headless) — ~11 min
 > **Source:** Reverse-engineering mode (34 assertions total, collapsed to 8 rows below)
 > **Result:** 8/8 passing

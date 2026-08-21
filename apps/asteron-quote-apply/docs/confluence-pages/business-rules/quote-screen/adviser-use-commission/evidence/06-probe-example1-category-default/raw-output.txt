@@ -1,0 +1,19 @@
+--- All labeled selects, Flexi Rate = 2.5%, Upfront agency default ---
+Select IC/RC: {"options":["Please Select","IC-100%, RC-50%","IC-75%, RC-100%"],"selected":"IC-100%, RC-50%"}
+Select All: {"options":["Please Select","Upfront"],"selected":"Please Select"}
+Life Cover: {"options":["Please Select","Upfront"],"selected":"Upfront"}
+
+Full raw JSON dump (all selects on page, not just the 3 above):
+[
+  {"id":"b15-OccupationCode_Dropdown","label":"Occupation code","options":["","AM","AA","A1","A2","B","C","S","U","IC"],"selected":"AA"},
+  {"id":"b15-EmploymentStatus_Dropdown","label":"Employment status","options":["Select one","Employed","Self-Employed","Employed by own company","Other"],"selected":"Select one"},
+  {"id":"b23-b1-Dropdown_Premiums","label":"We Pay Your Premiums","options":["None","30 days","60 days","90 days"],"selected":"None"},
+  {"id":"b23-b1-Dropdown_FlexiRate","label":"Flexi Rate","options":["N/A","2.5%","5.0%","7.5%","10.0%","12.5%","15.0%","17.5%","20.0%","22.5%","25.0%","27.5%","30.0%"],"selected":"2.5%"},
+  {"id":"b23-l2-1662_0-b7-Dropdown1","label":null,"options":["Stepped","Level to 50","Level to 60","Level to 65","Level to 70","Level to 75","Level to 80","Level to 100"],"selected":"Stepped"},
+  {"id":"b23-b14-Dropdown1","label":"Number of Kids","options":["0","1","2","3","4","5","6","7","8","9"],"selected":"0"},
+  {"id":"b25-l4-3829_0-l4-3678_0-PaymentFrequencyDropdown","label":"Payment frequency","options":["Fortnightly","Monthly","Quarterly","Half Yearly","Yearly"],"selected":"Monthly"},
+  {"id":"b25-b18-Dropdown1","label":"Default for Agency (1123)","options":["Upfront","Level 30","Spread 20"],"selected":"Upfront"},
+  {"id":"b25-b18-l3-3678_0-b6-Dropdown2","label":"Select IC/RC","options":["Please Select","IC-100%, RC-50%","IC-75%, RC-100%"],"selected":"IC-100%, RC-50%"},
+  {"id":"b25-b18-l3-3678_0-b8-Dropdown3","label":"Select All","options":["Please Select","Upfront"],"selected":"Please Select"},
+  {"id":"b25-b18-l3-3678_0-l3-3843_0-b10-Dropdown2","label":"Life Cover","options":["Please Select","Upfront"],"selected":"Upfront"}
+]

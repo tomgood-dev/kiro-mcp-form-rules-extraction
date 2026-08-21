@@ -138,7 +138,7 @@ All files are in: `https://github.com/tomgood-dev/kiro-mcp-form-rules-extraction
 
 | Path | Purpose |
 |------|---------|
-| `apps/asteron-quote-apply/tests/ip-check.spec.js` | Network connectivity diagnostic |
+| `apps/asteron-quote-apply/tests/outbound-ip-diagnostic-v1.spec.js` | Network connectivity diagnostic |
 | `apps/asteron-quote-apply/tests/quote-screen/showcase-business-rules.spec.js` | Showcase business rule tests using shared helpers |
 | `apps/asteron-quote-apply/helpers/quote-helpers.js` | Reusable OutSystems interaction helpers |
 | `apps/asteron-quote-apply/docs/changelog.md` | Full changelog of business rules discovered |

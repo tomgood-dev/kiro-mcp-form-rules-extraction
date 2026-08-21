@@ -396,8 +396,8 @@ test-pd-v1.spec.js          — Personal Details rules, version 1
 test-lsc-v1.spec.js         — Lump Sum Cover rules, version 1
 prem-check-v1.spec.js       — Premium/Bundling rules, version 1
 demo-check-v1.spec.js       — Intentional fail demo, version 1
-connection-test.spec.js     — Diagnostic (no version needed)
-ip-check.spec.js            — Diagnostic (no version needed)
+network-whitelist-connectivity-check-v1.spec.js — Diagnostic
+outbound-ip-diagnostic-v1.spec.js               — Diagnostic
 ```
 
 ---
@@ -419,7 +419,7 @@ ip-check.spec.js            — Diagnostic (no version needed)
 
 ## Complete Working Example
 
-See `test-pd-v12.spec.js` (current version — `test-pd-v1.spec.js` is now in `tests/deprecated/`) for a full working test that:
+See `personal-details-age-boundary-rules-v1.spec.js` (current version — earlier `test-pd-*` versions are now in `tests/deprecated/`) for a full working test that:
 1. Validates environment variables
 2. Logs in with polling
 3. Opens a new quote

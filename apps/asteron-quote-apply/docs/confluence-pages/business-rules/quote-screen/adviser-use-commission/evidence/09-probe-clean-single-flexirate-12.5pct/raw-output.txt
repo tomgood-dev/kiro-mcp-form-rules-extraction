@@ -1,0 +1,26 @@
+=== CLEAN SINGLE-FLEXIRATE PROBE — target 12.5% — 2026-08-20T05:54:35.653Z ===
+Adviser Use will be opened EXACTLY ONCE in this session, at 12.5%, never at any other rate.
+Quote priced. Flexi Rate is still at its untouched default (N/A) - NOT opening Adviser Use yet.
+Flexi Rate set to 12.5%. Opening Adviser Use for the first and only time this session.
+
+--- CLEAN result at 12.5% (Adviser Use opened for the first time ever this session) ---
+[
+  {
+    "id": "b25-b18-l3-3644_0-b6-Dropdown2",
+    "label": "Select IC/RC",
+    "options": ["Please Select", "IC-25%, RC-100%", "IC-50%, RC-100%", "IC-75%, RC-0%", "IC-75%, RC-50%"],
+    "selected": "Please Select"
+  },
+  {
+    "id": "b25-b18-l3-3644_0-b8-Dropdown3",
+    "label": "Select All",
+    "options": ["Please Select"],
+    "selected": "Please Select"
+  },
+  {
+    "id": "b25-b18-l3-3644_0-l3-3809_0-b10-Dropdown2",
+    "label": "Life Cover",
+    "options": ["Please Select"],
+    "selected": "Please Select"
+  }
+]

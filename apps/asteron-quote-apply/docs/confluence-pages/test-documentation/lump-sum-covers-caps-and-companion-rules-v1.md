@@ -1,6 +1,6 @@
-# Test: Lump Sum Covers — lsc-both-v11
+# Test: Lump Sum Covers Caps & Companion Rules — lump-sum-covers-caps-and-companion-rules-v1
 
-> **Test file:** `lsc-both-v11.spec.js`
+> **Test file:** `lump-sum-covers-caps-and-companion-rules-v1.spec.js`
 > **Last run:** 2026-08-20 (local Edge headless) — ~11 min
 > **Source:** Reverse-engineering mode (24 assertions total, collapsed to 7 rows below)
 > **Result:** 7/7 passing
@@ -21,6 +21,6 @@
 
 | Rule ID | Why |
 |---|---|
-| — | TPD $250k cap at ANB 17-21 is covered in `test-pd-v12`, not here |
+| — | TPD $250k cap at ANB 17-21 is covered in `personal-details-age-boundary-rules-v1`, not here |
 | LSC-02 | Needlestick's OCC restriction was found obsolete during probing — it now activates for all OCCs; superseded, not a gap |
 | — | Three-way combined cap (TRC + Major Trauma + Cancer simultaneously) not tested — only two-way combos confirmed individually |

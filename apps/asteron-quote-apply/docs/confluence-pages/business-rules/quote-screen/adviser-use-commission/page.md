@@ -2,7 +2,7 @@
 
 > Child of [Quote Screen](../page.md). Rule ID prefix: `ADV-`
 > Source spec: [User Story - Select Default Commission Category](../../../user-stories/User%20Story-%20Select%20Default%20Commission%20Category.md) (Jira ACB-13175)
-> Tested by: `apps/asteron-quote-apply/tests/comm-cat-v1.spec.js` ([test doc](../../test-documentation/comm-cat-v1.md))
+> Tested by: `apps/asteron-quote-apply/tests/commission-category-modal-defaults-and-update-button-v1.spec.js` ([test doc](../../test-documentation/commission-category-modal-defaults-and-update-button-v1.md)) and `commission-category-flexirate-icrc-examples-v1.spec.js` ([test doc](../../test-documentation/commission-category-flexirate-icrc-examples-v1.md)) — originally one 7-part file (`comm-cat-v2.spec.js`), split 2026-08-21 to reduce sustained-session load (see "Retracted findings" below)
 > **This feature is treated as already built** — the source doc's Jira Status field is blank,
 > but per `.kiro/steering/test-expansion-process.md` ("acceptance-criteria mode"), a mismatch
 > here is a candidate defect, not evidence the feature isn't shipped. Every mismatch below is
@@ -17,6 +17,8 @@ Clicking **Adviser Use** on a valid, priced quote opens a **"Commissions"** moda
 
 The Default for Agency setting is **shared across the agency**, not per-quote — changing it affects future quotes agency-wide. Tests must not click its Update button against the shared dev environment without a clear reason to.
 
+**Important methodology note:** the Select IC/RC default depends on which Flexi Rate is selected. Switching Flexi Rate and reopening Adviser Use *within the same quote* can leave a stale selection from the previous Flexi Rate instead of computing a fresh one — this produced two false-positive "defects" this session (see "Retracted findings" below). Always test each distinct Flexi Rate value in its own fresh quote (a "New Quote" navigation within the same login session is sufficient isolation — confirmed via `evidence/10-probe-fresh-quote-isolation/`).
+
 ## Confirmed rules
 
 | Rule ID | Rule |
@@ -27,56 +29,48 @@ The Default for Agency setting is **shared across the agency**, not per-quote �
 | `ADV-04` | When **Flexi Rate = N/A**, the **Select IC/RC** dropdown for a cover has exactly one real option (`IC-100%, RC-100%`) besides "Please Select", and it is **auto-selected** rather than left on "Please Select" (AC14). |
 | `ADV-05` | Selecting the **30% Flexi Rate** displays: *"Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected"* (AC11, exact text confirmed). No "Please select IC/RC" validation appears in this state. |
 | `ADV-06` | At 30% Flexi Rate, the per-cover commission rows (**Select IC/RC**, **Select All**, per-cover dropdown) are **removed from the modal entirely** — only the agency-wide Default for Agency dropdown remains. This matches the doc's "Adviser Use Cover display" note that covers are not shown in this scenario. |
-| `ADV-07` | **Update** button starts **disabled**, and only enables once the Default for Agency selection genuinely differs from the currently-saved value; reverting the selection back to the saved value re-disables it (AC04, AC05, and the spirit of AC09). See "Retracted finding" below — this was initially misreported as broken. |
+| `ADV-07` | **Update** button starts **disabled**, and only enables once the Default for Agency selection genuinely differs from the currently-saved value; reverting the selection back to the saved value re-disables it (AC04, AC05, and the spirit of AC09). See "Retracted findings" below — this was initially misreported as broken. |
+| `ADV-08` | **Example 1 (2.5% Flexi Rate):** Select IC/RC auto-selects `IC-100%, RC-50%` (the documented Upfront default); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/06-probe-example1-category-default/`. |
+| `ADV-09` | **Example 2 (7.5% Flexi Rate):** Select IC/RC auto-selects `IC-75%, RC-100%` (the documented Upfront default), with exactly the 4 documented options. Confirmed via `evidence/08-probe-clean-single-flexirate-7.5pct/` — see "Retracted findings" for why this took two attempts. |
+| `ADV-10` | **Example 3 (15% Flexi Rate):** Select IC/RC auto-selects `IC-50%, RC-50%` (the documented Upfront default); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/07-probe-examples-3-4/`. |
+| `ADV-11` | **Example 4 (12.5% Flexi Rate, multiple UPFRONT IC/RC rates):** Select IC/RC correctly stays on `Please Select` (does NOT auto-select) with exactly the 4 documented options, since multiple valid IC/RC combinations exist for Upfront at this rate — matches the doc's explicit "the adviser must select an option" instruction and the general principle behind AC15. Confirmed via `evidence/09-probe-clean-single-flexirate-12.5pct/` — see "Retracted findings" for why this took two attempts. |
 
-## Discrepancy Evidence Record — genuine, reproduced 3× on separate runs
+## Retracted findings (methodology notes, kept for the record)
 
-#### 7.5% Flexi Rate: Select IC/RC does not default per the user story's own worked example
+Two apparent discrepancies were found this session and both were retracted after further investigation — worth reading in full, not just the conclusion, since each is a caution about testing this specific app.
 
-- **AC / Rule ID:** AC10 / the user story's **"Use Case: Multiple IC/RC Rate" → Example 2** (part of the multi-option IC/RC matrix; AC15 territory)
-- **Verbatim requirement** (from `User Story- Select Default Commission Category.md`, "Example 2 - If the FR selected is 7.50%" table):
-  > "Pick list options | IC-100%, RC-50%; or IC-50%, RC-100%; or IC-75%, RC-100%, or IC-25%, RC-100%"
-  > "Default IC/RC expectation | IC-75%, RC-100% is the Default for UPFRONT for 7.5%. Expect to see this value in the IC/RC field after opening the Adviser Use screen."
-- **Reproduction steps:**
-  1. Log in as `hanno.coetzee+1123@resolutionlife.com.au` at `https://outsystems-dev.asteronlife.co.nz`.
-  2. Open a **New Quote**. Set Age Next Birthday = **35**, Gender = **Male**, Occupation Code = **AA** (dropdown value `1`).
-  3. Activate the **Life** cover, enter Sum Insured = **500000** (via calc-mask: 12× Backspace, then type digits, then Tab). Confirm the quote prices (Total Yearly Premium appears).
-  4. Leave the agency's Default for Agency commission category at its default (**Upfront** — confirmed via `ADV-03`, untouched in this repro).
-  5. Set the **Flexi Rate** dropdown (`select[id*="FlexiRate"]`) to **7.5%**.
-  6. Click **Adviser Use** to open the Commissions modal.
-  7. Read the **Select IC/RC** dropdown for "Personal Insurance - 1" (located by fingerprint: first option `"Please Select"`, remaining options all matching `/^IC-\d+%, RC-\d+%$/`).
-- **Expected result:** Selected value = **`IC-75%, RC-100%`** (per Example 2, for the Upfront agency default).
-- **Actual result** (verbatim, identical across all 3 runs below):
-  ```json
-  {
-    "options": ["Please Select", "IC-100%, RC-50%", "IC-25%, RC-100%", "IC-50%, RC-100%", "IC-75%, RC-100%", "IC-100%, RC-100%"],
-    "selectedIndex": 5,
-    "selectedText": "IC-100%, RC-100%"
-  }
-  ```
-  The option set itself is a near-match to the spec (4 expected options plus an extra `IC-100%, RC-100%`), but the **auto-selected default is wrong** — it lands on `IC-100%, RC-100%` (index 5) instead of `IC-75%, RC-100%`.
-- **Evidence artifacts** (in `evidence/` next to this page):
-  - `finding-02-7.5pct-icrc-default-mismatch.png` — screenshot from `apps/asteron-quote-apply/probes/probe-commission-evidence.js` (run 2)
-  - `finding-02-test-run-failure-screenshot.png` — Playwright's own failure screenshot from running the real test file, `comm-cat-v1.spec.js`, Part 5 (run 3 — closest to how this will run in the OutSystems Test Console)
-  - `raw-probe-output-run2.json` — raw JSON dump from run 2
-- **Environment:** `https://outsystems-dev.asteronlife.co.nz`, account `hanno.coetzee+1123@resolutionlife.com.au`, observed 2026-08-20.
-- **Reproducibility:** Confirmed **3 times** on 3 separate script executions (`apps/asteron-quote-apply/probes/probe-commission-category.js`, `apps/asteron-quote-apply/probes/probe-commission-evidence.js`, and `comm-cat-v1.spec.js` Part 5 via the real Playwright Test runner). Identical result every time — no variance observed.
-- **Test encoding:** `comm-cat-v1.spec.js`, Part 5 ("7.5% FLEXI RATE -> IC/RC DEFAULT PER USER STORY EXAMPLE 2"), asserts the spec's expected value (`IC-75%, RC-100%`) and currently fails with exactly the actual value shown above. This assertion will pass automatically once the default-selection logic is corrected — no test change needed when it ships.
+### Update button (mouse.wheel() artifact)
 
-## Retracted finding — Update button (methodology note, kept for the record)
+An earlier probe reported the **Update** button as already enabled on modal open, before any change — apparently contradicting AC04/AC05. A deeper, controlled re-investigation (4 further runs — timing samples with zero interaction, and a clean re-test using only Playwright's real `selectOption()` API) found this was a **false positive**, most likely caused by the original probe's own `page.mouse.wheel(0, 400)` call (used just to scroll a screenshot into view) — plausibly an OS/browser quirk where a wheel event over a focused `<select>` silently changes its value, which the app's reactive binding then treated as a genuine user change. `ADV-07` reflects the corrected, confirmed conclusion. Full trail: `evidence/update-button-investigation.txt` (Part 1) and `evidence/01` through `evidence/04`.
 
-An earlier probe (`apps/asteron-quote-apply/probes/probe-commission-category.js`) reported the **Update** button as already enabled on modal open, before any change — apparently contradicting AC04/AC05. On this session's instruction to document discrepancies to defect-report quality, a deeper, controlled re-investigation was done (4 further runs — timing samples with zero interaction, and a clean re-test using only Playwright's real `selectOption()` API). Full raw output: `evidence/update-button-investigation-raw-output.txt`.
+**Lesson:** avoid `page.mouse.wheel()` (or any raw scroll) near `<select>` elements when probing this app — prefer `locator.scrollIntoViewIfNeeded()`.
 
-**Conclusion: this was a false positive, not a real defect.** The original probe's own `page.mouse.wheel(0, 400)` call (used just to scroll a screenshot into view) is the suspected contaminant — most likely an OS/browser quirk where a wheel event over a focused `<select>` silently changes its value, which the app's reactive binding then treated as a genuine user change. A clean re-run with zero interaction after opening the modal showed the button staying disabled for 12+ seconds with nothing touched, and a re-run using only real `selectOption()` calls confirmed the full expected sequence: disabled by default → enabled after a real change → disabled again after reverting to the saved value. `ADV-07` above reflects the corrected, confirmed conclusion.
+### 7.5% and 12.5% Flexi Rate IC/RC defaults (same-quote carryover artifact)
 
-**Lesson for future probes against this app:** avoid `page.mouse.wheel()` (or any raw scroll) while a `<select>` might be under the cursor — it can silently mutate the select's value and produce a false reading. Prefer `locator.scrollIntoViewIfNeeded()` over `page.mouse.wheel()` when framing a screenshot.
+The 7.5% Flexi Rate default was reported as a mismatch (`IC-100%, RC-100%` observed vs. `IC-75%, RC-100%` expected) and reproduced identically on 3 separate script runs, including the actual `comm-cat-v1.spec.js` test file — this looked like solid, independently-confirmed evidence of a real defect. It wasn't. All 3 runs had opened the Adviser Use modal at Flexi Rate N/A (whose correct default genuinely is `IC-100%, RC-100%`) earlier in the *same quote/session* before switching to 7.5% and reopening the modal — none were actually independent. This surfaced when testing Example 4 (12.5%) immediately after Example 3 (15%) in one script produced an equally wrong result (Example 3's own correct default leaking into Example 4's reading), which prompted a fully clean re-test: fresh quote, Flexi Rate set to the target value *before* Adviser Use is ever opened. Both 7.5% and 12.5% then matched the user story exactly. `ADV-09` and `ADV-11` reflect the corrected, confirmed conclusions. Full trail: `evidence/update-button-investigation.txt` (Part 2) and `evidence/05` through `evidence/10`.
+
+**Lesson:** when a component's default depends on another field's current value, test each distinct value in its own fresh quote — switching the field and reopening the same component instance within one quote is not sufficient isolation, even with zero interaction-API mistakes. This is now a mandatory rule in `.kiro/steering/test-expansion-process.md` ("Stateful-component carryover across a driving field's value").
 
 ## Deferred (not yet investigated — explicitly, not silently skipped)
 
 | AC(s) | Why deferred |
 |---|---|
+| AC06, AC07, AC08 | Save/persist flow for the agency-wide default — requires actually clicking Update, which mutates a setting shared with other users of this dev environment. Not attempted without a dedicated test account/agency. |
 | AC09 | Partially covered by `ADV-07`'s revert-to-saved-value behavior; the exact "no changes made across a session" first-open case beyond first-time-ever-configured is not separately isolated. |
-| AC12, AC13, AC15–AC19 | Rest of the multi-option IC/RC matrix (Examples 1, 3, 4 in the source doc) — each is its own persona/Flexi-Rate/commission-category combination and needs the same reproduce-3-times rigor as the 7.5% case above before being encoded. |
-| AC20–AC25 | Cross-quote persistence (agency default changes must not retroactively affect saved quotes) — requires saving two separate quotes and reopening them, not yet attempted. |
+| AC10 (remainder), AC12, AC13, AC15–AC19 | Rest of the multi-option IC/RC matrix (the 9 non-named-example Flexi Rate values, the "no Spread 20 option" validation scenarios, the enabled/disabled cascade of category pick lists) — each needs the same fresh-quote-per-value rigor confirmed above. AC12/AC13 additionally require Spread 20 as the actual agency default, which (per the investigation above) only takes effect once Update is genuinely clicked — same shared-state consideration as AC06-08. |
+| AC18 | Save Selected IC/RC Option — requires actually saving a quote (not just an in-memory Illustration), persisting real data in the shared dev environment. |
+| AC20–AC25 | Cross-quote persistence (agency default changes must not retroactively affect saved quotes) — requires saving two separate quotes and reopening them, plus the same Update-button shared-state consideration as AC06-08. |
 | AC26 | Data integrity after deployment — not testable pre-deployment by definition. |
 | AC27 | STP / LIFE400 `createPolicy` payload — requires backend/payload inspection, out of scope for UI-only Playwright tests. |
+
+## Environment finding: sustained session load (2026-08-21)
+
+Not a defect in the app or the test logic — a discovered limit of this shared dev environment worth knowing before writing future tests that open many quotes in one session.
+
+`comm-cat-v2.spec.js` (the original single-file version, opening 7 fresh quotes in one login session per the fresh-quote-per-Flexi-Rate methodology above) hit two distinct instability events across several runs: a 15-minute hang on the very first action of the 7th fresh quote in one run, and a full forced logout back to the login page mid-test on the 3rd fresh quote in another run. Neither correlated with a specific quote number, Flexi Rate value, or account — both point at cumulative session load (many "New Quote" cycles in one continuous session) as the trigger, something no other test in this suite has done before (every other test reuses one quote throughout).
+
+Separately, session conflicts ("Credentials rejected or session conflict") reliably followed any run that didn't reach its own clean sign-out (a timeout or crash leaves the server-side session held) — expected per the platform's documented single-session-per-account behavior, not new instability.
+
+**Fix:** split into `commission-category-modal-defaults-and-update-button-v1.spec.js` (Parts 1-4, 4 fresh quotes) and `commission-category-flexirate-icrc-examples-v1.spec.js` (Parts 5-7, 3 fresh quotes), each with its own login. Both ran clean end-to-end with zero retries needed after the split. Also fixed in the same pass: `openFreshQuote()`'s "New Quote" URL capture only handled an absolute `window.open()` URL — a different test account returned a relative path, which `page.goto()` rejected; now normalized to prepend `BASE_URL` when the captured URL isn't already absolute.
+
+**Rule of thumb for future tests:** if a test needs more than ~4-5 fresh quotes to cover its scenarios, split it across multiple files/sessions rather than one long one.

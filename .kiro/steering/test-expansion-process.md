@@ -29,8 +29,8 @@ catch it.
   target** — same ambient-focus risk. Always click/focus the exact target locator first.
 - **Raw `element.value = x; element.dispatchEvent(...)`** to change a select/input — avoid when
   `locator.selectOption()` / `locator.fill()` can do the same thing natively. When it genuinely
-  can't be avoided (existing precedent: `dc-v5.spec.js`, `lsc-both-v11.spec.js`,
-  `test-pd-v12.spec.js`), it MUST be paired with the self-verifying rule below.
+  can't be avoided (existing precedent: `disability-covers-formulas-and-caps-v1.spec.js`, `lump-sum-covers-caps-and-companion-rules-v1.spec.js`,
+  `personal-details-age-boundary-rules-v1.spec.js`), it MUST be paired with the self-verifying rule below.
 
 ### The self-verifying interaction rule (mandatory)
 
@@ -40,11 +40,45 @@ DOM attribute (`.disabled`, `.value`, `.selectedIndex`) immediately after an int
 that alone as proof it landed — a passive read can't distinguish "the framework's reactive state
 really updated" from "the raw DOM property changed but nothing downstream noticed."
 
-- **Good** (existing precedent, `dc-v5.spec.js`): switch a dropdown via raw `dispatchEvent`, then
+- **Good** (existing precedent, `disability-covers-formulas-and-caps-v1.spec.js`): switch a dropdown via raw `dispatchEvent`, then
   assert a *server-recalculated* value (a benefit cap, an error message) that could only be
   correct if the switch really happened.
 - **Bad** (what caused the 2026-08-20 false positive): read a button's `.disabled` boolean right
   after an interaction, with nothing forcing proof the interaction actually registered.
+
+### Stateful-component carryover across a driving field's value (mandatory fresh session per value)
+
+A second, distinct contamination vector found 2026-08-20 (in the same investigation as above):
+when a component's displayed default depends on another field's current value (e.g. an IC/RC
+pick list whose default depends on which Flexi Rate is selected), simply changing the driving
+field and reopening the SAME component instance within the SAME quote/session can leave a stale
+selection from the previous value instead of computing a fresh one — with no interaction-API
+mistake involved at all (no `mouse.wheel()`, no raw `dispatchEvent`, just switching a dropdown
+and reopening a modal, both via real Playwright APIs).
+
+**Rule: test each distinct value of the driving field in its own fresh quote/session, not by
+switching the field and reopening the same component instance.** A fresh "New Quote" navigation
+was confirmed sufficient (does not require a whole new browser/login session) — see
+`adviser-use-commission/evidence/10-probe-fresh-quote-isolation/`. A "genuine discrepancy" found
+this session (a 7.5%/12.5% IC/RC default mismatch, reproduced on 3 separate script runs) turned
+out to be exactly this artifact, not a real defect, once re-tested with a fresh quote per value
+— a *different* root cause from the mouse.wheel()-caused false positive above, but the same
+lesson: verify before writing up.
+
+### Sustained session load — split tests that need many fresh quotes
+
+A single test opening many fresh quotes in one continuous login session (needed to satisfy the
+fresh-quote-per-value rule above) can itself trigger environment instability distinct from
+anything covered so far — observed 2026-08-21: a 15-minute hang on the first action of the 7th
+fresh quote in one run, and a full forced logout back to the login page mid-test on the 3rd fresh
+quote in a different run. Neither correlated with a specific quote number or value — the trigger
+is cumulative session load, not a specific step. No other test in this suite reuses a fresh quote
+this many times per session, so this had never surfaced before. **Rule of thumb: if a test needs
+more than ~4-5 fresh quotes to cover its scenarios, split it across multiple files/sessions**
+(each with its own login) rather than one long one — see `commission-category-modal-defaults-and-update-button-v1.spec.js` /
+`commission-category-flexirate-icrc-examples-v1.spec.js` for the pattern. This is separate from the ordinary "session conflict on
+the next run" issue below, which is just the platform's documented single-session-per-account
+behavior after a run that didn't reach its own clean sign-out.
 
 ### When a probe finds something "surprising" — verify before writing it up
 
@@ -101,16 +135,48 @@ which stays a terse matrix with a short inline Notes phrase and no links out (se
 - **Actual result:** verbatim string, or the raw DOM/JSON dump observed (not a paraphrase —
   e.g. the literal options array and selectedIndex, not "it showed the wrong thing")
 - **Evidence artifact(s):** relative path(s) to a retained screenshot and/or the raw probe
-  script output that produced this finding. Store screenshots in an `evidence/` folder next
-  to the business-rules page.md that documents the feature (e.g.
-  `.../adviser-use-commission/evidence/`). Never delete probe screenshots or raw output
-  once they've supported a finding.
+  script output that produced this finding — see "Evidence folder structure" below for where
+  these live. Never delete probe screenshots or raw output once they've supported a finding.
 - **Environment:** base URL, account/login used, date observed
 - **Reproducibility:** confirmed once vs. reproduced N times, and any variance noticed
   between runs
 - **Test encoding:** which assertion in which `.spec.js` currently encodes this as an
   expected-to-fail check (per outcome #2 above), or "not yet encoded — reason: ..."
 ```
+
+### Evidence folder structure — one subfolder per run, never a flat dump
+
+A flat `evidence/` folder with a pile of same-named-pattern screenshots becomes unreadable
+within a few probes — you can't tell which image came from which run without cross-referencing
+timestamps by hand. Instead:
+
+```
+<feature>/evidence/
+  01-probe-<script-name>/          <- zero-padded sequence number = execution order
+    notes.md                        <- 2-5 lines: date/time, command run, one-line result
+    <screenshot>.png                 (if any were taken)
+    <raw-output>.json or .txt        (if the script wrote one, or paste captured stdout)
+  02-probe-<other-script>/
+    notes.md
+    ...
+  03-spec-run-<test-file>/          <- for evidence from an actual .spec.js execution,
+    notes.md                           not a throwaway probe - label it "spec-run-" not "probe-"
+    test-failed-1.png
+```
+
+- **One folder per execution**, not per script — if `probe-foo.js` is run 3 times, that's
+  `01-probe-foo/`, `04-probe-foo/` (etc., wherever it falls in sequence), not one shared folder.
+- **`notes.md` is mandatory even if there's no screenshot** — a console-only run still gets a
+  folder with its captured output pasted into a `.txt`/`.json` file and a `notes.md` explaining
+  what it was checking and what it found. This is what makes a later reader able to tell "run 7
+  is the one that disproved run 2" without re-deriving it from timestamps.
+- **Cross-run investigation write-ups** (a narrative that synthesizes several runs into one
+  story, like retracting an earlier finding) go in the `evidence/` folder ROOT as their own
+  named file (e.g. `evidence/update-button-investigation.md`), not inside any single run's
+  folder — they're a summary of many runs, not the output of one.
+- Renumber is not required when old runs get superseded — leave gaps/retracted runs in place
+  with their real sequence number; the point is reconstructing what happened in order, not a
+  clean final list.
 
 ### Test Console constraints (still apply in this mode)
 
@@ -145,6 +211,11 @@ fixed — order matters (see outcome #2 above).
 - [ ] No banned interaction patterns used (`page.mouse.wheel`/`page.mouse.move`, unscoped
       `page.keyboard.press`, raw `dispatchEvent` without a self-verifying follow-up assertion —
       see "Probe & Interaction Safety")
+- [ ] Any test/probe of a component whose default depends on another field's value uses a fresh
+      quote per distinct value, not a reused quote with the field switched (see "Stateful-component
+      carryover")
+- [ ] Evidence stored as one numbered subfolder per run with a `notes.md`, not a flat dump — see
+      "Evidence folder structure"
 - [ ] Every "surprising" result was re-verified with a different minimal script (and a
       no-interaction timing sample if time-dependence was plausible) before being written up
 - [ ] `exhaustive-analysis.md` updated if new GAP/finding
@@ -286,10 +357,10 @@ Commit message should name the test file, assertion count, and any doc correctio
 
 ## Remaining Tests Needing This Process
 
-Both items previously listed here are done: `pol-kid-v1` was superseded by `pol-kid-v3`
-(multi-persona POL-05, SI tiers, multiple kids all present — see `pol-kid-v3.md`), and `dc-v3`
-was superseded by `dc-v5` (Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type
-all present — see `dc-v5.md`). Nothing currently queued. When a new gap is identified, list it
+Both items previously listed here are done: `pol-kid-v1` was superseded by `policy-structure-and-kids-cover-rules-v1`
+(multi-persona POL-05, SI tiers, multiple kids all present — see `policy-structure-and-kids-cover-rules-v1.md`), and `dc-v3`
+was superseded by `disability-covers-formulas-and-caps-v1` (Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type
+all present — see `disability-covers-formulas-and-caps-v1.md`). Nothing currently queued. When a new gap is identified, list it
 here with the test file and what's missing, and remove the row once closed — don't let entries
 go stale (this table itself was out of date for a while before being caught in a documentation audit).
 

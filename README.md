@@ -175,12 +175,12 @@ older versions referenced by number are in `apps/asteron-quote-apply/tests/depre
 
 | File | Rules Tested |
 |------|-------------|
-| `test-pd-v12` | Age boundaries (11–75), Life $50k cap under-17, TPD min age, TPD $250k cap (17-21), Acd Death max age 70 |
-| `lsc-both-v11` | Specific Injury companion requirement, Major Trauma 300% cap, $2M combined ceiling, TPD $5M max, Acd Death $1M max |
-| `bundling-v12` | Bundling "None"/15%/20% thresholds, Trauma $25k minimum, uncommitted covers don't count |
-| `dc-v5` | M&L/IP/Workability formulas, Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type |
-| `pol-kid-v3` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
-| `comm-cat-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
+| `personal-details-age-boundary-rules-v1` | Age boundaries (11–75), Life $50k cap under-17, TPD min age, TPD $250k cap (17-21), Acd Death max age 70 |
+| `lump-sum-covers-caps-and-companion-rules-v1` | Specific Injury companion requirement, Major Trauma 300% cap, $2M combined ceiling, TPD $5M max, Acd Death $1M max |
+| `premium-bundling-discount-thresholds-v1` | Bundling "None"/15%/20% thresholds, Trauma $25k minimum, uncommitted covers don't count |
+| `disability-covers-formulas-and-caps-v1` | M&L/IP/Workability formulas, Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type |
+| `policy-structure-and-kids-cover-rules-v1` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
+| `commission-category-modal-defaults-and-update-button-v1` / `commission-category-flexirate-icrc-examples-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
 
 These tests run against the live dev environment and pass consistently (~1-4 min each).
 
