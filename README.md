@@ -180,7 +180,7 @@ older versions referenced by number are in `apps/asteron-quote-apply/tests/depre
 | `premium-bundling-discount-thresholds-v1` | Bundling "None"/15%/20% thresholds, Trauma $25k minimum, uncommitted covers don't count |
 | `disability-covers-formulas-and-caps-v1` | M&L/IP/Workability formulas, Agreed Value + Loss of Earnings variants, Monthly Mortgage cover type |
 | `policy-structure-and-kids-cover-rules-v1` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
-| `commission-category-modal-defaults-and-update-button-v1` / `commission-category-flexirate-icrc-examples-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
+| `select-default-commission-category-part-1-v1` / `select-default-commission-category-part-2-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
 
 These tests run against the live dev environment and pass consistently (~1-4 min each).
 

@@ -25,7 +25,7 @@ authoring process.
 
 | File | Purpose |
 |------|---------|
-| `tests/*.spec.js` (e.g. `personal-details-age-boundary-rules-v1`, `lump-sum-covers-caps-and-companion-rules-v1`, `disability-covers-formulas-and-caps-v1`, `premium-bundling-discount-thresholds-v1`, `policy-structure-and-kids-cover-rules-v1`, `commission-category-modal-defaults-and-update-button-v1`, `commission-category-flexirate-icrc-examples-v1`) | Current, live full-coverage business rule tests |
+| `tests/*.spec.js` (e.g. `personal-details-age-boundary-rules-v1`, `lump-sum-covers-caps-and-companion-rules-v1`, `disability-covers-formulas-and-caps-v1`, `premium-bundling-discount-thresholds-v1`, `policy-structure-and-kids-cover-rules-v1`, `select-default-commission-category-part-1-v1`, `select-default-commission-category-part-2-v1`) | Current, live full-coverage business rule tests |
 | `tests/outbound-ip-diagnostic-v1.spec.js`, `tests/network-whitelist-connectivity-check-v1.spec.js`, `tests/demo-intentional-fail-smoke-test-v1.spec.js` | Connectivity diagnostics / demo smoke test |
 | `tests/deprecated/` | Superseded versions, kept for history |
 | `tests/quote-screen/*.spec.js` | Original per-topic modular suite |

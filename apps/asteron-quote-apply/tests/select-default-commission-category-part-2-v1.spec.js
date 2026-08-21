@@ -1,5 +1,5 @@
 /**
- * Commission Category — Modal Defaults & Update Button (Parts 1-4)
+ * Select Default Commission Category — Part 2 (Parts 5-7: Flexi Rate IC/RC examples)
  * Source: docs/user-stories/User Story- Select Default Commission Category.md
  * Business rules: ../docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md
  * ACB-13175 is treated as already-built per this session's acceptance-criteria-mode
@@ -8,15 +8,12 @@
  *
  * Named/renamed 2026-08-21. History: originally comm-cat-v1.spec.js (single quote,
  * reused across Flexi Rate switches - caused carryover false positives), then
- * comm-cat-v2.spec.js: a single 7-part file opening a fresh quote per part (needed to
- * avoid the Select IC/RC carryover bug - see below), which sustained one login session
- * through 7 "New Quote" cycles. That's more sustained load than any other test in this
- * suite puts on one session, and it correlated with two real instability events (a
- * 15-minute hang on the 7th fresh quote in one run; a full forced logout mid-test on
- * the 3rd fresh quote in another). Split into two files - this one (Parts 1-4) and
- * commission-category-flexirate-icrc-examples-v1.spec.js (Parts 5-7), each with its own
- * login - which halved the sustained load per session and resolved both instability
- * events; both files ran clean end-to-end with zero retries after the split.
+ * comm-cat-v2.spec.js (fresh quote per part, but all 7 parts in one session - caused
+ * two instability events from sustained session load), then split into this file
+ * (Parts 5-7) and select-default-commission-category-part-1-v1.spec.js
+ * (Parts 1-4), each with its own login. See that file's header for the full
+ * sustained-session-load rationale. Both files were later renamed from topic-based
+ * names to this story-based part-N scheme.
  *
  * CRITICAL STRUCTURAL DIFFERENCE FROM v1: every Flexi-Rate-dependent check below opens
  * its OWN fresh quote (via "New Quote" navigation, same login session). v1 reused a
@@ -29,16 +26,14 @@
  *
  * ALL CHECKS BELOW ARE CONFIRMED PASSING — every one was re-verified with a fresh quote
  * per Flexi Rate value before being encoded. Full evidence: business-rules page above.
- *   AC01/AC02/AC03 - Default for Agency label, options (Upfront/Level 30/Spread 20 only,
- *          no Nil Commission), first-time default = Upfront
- *   AC14  - Flexi Rate N/A: Select IC/RC has a single real option, auto-selected
- *   AC11  - 30% Flexi Rate: exact "Nil Comm" message; per-cover rows hidden from modal
- *   AC04/AC05 - Update button disabled by default, enabled after a real change,
- *          disabled again after reverting (an earlier probe's "always enabled" reading
- *          was a false positive from a stray mouse.wheel() call — see business-rules page)
- *   ADV-08 (Example 1, 2.5%)  - Select IC/RC = IC-100%,RC-50%; Life Cover row = Upfront
- *
- * See commission-category-flexirate-icrc-examples-v1.spec.js for Examples 2/3/4 (Parts 5-7).
+ *   ADV-09 (AC10, AC14 — Example 2, 7.5%) - Select IC/RC = IC-75%,RC-100% (v1 reported
+ *          IC-100%,RC-100% here — that was the carryover artifact described above, retracted)
+ *   ADV-10 (AC10, AC14 — Example 3, 15%) - Select IC/RC = IC-50%,RC-50%; Life Cover row = Upfront
+ *   ADV-11 (AC10, AC15 — Example 4, 12.5%, multiple valid UPFRONT IC/RC options) - Select
+ *          IC/RC correctly stays on "Please Select" (does NOT auto-select, since more than
+ *          one valid option exists) with exactly 4 documented options (v1 reported a 5th
+ *          phantom option auto-selected — also the carryover artifact, retracted). This is
+ *          the only one of the four named examples that demonstrates AC15 rather than AC14.
  *
  * Still out of scope, explicitly deferred not silently skipped (see business-rules page
  * "Deferred" table for why each one):
@@ -51,7 +46,7 @@ const { test } = require('@playwright/test');
 
 test.setTimeout(900000);
 
-test('Commission category v2a: Default for Agency, 30% Nil Commission, Update button, Example 1', async ({ page }) => {
+test('Select Default Commission Category - Part 2: Examples 2, 3, 4', async ({ page }) => {
   try {
     const BASE_URL = (process.env.BASE_URL || '').trim();
     const LOGIN_EMAIL = (process.env.LOGIN_EMAIL || '').trim();
@@ -81,7 +76,7 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
     if (!page.url().includes('AdviserCentral') && !page.url().includes('QuoteAndApply'))
       throw new Error('FAILED [Login]: Did not reach dashboard. Possible concurrent session. URL: ' + page.url());
 
-    console.log('[comm-cat-modal] Login OK, ' + new Date().toISOString());
+    console.log('[comm-cat-part2] Login OK, ' + new Date().toISOString());
 
     // === HELPERS ===
     async function waitSettle(ms) {
@@ -92,13 +87,13 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
     // Opens a genuinely fresh quote ("New Quote" navigation) - confirmed sufficient
     // isolation for the Select IC/RC carryover bug, without needing a new login session.
     async function openFreshQuote() {
-      console.log('[comm-cat-modal]   openFreshQuote: navigating to quote list...');
+      console.log('[comm-cat-part2]   openFreshQuote: navigating to quote list...');
       await page.goto(BASE_URL + '/QuoteAndApply/', { waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForTimeout(3000);
       if (page.url().includes('Login') || page.url().includes('_error.html'))
         throw new Error('FAILED [Session]: Redirected to login/error after navigation. Likely concurrent session. URL: ' + page.url());
 
-      console.log('[comm-cat-modal]   openFreshQuote: clicking New Quote...');
+      console.log('[comm-cat-part2]   openFreshQuote: clicking New Quote...');
       var quoteUrl = await page.evaluate(function() {
         return new Promise(function(resolve) {
           window.open = function(url) { resolve(url); };
@@ -147,7 +142,7 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
           return btn ? btn.className.indexOf('button-group-selected-item') !== -1 : false;
         }, gender);
         if (selected) return;
-        console.log('[comm-cat-modal]   setGender: attempt ' + attempt + ' did not register, retrying...');
+        console.log('[comm-cat-part2]   setGender: attempt ' + attempt + ' did not register, retrying...');
       }
       throw new Error('FAILED [setGender]: clicked "' + gender + '" 3 times but it is never selected afterward - click is not registering');
     }
@@ -190,22 +185,22 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
 
     // Fresh quote + minimum persona (Age 35, Male, OCC AA) + Life $500,000, priced.
     async function freshPricedQuote() {
-      console.log('[comm-cat-modal]   freshPricedQuote: opening new quote...');
+      console.log('[comm-cat-part2]   freshPricedQuote: opening new quote...');
       await openFreshQuote();
-      console.log('[comm-cat-modal]   freshPricedQuote: setting age...');
+      console.log('[comm-cat-part2]   freshPricedQuote: setting age...');
       await setAge('35');
-      console.log('[comm-cat-modal]   freshPricedQuote: setting gender...');
+      console.log('[comm-cat-part2]   freshPricedQuote: setting gender...');
       await setGender('Male');
-      console.log('[comm-cat-modal]   freshPricedQuote: setting occupation code...');
+      console.log('[comm-cat-part2]   freshPricedQuote: setting occupation code...');
       await setOCC('1'); // AA
-      console.log('[comm-cat-modal]   freshPricedQuote: activating Life cover...');
+      console.log('[comm-cat-part2]   freshPricedQuote: activating Life cover...');
       await activateCover('Life');
-      console.log('[comm-cat-modal]   freshPricedQuote: entering Sum Insured...');
+      console.log('[comm-cat-part2]   freshPricedQuote: entering Sum Insured...');
       var siInput = page.locator('input[id*="SumInsured"]').first();
       await enterCalcMask(siInput, '500000');
       var premium = await getTotalYearlyPremium();
       if (!premium) throw new Error('FAILED [Precondition]: Quote did not price - Total Yearly Premium not found after Life cover + Sum Insured 500000');
-      console.log('[comm-cat-modal]   freshPricedQuote: priced OK (' + premium.replace(/\s+/g, ' ').trim() + ')');
+      console.log('[comm-cat-part2]   freshPricedQuote: priced OK (' + premium.replace(/\s+/g, ' ').trim() + ')');
     }
 
     async function openAdviserUse() {
@@ -229,20 +224,6 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
     async function setFlexiRate(label) {
       await page.locator('select[id*="FlexiRate"]').first().selectOption({ label: label });
       await waitSettle(2000);
-    }
-
-    // Fingerprint: the ONE select whose options are exactly Upfront/Level 30/Spread 20
-    // with no "Please Select" prefix - this is the agency-wide default dropdown.
-    async function getDefaultAgencySelectInfo() {
-      return await page.evaluate(function() {
-        var sels = Array.from(document.querySelectorAll('select'));
-        var match = sels.find(function(s) {
-          var opts = Array.from(s.options).map(function(o) { return o.text; });
-          return opts.length === 3 && opts.indexOf('Upfront') !== -1 && opts.indexOf('Level 30') !== -1 && opts.indexOf('Spread 20') !== -1;
-        });
-        if (!match) return null;
-        return { id: match.id, options: Array.from(match.options).map(function(o) { return o.text; }), selectedIndex: match.selectedIndex };
-      });
     }
 
     // Fingerprint: select whose first option is "Please Select" and remaining options
@@ -284,27 +265,6 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
       });
     }
 
-    async function getDefaultAgencyLabelText() {
-      return await page.evaluate(function() {
-        var idx = document.body.innerText.indexOf('Default for Agency');
-        return idx === -1 ? null : document.body.innerText.slice(idx, idx + 100);
-      });
-    }
-
-    async function getUpdateButtonInfo() {
-      return await page.evaluate(function() {
-        var b = Array.from(document.querySelectorAll('button')).find(function(x) { return x.innerText.trim() === 'Update'; });
-        return b ? { disabled: b.disabled } : null;
-      });
-    }
-
-    async function getVisibleErrors() {
-      return await page.evaluate(function() {
-        var nodes = Array.from(document.querySelectorAll('[class*="error"], [class*="Error"], [class*="background-error"]'));
-        return nodes.filter(function(n) { return n.innerText && n.getBoundingClientRect().width > 0; }).map(function(n) { return n.innerText.trim(); });
-      });
-    }
-
     function assertArraysEqual(actual, expected, ruleId, context) {
       var a = JSON.stringify(actual);
       var e = JSON.stringify(expected);
@@ -315,120 +275,67 @@ test('Commission category v2a: Default for Agency, 30% Nil Commission, Update bu
       if (actual !== expected) throw new Error('FAILED [' + ruleId + ' ' + context + ']: Expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
     }
 
-    function assertContains(haystack, needle, ruleId, context) {
-      if (!haystack || haystack.indexOf(needle) === -1) throw new Error('FAILED [' + ruleId + ' ' + context + ']: Expected text containing "' + needle + '", got: ' + JSON.stringify(haystack));
-    }
-
     // ════════════════════════════════════════════════════════════════
-    // PART 1: DEFAULT FOR AGENCY DISPLAY (AC01, AC02, AC03) + N/A AUTO-SELECT (AC14)
-    // Fresh quote #1. Flexi Rate is untouched (N/A) - both checks read the SAME
-    // untouched state, no Flexi Rate switch happens between them.
+    // PART 5: EXAMPLE 2 - FLEXI RATE 7.5% (ADV-09)
+    // Fresh quote #1 (of this file). v1 got this wrong (IC-100%,RC-100% observed)
+    // because it reused a quote already opened at Flexi Rate N/A - see file header.
     // ════════════════════════════════════════════════════════════════
 
-    console.log('[comm-cat-modal] PART 1 starting: Default for Agency display + AC14 (N/A auto-select)');
+    console.log('[comm-cat-part2] PART 5 starting: Example 2, Flexi Rate 7.5%');
     await freshPricedQuote();
+    await setFlexiRate('7.5%');
     await openAdviserUse();
 
-    var labelText = await getDefaultAgencyLabelText();
-    assertContains(labelText, 'Default for Agency (', 'AC01', 'label visible');
-    if (!/Default for Agency \(\d/.test(labelText || ''))
-      throw new Error('FAILED [AC01 label visible]: Expected a real agency number after "Default for Agency (", got: ' + labelText);
-
-    var defaultAgency = await getDefaultAgencySelectInfo();
-    if (!defaultAgency) throw new Error('FAILED [AC02]: Default-for-Agency dropdown not found');
-    assertArraysEqual(defaultAgency.options, ['Upfront', 'Level 30', 'Spread 20'], 'AC02', 'available commission categories');
-    assertEquals(defaultAgency.selectedIndex, 0, 'AC03', 'first-time default is Upfront');
-
-    var icRcAtNA = await getIcRcSelectInfo();
-    if (!icRcAtNA) throw new Error('FAILED [AC14]: Select IC/RC dropdown not found while Flexi Rate = N/A');
-    assertArraysEqual(icRcAtNA.options, ['Please Select', 'IC-100%, RC-100%'], 'AC14', 'Flexi Rate N/A has a single real IC/RC option');
-    if (icRcAtNA.selectedIndex === 0)
-      throw new Error('FAILED [AC14]: Select IC/RC should auto-select the single available option "IC-100%, RC-100%", but is still on "Please Select"');
+    var icRc75 = await getIcRcSelectInfo();
+    if (!icRc75) throw new Error('FAILED [ADV-09]: Select IC/RC dropdown not found at 7.5% Flexi Rate');
+    assertArraysEqual(icRc75.options, ['Please Select', 'IC-100%, RC-50%', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-100%'], 'ADV-09', '7.5% Flexi Rate IC/RC pick list (Example 2)');
+    assertEquals(icRc75.options[icRc75.selectedIndex], 'IC-75%, RC-100%', 'ADV-09', '7.5% Flexi Rate default IC/RC for Upfront (Example 2)');
 
     await closeAdviserUse();
-    console.log('[comm-cat-modal] PART 1 PASSED');
+    console.log('[comm-cat-part2] PART 5 PASSED');
 
     // ════════════════════════════════════════════════════════════════
-    // PART 2: 30% FLEXI RATE FORCES NIL COMMISSION (AC11)
-    // Fresh quote #2.
+    // PART 6: EXAMPLE 3 - FLEXI RATE 15% (ADV-10)
+    // Fresh quote #2 (of this file).
     // ════════════════════════════════════════════════════════════════
 
-    console.log('[comm-cat-modal] PART 2 starting: 30% Flexi Rate forces Nil Commission');
+    console.log('[comm-cat-part2] PART 6 starting: Example 3, Flexi Rate 15%');
     await freshPricedQuote();
-    await setFlexiRate('30.0%');
-
-    // AC11's trigger is literally "When the user navigates to the Adviser Use page" (and
-    // the narrative section says "display this message in the Adviser Use page should the
-    // adviser enter the page") - the message is scoped to opening Adviser Use, not to
-    // selecting the Flexi Rate on the main quote page. Open it before checking.
+    await setFlexiRate('15.0%');
     await openAdviserUse();
 
-    var bodyTextAt30 = await page.evaluate(function() { return document.body.innerText; });
-    assertContains(bodyTextAt30, 'Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected', 'AC11', '30% Flexi Rate message');
+    var icRc15 = await getIcRcSelectInfo();
+    if (!icRc15) throw new Error('FAILED [ADV-10]: Select IC/RC dropdown not found at 15% Flexi Rate');
+    assertArraysEqual(icRc15.options, ['Please Select', 'IC-0%, RC-100%', 'IC-100%, RC-0%', 'IC-50%, RC-50%'], 'ADV-10', '15% Flexi Rate IC/RC pick list (Example 3)');
+    assertEquals(icRc15.options[icRc15.selectedIndex], 'IC-50%, RC-50%', 'ADV-10', '15% Flexi Rate default IC/RC for Upfront (Example 3)');
 
-    var errorsAt30 = await getVisibleErrors();
-    if (errorsAt30.some(function(e) { return e.indexOf('Please select IC/RC') !== -1; }))
-      throw new Error('FAILED [AC11 Validation]: Expected NO "Please select IC/RC" validation at 30% Flexi Rate (adviser should be able to proceed without visiting Adviser Use), got: ' + errorsAt30.join(' | '));
-
-    var defaultAgencyAt30 = await getDefaultAgencySelectInfo();
-    if (!defaultAgencyAt30) throw new Error('FAILED [AC11]: Default-for-Agency dropdown should still be visible in Adviser Use at 30% Flexi Rate');
-
-    var icRcAt30 = await getIcRcSelectInfo();
-    if (icRcAt30) throw new Error('FAILED [AC11 Cover display]: Expected NO Select IC/RC row for covers when Flexi Rate forces Nil Commission (covers should not be displayed), but found one: ' + JSON.stringify(icRcAt30));
+    var lifeCover15 = await getLifeCoverCategoryInfo();
+    if (!lifeCover15) throw new Error('FAILED [ADV-10]: Life Cover commission category row not found at 15% Flexi Rate');
+    assertEquals(lifeCover15.options[lifeCover15.selectedIndex], 'Upfront', 'ADV-10', '15% Flexi Rate Life Cover default category (Example 3)');
 
     await closeAdviserUse();
-    console.log('[comm-cat-modal] PART 2 PASSED');
+    console.log('[comm-cat-part2] PART 6 PASSED');
 
     // ════════════════════════════════════════════════════════════════
-    // PART 3: UPDATE BUTTON DISABLED-UNTIL-CHANGED (AC04, AC05)
-    // Fresh quote #3. Flexi Rate untouched (N/A) - this check doesn't depend on
-    // Flexi Rate at all, but uses its own fresh quote for consistency/safety.
+    // PART 7: EXAMPLE 4 - FLEXI RATE 12.5%, MULTIPLE UPFRONT IC/RC RATES (ADV-11)
+    // Fresh quote #3 (of this file). v1 got this wrong (a 5th phantom option
+    // auto-selected) because it tested this immediately after Example 3 in the
+    // same quote - see file header.
     // ════════════════════════════════════════════════════════════════
 
-    console.log('[comm-cat-modal] PART 3 starting: Update button disabled-until-changed');
+    console.log('[comm-cat-part2] PART 7 starting: Example 4, Flexi Rate 12.5%');
     await freshPricedQuote();
+    await setFlexiRate('12.5%');
     await openAdviserUse();
 
-    var updateBefore = await getUpdateButtonInfo();
-    if (!updateBefore) throw new Error('FAILED [AC04]: Update button not found');
-    assertEquals(updateBefore.disabled, true, 'AC04', 'Update button disabled before any change to Default for Agency');
-
-    var defaultAgencyForUpdate = await getDefaultAgencySelectInfo();
-    var otherOption = defaultAgencyForUpdate.options.find(function(o) { return o !== defaultAgencyForUpdate.options[defaultAgencyForUpdate.selectedIndex]; });
-    await page.locator('#' + defaultAgencyForUpdate.id).selectOption({ label: otherOption });
-    await page.waitForTimeout(500);
-
-    var updateAfter = await getUpdateButtonInfo();
-    assertEquals(updateAfter.disabled, false, 'AC05', 'Update button enabled after changing Default for Agency selection');
-
-    // Revert the selection (never click Update - agency-wide shared setting in this dev env)
-    await page.locator('#' + defaultAgencyForUpdate.id).selectOption({ label: defaultAgencyForUpdate.options[defaultAgencyForUpdate.selectedIndex] });
-    await page.waitForTimeout(500);
+    var icRc125 = await getIcRcSelectInfo();
+    if (!icRc125) throw new Error('FAILED [ADV-11]: Select IC/RC dropdown not found at 12.5% Flexi Rate');
+    assertArraysEqual(icRc125.options, ['Please Select', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-0%', 'IC-75%, RC-50%'], 'ADV-11', '12.5% Flexi Rate IC/RC pick list (Example 4)');
+    if (icRc125.selectedIndex !== 0)
+      throw new Error('FAILED [ADV-11]: Select IC/RC should stay on "Please Select" at 12.5% Flexi Rate (multiple valid UPFRONT options exist, adviser must choose), but got: ' + icRc125.options[icRc125.selectedIndex]);
 
     await closeAdviserUse();
-    console.log('[comm-cat-modal] PART 3 PASSED');
-
-    // ════════════════════════════════════════════════════════════════
-    // PART 4: EXAMPLE 1 - FLEXI RATE 2.5% (ADV-08)
-    // Fresh quote #4.
-    // ════════════════════════════════════════════════════════════════
-
-    console.log('[comm-cat-modal] PART 4 starting: Example 1, Flexi Rate 2.5%');
-    await freshPricedQuote();
-    await setFlexiRate('2.5%');
-    await openAdviserUse();
-
-    var icRc25 = await getIcRcSelectInfo();
-    if (!icRc25) throw new Error('FAILED [ADV-08]: Select IC/RC dropdown not found at 2.5% Flexi Rate');
-    assertArraysEqual(icRc25.options, ['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%'], 'ADV-08', '2.5% Flexi Rate IC/RC pick list (Example 1)');
-    assertEquals(icRc25.options[icRc25.selectedIndex], 'IC-100%, RC-50%', 'ADV-08', '2.5% Flexi Rate default IC/RC for Upfront (Example 1)');
-
-    var lifeCover25 = await getLifeCoverCategoryInfo();
-    if (!lifeCover25) throw new Error('FAILED [ADV-08]: Life Cover commission category row not found at 2.5% Flexi Rate');
-    assertEquals(lifeCover25.options[lifeCover25.selectedIndex], 'Upfront', 'ADV-08', '2.5% Flexi Rate Life Cover default category (Example 1)');
-
-    await closeAdviserUse();
-    console.log('[comm-cat-modal] PART 4 PASSED - ALL PARTS PASSED');
+    console.log('[comm-cat-part2] PART 7 PASSED - ALL PARTS PASSED');
 
   } catch (error) {
     await page.locator('button:has-text("Sign out")').click().catch(function() {});

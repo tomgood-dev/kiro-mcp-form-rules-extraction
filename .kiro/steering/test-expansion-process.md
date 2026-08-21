@@ -75,8 +75,8 @@ quote in a different run. Neither correlated with a specific quote number or val
 is cumulative session load, not a specific step. No other test in this suite reuses a fresh quote
 this many times per session, so this had never surfaced before. **Rule of thumb: if a test needs
 more than ~4-5 fresh quotes to cover its scenarios, split it across multiple files/sessions**
-(each with its own login) rather than one long one — see `commission-category-modal-defaults-and-update-button-v1.spec.js` /
-`commission-category-flexirate-icrc-examples-v1.spec.js` for the pattern. This is separate from the ordinary "session conflict on
+(each with its own login) rather than one long one — see `select-default-commission-category-part-1-v1.spec.js` /
+`select-default-commission-category-part-2-v1.spec.js` for the pattern. This is separate from the ordinary "session conflict on
 the next run" issue below, which is just the platform's documented single-session-per-account
 behavior after a run that didn't reach its own clean sign-out.
 
