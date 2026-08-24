@@ -1,7 +1,7 @@
 {
   "capturedAt": "2026-08-20T04:40:35.074Z",
   "baseUrl": "https://outsystems-dev.asteronlife.co.nz",
-  "account": "hanno.coetzee+1123@resolutionlife.com.au",
+  "account": "<your-test-account-email>",
   "persona": "Age 35, Male, OCC AA, Life cover $500,000",
   "finding1_updateButton": {
     "disabled": true,

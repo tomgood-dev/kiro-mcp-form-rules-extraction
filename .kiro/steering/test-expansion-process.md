@@ -256,8 +256,8 @@ Set timeout generously — 10-12 minute tests are fine. Use `test.setTimeout(720
 $env:Path = "C:\Users\TOMGOO\AppData\Local\Kiro-Cli;" + $env:Path
 $env:NODE_TLS_REJECT_UNAUTHORIZED = "0"
 $env:BASE_URL = "https://outsystems-dev.asteronlife.co.nz"
-$env:LOGIN_EMAIL = "hanno.coetzee+1123@resolutionlife.com.au"
-$env:LOGIN_PASSWORD = "P@ssw0rd135"
+$env:LOGIN_EMAIL = "<your-test-account-email>"
+$env:LOGIN_PASSWORD = "<your-test-account-password>"
 
 # Use Edge config (Chromium blocked by security tools)
 node node_modules/@playwright/test/cli.js test apps/asteron-quote-apply/tests/<file>.spec.js --reporter=line --config=playwright.edge.config.js

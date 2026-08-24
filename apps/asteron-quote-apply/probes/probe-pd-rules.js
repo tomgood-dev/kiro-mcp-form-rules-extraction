@@ -11,8 +11,10 @@ const { chromium } = require('@playwright/test');
   page.setDefaultTimeout(30000);
 
   const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
-  const LOGIN_EMAIL = 'hanno.coetzee+1123@resolutionlife.com.au';
-  const LOGIN_PASSWORD = 'P@ssw0rd135';
+  const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL;
+  if (!LOGIN_EMAIL) throw new Error('Set ASTERON_LOGIN_EMAIL env var before running this probe.');
+  const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD;
+  if (!LOGIN_PASSWORD) throw new Error('Set ASTERON_LOGIN_PASSWORD env var before running this probe.');
 
   try {
     // LOGIN

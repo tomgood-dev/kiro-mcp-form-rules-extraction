@@ -13,8 +13,8 @@ const { chromium } = require('@playwright/test');
   page.setDefaultTimeout(30000);
 
   const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
-  const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL || 'hanno.coetzee+1123@resolutionlife.com.au';
-  const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD || 'P@ssw0rd135';
+  const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL;
+  const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD;
 
   try {
     console.log('=== GENDER CONTROL DIAGNOSTIC — ' + new Date().toISOString() + ' ===');

@@ -356,8 +356,8 @@ Set these on EVERY test entry in the Test Console:
 | Name | Value | Notes |
 |------|-------|-------|
 | `BASE_URL` | `https://outsystems-dev.asteronlife.co.nz` | No trailing slash |
-| `LOGIN_EMAIL` | `hanno.coetzee+1123@resolutionlife.com.au` | Must not be logged in elsewhere |
-| `LOGIN_PASSWORD` | `P@ssw0rd135` | |
+| `LOGIN_EMAIL` | `<your-test-account-email>` | Must not be logged in elsewhere |
+| `LOGIN_PASSWORD` | `<your-test-account-password>` | |
 
 Access in code: `process.env.BASE_URL`
 

@@ -18,8 +18,8 @@ const { chromium } = require('@playwright/test');
   page.setDefaultTimeout(30000);
 
   const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
-  const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL || 'hanno.coetzee+1123@resolutionlife.com.au';
-  const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD || 'P@ssw0rd135';
+  const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL;
+  const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD;
 
   async function waitSettle(ms) {
     await page.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
