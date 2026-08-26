@@ -108,7 +108,9 @@ function makeRenderer(currentRelPath) {
 
   renderer.image = function ({ href, title, text }) {
     let outHref = href || '';
-    if (href && !isExternal(href)) {
+    // Leave data: URIs (base64-embedded images) and external URLs untouched —
+    // only rewrite repo-relative file paths through the /raw endpoint.
+    if (href && !isExternal(href) && !href.startsWith('data:')) {
       outHref = `/raw?path=${encodeURIComponent(resolveRelative(currentRelPath, decodeURIComponent(href)))}`;
     }
     const titleAttr = title ? ` title="${title}"` : '';
