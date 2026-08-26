@@ -104,6 +104,28 @@ same "no stable error, no navigation" result as a completely minimal baseline wi
 neither set — so this isn't specifically an Employment-Status-didn't-persist issue either,
 at least not one visible from the client side.
 
+## Additional corroborating evidence (2026-08-26, stress-testing follow-up)
+
+A second, independent scenario found the same family of issue with a sharper diagnosis.
+Config: Age 17, Gender Female, Occupation Code B, Business policy, Employment Status
+Self-Employed, Farmers Disability cover. Generous (2-3s) settle time was inserted after
+**every single field change**, and the Occupation Code and Employment Status **select
+values were read directly from the DOM immediately before clicking Apply**, confirming
+both were genuinely set correctly (`Occupation code value ... after Business switch: 4`
+i.e. "B"; `Employment status value after settle: 1`). Age and Gender were set via the
+same helper used successfully everywhere else in this suite. **Annual Income was
+deliberately left unset** for this check.
+
+Apply still produced: *"You must complete the following fields - Gender, Age Next
+Birthday, Occupation/Occupation Code, Employment Status & Annual Income $"* — correctly
+flagging Annual Income as missing, but **also incorrectly claiming Gender, Age Next
+Birthday, Occupation/Occupation Code, and Employment Status are missing**, all four of
+which were confirmed set via direct DOM read moments before. This rules out a pure
+timing/race explanation (generous settle time did not help) and points instead at a
+genuine validation-message-accuracy bug: the combined "must complete fields" message
+appears to list some fields as missing independent of whether they're actually set,
+rather than a stale read racing a slow save.
+
 ## Root cause
 
 Unknown from black-box observation alone. Two hypotheses, neither confirmed:
