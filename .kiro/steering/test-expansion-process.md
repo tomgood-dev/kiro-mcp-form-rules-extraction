@@ -237,6 +237,16 @@ and its `TEMPLATE.md` still exist and are still the format to follow — only th
 changes for reports produced by an actual spec-file run going forward. Bug reports written
 before this convention existed were left where they are, not migrated.
 
+**When a run reproduces an ALREADY-documented finding (mandatory):** do not write a
+second bug report for the same issue. Instead, add a short `known-failures.md` next to
+that run's `results.md`, listing each such failure with a link back to the original
+report and, for acceptance-criteria-mode tests, a quote of the exact AC text the failure
+violates (checked against the source user story directly, not just a downstream
+business-rules doc — see "Testing a Written User Story" above). This is what makes a run
+folder self-explanatory on its own: someone opening `results.md` cold shouldn't see
+unexplained red without a trail to follow. Skip this file entirely when a run has no
+failures, or when every failure is genuinely new (write a fresh bug report instead).
+
 ### Test Console constraints (still apply in this mode)
 
 Same as reverse-engineering mode: one `test()` per file, ES5 inside `page.evaluate()` (no arrow
