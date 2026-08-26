@@ -15,6 +15,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
+const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
 
 let quote;
 
@@ -120,7 +121,12 @@ test('PREM-20/PREM-21 cross-check: 2 committed covers (1 Lump Sum + 1 Disability
 
 test.describe('Business-only Disability covers (DC-06, DC-33, DC-39, DC-44)', () => {
   test.beforeEach(async () => {
-    await quote.getByRole('button', { name: 'Business', exact: true }).click();
+    // Confirmed 2026-08-26: the "Business" button has no accessible name Playwright's
+    // getByRole can match (ariaLabel: null, same pre-existing OutSystems quirk already
+    // documented for "Number of Kids" in kids-cover.spec.js) - getByRole silently
+    // matched zero elements and timed out. Use the same evaluate()-based exact-text
+    // lookup this project's other cover/policy buttons already rely on.
+    await clickButtonByLabel(quote, 'Business', 'Policy type button');
     await waitForSettle(quote);
   });
 

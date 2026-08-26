@@ -35,9 +35,12 @@ const {
  * target URL, then navigate to it directly.
  */
 async function openNewQuote(page) {
+  console.log('  [step] Opening a new quote...');
   await page.goto('/QuoteAndApply/');
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(3000); // Give the SPA time to fully render the quote list
+  // Wait for the actual "New Quote" link to be usable instead of a blind sleep —
+  // this is the real condition the old 3s sleep was guessing at.
+  await page.locator('a', { hasText: 'New Quote' }).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
 
   const quoteUrl = await captureWindowOpenFromLink(page, 'New Quote');
 
@@ -49,12 +52,50 @@ async function openNewQuote(page) {
     await page.goto('/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=', { waitUntil: 'domcontentloaded' });
   }
 
-  // Wait for the quote form to actually render
-  await page.waitForTimeout(3000);
+  // Wait for the quote form to actually render — this real locator wait already
+  // covers what the old second 3s blind sleep was guessing at.
   await page.locator('input[id*="Input_AgeNextBirthday"], input[id*="Input_FirstName"]').first()
     .waitFor({ state: 'visible', timeout: 30000 });
   await waitForSettle(page);
+  console.log('  [step] Quote form rendered OK');
   return page;
+}
+
+/**
+ * Sets Age Next Birthday using the type action pattern (click + select-all + delete +
+ * type + tab) required for OutSystems reactive binding — a plain `.fill()` does not
+ * reliably trigger the same validation/recalculation.
+ * @param {import('@playwright/test').Page} page
+ * @param {number|string} age
+ */
+async function setAge(page, age) {
+  console.log(`  [step] Setting Age Next Birthday = ${age}`);
+  const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
+  await ageInput.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type(String(age), { delay: 40 });
+  await page.keyboard.press('Tab');
+  await waitForSettle(page, 1000);
+}
+
+/**
+ * Sets Gender — a button group, NOT a radio input (getByRole('radio') will not find
+ * it). Triggers a FULL page recalculation — waits for it to complete.
+ * @param {import('@playwright/test').Page} page
+ * @param {'Male'|'Female'} gender
+ */
+async function setGender(page, gender) {
+  console.log(`  [step] Setting Gender = ${gender}`);
+  await page.evaluate((g) => {
+    const btn = [...document.querySelectorAll('.button-group-item, .button-group-selected-item')]
+      .find(b => b.innerText.trim() === g);
+    if (btn && !btn.className.includes('selected')) {
+      btn.scrollIntoView({ block: 'center' });
+      btn.click();
+    }
+  }, gender);
+  await waitForSettle(page, 2000);
 }
 
 /**
@@ -80,28 +121,11 @@ async function setMinimumPersonalDetails(page, opts = {}) {
     income,
   } = opts;
 
-  // Age — use type action pattern (clear + type + tab) for OutSystems reactive binding
-  const ageInput = page.locator('input[id*="Input_AgeNextBirthday"]').first();
-  await ageInput.click();
-  await page.keyboard.press('Control+a');
-  await page.keyboard.press('Delete');
-  await page.keyboard.type(String(age), { delay: 40 });
-  await page.keyboard.press('Tab');
-  await waitForSettle(page, 1000);
-
-  // Gender — button group (not a radio input). Use scrollIntoView + click via evaluate.
-  // This triggers a FULL page recalculation — must wait for it to complete.
-  await page.evaluate((g) => {
-    const btn = [...document.querySelectorAll('.button-group-item, .button-group-selected-item')]
-      .find(b => b.innerText.trim() === g);
-    if (btn && !btn.className.includes('selected')) {
-      btn.scrollIntoView({ block: 'center' });
-      btn.click();
-    }
-  }, gender);
-  await waitForSettle(page, 2000); // Gender change triggers heavy recalculation
+  await setAge(page, age);
+  await setGender(page, gender);
 
   // Occupation Code — native <select> dropdown. May be temporarily disabled after Gender change.
+  console.log(`  [step] Setting Occupation Code = ${occupationCode}`);
   const occDropdown = page.locator('select[id*="OccupationCode_Dropdown"]').first();
   await occDropdown.waitFor({ state: 'visible', timeout: 10000 });
   // Wait for dropdown to become enabled (OutSystems may disable during recalculation)
@@ -113,6 +137,7 @@ async function setMinimumPersonalDetails(page, opts = {}) {
   await waitForSettle(page, 1500);
 
   if (employmentStatus) {
+    console.log(`  [step] Setting Employment Status = ${employmentStatus}`);
     const empDropdown = page.locator('select[id*="EmploymentStatus_Dropdown"]').first();
     await empDropdown.waitFor({ state: 'visible', timeout: 10000 });
     await page.waitForFunction(
@@ -123,9 +148,11 @@ async function setMinimumPersonalDetails(page, opts = {}) {
     await waitForSettle(page, 1500);
   }
   if (income !== undefined) {
+    console.log(`  [step] Setting Annual Income = ${income}`);
     await fillCalcMask(page.locator('input[id*="MaskedInput"]').first(), String(income));
     await waitForSettle(page, 1000);
   }
+  console.log('  [step] Personal Details set OK');
 }
 
 /** Opens the Occupation type-ahead, types a search string, and clicks the first matching option. */
@@ -142,6 +169,7 @@ async function setOccupation(page, searchText, optionStartsWith) {
  * whose visible text starts with the given label.
  */
 async function activateCover(page, buttonLabel) {
+  console.log(`  [step] Activating cover: ${buttonLabel}`);
   return clickButtonByLabel(page, buttonLabel, 'Cover button');
 }
 
@@ -169,10 +197,38 @@ async function removeAllCoverCards(page) {
   await waitForSettle(page);
 }
 
-/** Clicks the footer Apply button. */
+/**
+ * Clicks the footer Apply button and waits for the page to reach a STABLE post-Apply
+ * state before reading errors - not just a fixed settle delay. Confirmed live
+ * (2026-08-26 investigation) that Apply can trigger a cascade of several recalculation
+ * requests (occupation eligibility, default commission, etc.) during which a transient
+ * validation message can appear and then clear again as later requests resolve - e.g.
+ * "Please complete the client's employment details before applying" flashed at ~600ms
+ * and was gone by ~7.6s on a config where Employment Status genuinely had been set. A
+ * single early read (the old fixed ~400ms wait) can land in that window and produce a
+ * false "no errors" or a since-cleared error, which is what caused VAL-08/09/10, VAL-11,
+ * and KID-05 to misreport in the 2026-08-26 full-suite run. This instead polls
+ * document.body.innerText for stability (2 consecutive identical reads) before treating
+ * the state as final, per the project's "self-verifying interaction" rule - never trust
+ * a read that isn't confirmed stable.
+ */
 async function clickApply(page) {
+  console.log('  [step] Clicking Apply...');
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
   await waitForSettle(page);
+
+  const stabilityDeadline = Date.now() + 8000;
+  let previous = null;
+  let stableStreak = 0;
+  while (Date.now() < stabilityDeadline && stableStreak < 2) {
+    const current = await page.evaluate(() => document.body.innerText);
+    stableStreak = current === previous ? stableStreak + 1 : 1;
+    previous = current;
+    if (stableStreak < 2) await page.waitForTimeout(500);
+  }
+
+  const errors = await getVisibleErrors(page);
+  console.log(errors.length ? `  [step] Apply result: ${errors.length} visible error(s): ${JSON.stringify(errors).slice(0, 200)}` : '  [step] Apply result: no visible errors');
 }
 
 /** Reads the current "Total Yearly Premium" figure as a number (e.g. 254.16), or null if not present. */
@@ -199,9 +255,18 @@ async function getBundlingDiscount(page) {
   });
 }
 
-/** True if the screen has silently navigated from "Illustration" to the Client-summary step. */
+/**
+ * True if the screen has silently navigated from "Illustration" to the Client-summary
+ * step. Per VAL-08/VAL-09, the URL doesn't reliably change and the exact heading text
+ * was never confirmed verbatim — so this checks the one hard, documented signal
+ * instead: the footer button set (Close/View PDF/Save as New/Save/Apply) disappearing
+ * along with the "Illustration" heading.
+ */
 async function isOnClientSummary(page) {
-  return page.evaluate(() => document.body.innerText.includes('Client summary'));
+  return page.evaluate(() => {
+    const hasApplyButton = [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === 'Apply');
+    return !hasApplyButton && !document.body.innerText.includes('Illustration');
+  });
 }
 
 /** Returns the Nth (0-based) Sum Insured / Monthly Benefit calc-mask input currently on the page. */
@@ -212,6 +277,8 @@ function sumInsuredInput(page, index = 0) {
 module.exports = {
   openNewQuote,
   waitForSettle,
+  setAge,
+  setGender,
   setMinimumPersonalDetails,
   setOccupation,
   fillCalcMask,

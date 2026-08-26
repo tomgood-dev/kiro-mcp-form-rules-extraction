@@ -2,7 +2,7 @@
 
 > Child of [Quote Screen](../page.md). Rule ID prefix: `DC-`
 
-Disability covers pay an ongoing monthly benefit rather than a lump sum. They are only visible once [Employment Status](../personal-details/page.md#field-reference) is set to any real value — leaving it at "Select one" hides this whole section.
+Disability covers pay an ongoing monthly benefit rather than a lump sum. *(Corrected 2026-08-26: the Mortgage & Living/Income Protection/Workability buttons are visible and enabled regardless of [Employment Status](../personal-details/page.md#field-reference) — confirmed live, this section is NOT hidden by leaving it at "Select one". Employment Status's actual, confirmed effect: Apply is blocked with* "You must complete the following fields - ... Employment Status & Annual Income $" *once a Disability cover is priced without it set — see [Personal Details — PD-20](../personal-details/page.md).)*
 
 ## ⚠️ Read this first: the "commitment" trap
 

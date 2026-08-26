@@ -23,6 +23,22 @@ This page covers the footer action buttons, the full validation error catalog, a
 
 ## What "Apply" actually does — silent navigation, same URL
 
+> ⚠ **Known issue, unresolved as of 2026-08-26 — clicking Apply on what should be a fully
+> valid, minimal single-Life quote (Age/Gender/Occupation Code set, Employment Status set,
+> Annual Income set, Life $200,000 priced) does not complete.** Confirmed live: the Apply
+> button remains present and enabled, the "Illustration" heading remains, and no stable
+> visible error explains why — but a **transient** error, *"Please complete the client's
+> employment details before applying"* (`VAL-23`), flashes for roughly 0.6-4s after the
+> click and then disappears on its own, even though Employment Status genuinely was set
+> beforehand. This looks like a real validation-state/validation-display desync (the
+> error clears before the underlying block does), not a test timing artifact — reproduced
+> with both a fully-detailed and a minimal-baseline config, both giving the identical
+> "no stable error, no navigation" result. See
+> `apps/asteron-quote-apply/docs/bug-reports/apply-never-completes-transient-employment-status-error.md`
+> for full evidence. Not yet confirmed with a BA/PM as regression vs. intentional. Until
+> resolved, treat `VAL-08`/`VAL-09`/`VAL-11` below as the *documented intended* behavior,
+> not confirmed current live behavior.
+
 | Rule ID | Rule |
 |---|---|
 | `VAL-08` | When the current configuration is fully valid, clicking **Apply** silently advances the single-page app to a **Client Details** screen (Apply Flow step 2) — replacing "Illustration" with a "Client summary"-style heading, and the footer button set changes completely (Close/View PDF/Save as New/Save/Apply all disappear, replaced by different controls). |
