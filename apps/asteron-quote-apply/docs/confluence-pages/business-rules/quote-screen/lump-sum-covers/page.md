@@ -57,6 +57,7 @@ Lump Sum covers pay a one-off sum insured on the relevant event (death, disabili
 |---|---|
 | `LSC-10` | **Maximum Sum Insured per life: $5,000,000.** Exact error: *"The maximum total Sum Insured per life for TPD Cover is $5,000,000."* |
 | `LSC-11` | **Minimum Age Next Birthday for Stepped TPD: 17** — see [Personal Details — PD-14](../personal-details/page.md). |
+| `LSC-11b` | **Maximum Age Next Birthday for Stepped TPD: 65** — newly discovered 2026-08-26 (not previously documented; `PD-31`'s max-age table covered Accidental Death/Needlestick/Specific Injury but omitted TPD). Exact error: *"The maximum Age Next Birthday for Stepped 'Standalone TPD Cover' is 65"*. Confirmed live at Age Next Birthday = 75 (Occupation Code = IC), alongside the `$5,000,000` cap and the IC referral warning all firing together correctly in one combined error. Not yet confirmed whether this cap applies only to the Stepped Premium Structure (matching `LSC-11`'s own "Stepped" qualifier) or to Level structures too — worth a follow-up check. |
 
 Discount bands: $100k–$249k / $250k–$499k / $500k+
 
@@ -74,6 +75,7 @@ Discount bands: $100k–$249k / $250k–$499k / $500k+
 
 | Rule ID | Rule |
 |---|---|
+| `LSC-17b` | **Trauma has its own occupation-eligibility gate, separate from and still functioning independent of `LSC-02`/`LSC-03`.** Newly discovered 2026-08-26: at Occupation Code = U, activating Trauma alone (no other covers) and clicking Apply produces *"This Occupation is not eligible"* — confirmed absent at Occupation Code = AA (control, no error). Fires at Apply time, not at cover-activation time (the cover card still appears on click, matching the pattern used elsewhere in this app). Applies equally to Major Trauma (the sub-cover) once Trauma itself is blocked. Notable given `LSC-02`/`LSC-03`'s occupation gating for Needlestick/Cancer/Accidental Death/Specific Injury is confirmed universally broken (see `docs/bug-reports/occupation-cover-gating-universally-not-enforced.md`) — Trauma's gate still working is evidence the occupation-gating *system* itself isn't wholesale disabled, strengthening "real regression in specific covers" over "the whole feature was intentionally removed" as the likely explanation for that other finding. Not yet exhaustively swept across all occupation codes for Trauma - only U (broken) and AA (working) confirmed so far. Also confirmed to fire identically under a Business policy (Trauma is available there per `POL-14`), so this gate isn't Personal-policy-specific. |
 | `LSC-17` | **Maximum Sum Insured per life for Trauma, combined with Cancer: $2,000,000.** Exact error: *"The maximum total Sum Insured per life for Trauma Recovery Cover, including Cancer Cover, is $2,000,000."* This is a **shared cap** — TRC + Cancer Sum Insured together cannot exceed $2M. |
 
 Discount bands: $100k–$249k / $250k–$499k / $500k+

@@ -8,6 +8,14 @@
 // caused a stale Select IC/RC selection to carry over from the last-viewed value (see
 // "Stateful-component carryover" in the same doc; this was the root cause of two
 // retracted false-positive findings during the original investigation).
+//
+// ADV-09 AND ADV-10 ARE EXPECTED TO FAIL as of 2026-08-25/26 — confirmed, real
+// regressions (Select IC/RC no longer auto-selects the single Upfront-valid option at
+// 7.5%/15% Flexi Rate), independently re-verified. ADV-11 (12.5%, multiple valid
+// options, correctly no auto-select) still passes. Full evidence: see part-1.spec.js's
+// header, or test-runs/select-default-commission-category-part-1/2026-08-25T19-26-35/
+// bug-reports/adviser-use-commission-regressions.md. Left asserting the documented
+// (intended) behavior on purpose - do not "fix" to match the current broken behavior.
 const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,

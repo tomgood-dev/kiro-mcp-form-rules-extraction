@@ -153,6 +153,23 @@ in this round of testing). The absence of errors slightly favors "the check was
 deliberately removed/disabled" over "the check is silently erroring," but this is not
 conclusive from the client side.
 
+**Update, 2026-08-26:** a separate stress-testing pass found **Trauma has its own
+occupation-eligibility gate that still works correctly** — Occupation Code = U blocks
+Trauma at Apply with *"This Occupation is not eligible"*, confirmed absent at Occupation
+Code = AA (control), and confirmed again under a Business policy. See
+`lump-sum-covers/page.md`'s `LSC-17b`. Since Trauma isn't one of the four covers this
+report covers, this doesn't change the finding above — but it does weigh the two
+explanations differently: the occupation-gating *system* clearly isn't wholesale disabled
+(Trauma's check still runs and blocks correctly), which favors "a real regression
+specific to these four covers' gating logic" over "the whole feature was intentionally
+removed."
+
+Also confirmed the regression is narrowly scoped even *within* the four broken covers:
+Needlestick's separate maximum-Age-Next-Birthday-65 validation (`PD-31`) still fires
+correctly (confirmed at Age 70, Occ=AA — a code where occupation gating was never the
+issue). Only the occupation-eligibility check itself is broken; every other validation on
+these covers (age caps, Sum Insured caps, companion-cover requirements) continues to work.
+
 ## Reproducibility
 
 Confirmed across:
