@@ -106,6 +106,32 @@ This project has two distinct starting points for a test, and they carry differe
 
 Section "Testing a Written User Story" below is mandatory for mode 2. Everything else in this file applies to both modes.
 
+## When a passing test starts failing — the app is a moving target (both modes)
+
+Developers actively work on this Quote & Apply form. A business-rules page built by
+reverse-engineering (mode 1) is a snapshot of what the app did *at the time it was
+written* — it is not guaranteed to still be true. When a test that used to pass starts
+failing (or a live probe contradicts a documented rule), that mismatch could mean:
+
+1. **A real regression** — the app now does something wrong it didn't before.
+2. **An intentional change** — the rule was deliberately updated by the dev team, and
+   our documentation is simply stale, not the app.
+3. **A test artifact** — our own script/interaction technique is at fault (rule this out
+   first, using the Probe & Interaction Safety rules above and the reproducibility check
+   below — this is the same discipline as writing up any other discrepancy).
+
+**Do not silently "fix" the test to match new behavior, and do not silently keep the old
+doc.** Once a mismatch survives the reproducibility check (2+ independent runs, or one
+run plus a deliberate second confirmation pass), write it up as a bug report using
+`docs/bug-reports/TEMPLATE.md` (same structure as the example the team uses for filed
+bugs — severity/component/environment header, summary, preconditions, numbered repro
+steps, an expected-vs-actual evidence table referencing the saved screenshot/trace, a
+root-cause hypothesis, reproducibility notes, and which of the three explanations above
+is most likely). Save it under `docs/bug-reports/<short-slug>.md`. If the most likely
+explanation turns out to be #2 (intentional change, confirmed with a BA/PM), update the
+business-rules page and the test to match — but the bug report stays as the record of
+when and how the drift was caught.
+
 ## Testing a Written User Story (Acceptance-Criteria Mode)
 
 When the test's source is a user story with numbered ACs rather than a black-box exploration:
@@ -177,6 +203,39 @@ timestamps by hand. Instead:
 - Renumber is not required when old runs get superseded — leave gaps/retracted runs in place
   with their real sequence number; the point is reconstructing what happened in order, not a
   clean final list.
+
+### Test-run artifact structure — `.spec.js` runs (distinct from probe evidence above)
+
+The "Evidence folder structure" above is for **reverse-engineering probe write-ups** — a
+narrative investigation synthesizing several throwaway probe scripts. A `.spec.js` **test
+run** (local Playwright, not Test Console) is a different kind of artifact and uses a
+different, automated convention: **`<app>/test-runs/<spec-file-slug>/<run-timestamp>/`**
+(e.g. `apps/asteron-quote-apply/test-runs/lump-sum-covers/2026-08-25T19-26-35/`) — one
+folder per spec file, one dated subfolder per run, holding *everything from that run
+together*.
+
+This is fully automated by a custom reporter (`tools/reporters/run-folder-reporter.js`,
+app-agnostic, wired up in both `playwright.config.js` and `playwright.edge.config.js`) —
+you don't create these folders by hand:
+- `outputDir` is redirected into a transient, repo-root-level `.test-runs-pending/<timestamp>/`
+  holding area (no more `test-results/` with cryptic hashed folder names).
+- After the run, the reporter creates `<app>/test-runs/<spec-file-slug>/<timestamp>/results.md`
+  (a pass/fail table for every test in that file, failure screenshots embedded inline as
+  base64 — no sibling `.png` files) plus a `native/` subfolder with the original
+  trace.zip/attachments for `npx playwright show-trace`, then deletes the holding area.
+  Which app a spec file's output lands under is derived from the spec file's own path
+  (`tools/artifact-helpers.js`'s `findAppRoot()`) — this works for any app under `apps/`,
+  not just Asteron.
+
+**Where a bug report goes now:** write it directly into that same run folder — e.g.
+`test-runs/<spec-file-slug>/<timestamp>/bug-reports/<slug>.md` — using
+`tools/artifact-helpers.js`'s `embedImage(path, altText)` for any screenshot (yours, or
+the run's own `native/.../test-failed-1.png`), so the report stays fully self-contained
+next to the results table that produced it, instead of a separate flat
+`docs/bug-reports/` folder disconnected from the run that found it. `docs/bug-reports/`
+and its `TEMPLATE.md` still exist and are still the format to follow — only the *location*
+changes for reports produced by an actual spec-file run going forward. Bug reports written
+before this convention existed were left where they are, not migrated.
 
 ### Test Console constraints (still apply in this mode)
 

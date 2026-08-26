@@ -7,9 +7,11 @@ const fs = require('fs');
 const commands = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const results = [];
 
+const PORT = Number(process.env.PORT) || 3333;
+
 function send(cmd) {
   return new Promise((resolve, reject) => {
-    const r = http.request({hostname:'127.0.0.1', port:3333, method:'POST', headers:{'Content-Type':'application/json'}}, res => {
+    const r = http.request({hostname:'127.0.0.1', port:PORT, method:'POST', headers:{'Content-Type':'application/json'}}, res => {
       let d=''; res.on('data',c=>d+=c); res.on('end',()=> {
         try { resolve(JSON.parse(d)); } catch(e) { resolve({ok:false, raw:d}); }
       });

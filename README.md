@@ -120,16 +120,22 @@ Where `commands.json` is an array:
 │       ├── probes/              # App-specific throwaway/retained investigation scripts
 │       ├── helpers/             # App-specific interaction patterns
 │       ├── global-setup.js      # Login automation
-│       ├── test-results/        # Generated: per-test artifacts (gitignored)
+│       ├── test-runs/           # Generated: one folder per spec file, one dated
+│       │                        # subfolder per run (results.md + bug-reports/)
 │       ├── playwright-report/   # Generated: HTML report (gitignored)
 │       └── docs/                # Discovered business rules
 │           └── exhaustive-analysis.md  # Full boundary/validation analysis
 │
-├── tools/                       # Generic, reusable, app-agnostic exploration tooling
-│   ├── server.js                # HTTP browser command server
+├── tools/                       # Generic, reusable, app-agnostic exploration + verification tooling
+│   ├── server.js                # HTTP browser command server (buttons/fields/errors/modals + fingerprint find)
 │   ├── batch.js                 # Batch command runner
 │   ├── cmd.js                   # Quick single command
-│   └── run.js                   # File-based command
+│   ├── run.js                   # File-based command
+│   ├── artifact-helpers.js      # test-runs/ convention: embedImage(), per-app run folders
+│   ├── reporters/                # Custom Playwright reporter: builds test-runs/ from each run
+│   ├── probe-safety-lint.js     # Static check for banned interaction patterns
+│   ├── verify-finding.js        # Independent-reverification engine — see "Verifying a finding" below
+│   └── draft-bug-report.js      # Turns a confirmed verdict into a TEMPLATE.md-shaped draft
 │
 ├── sessions/                    # Session notes (working context), chronological
 │

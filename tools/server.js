@@ -15,6 +15,14 @@
  *   { action: "buttons" }
  *   { action: "fields" }
  *   { action: "errors" }
+ *   { action: "find", kind: "select"|"button"|"input", fingerprint: {...} }
+ *                                    — fingerprint-based element lookup, e.g.
+ *                                    { optionsInclude: ["Upfront","Level 30"] },
+ *                                    { firstOptionEquals: "Please Select", optionsMatch: "^IC-\\d+%, RC-\\d+%$" },
+ *                                    { textIncludes: "Adviser Use" } (buttons),
+ *                                    { nearestLabelIncludes: "Life Cover" }.
+ *                                    Errors if 0 or >1 elements match - refine the
+ *                                    fingerprint rather than picking blindly.
  *   { action: "eval", code: "..." } — run arbitrary JS in page, return result
  *
  * WRITE commands (perform interaction):
@@ -24,28 +32,45 @@
  *   { action: "fill",   id: "...",       value: "John" }
  *   { action: "select", selector: "...", value: "option-value" }
  *   { action: "select", id: "...",       value: "option-value" }
+ *   { action: "select", selector: "...", label: "Visible Option Text" } — match by label
+ *                                    instead of an opaque value attribute
  *   { action: "check",  id: "..." }
  *   { action: "press",  key: "Tab" }
  *   { action: "scroll", direction: "bottom" | "top" }
  *   { action: "wait",   ms: 1000 }
  *   { action: "back" }
+ *
+ * CLI: node server.js <url> [--headless] [--storage-state <path>]
+ *   --headless          run without a visible browser window and without slowMo - for
+ *                        programmatic use (e.g. tools/verify-finding.js spawning this as
+ *                        a child process), not for interactive human driving
+ *   --storage-state F    load a Playwright storageState.json (cookies/session) instead of
+ *                        starting logged out - reuse the same auth an app's Playwright
+ *                        tests already produce (e.g. apps/<app>/.auth/state.json) rather
+ *                        than re-expressing login credentials as generic click/fill steps
+ * Env: PORT (default 3333) - set when running more than one instance at once (each
+ *   independent verification reading needs its own browser session/port).
  */
 
 const { chromium } = require('@playwright/test');
 const http = require('http');
 
-const PORT = 3333;
+const PORT = Number(process.env.PORT) || 3333;
 
-// URL to open — pass as first CLI arg, or defaults to the DemoQA practice form
-const START_URL = process.argv[2] || 'https://demoqa.com/automation-practice-form';
+const cliArgs = process.argv.slice(2);
+// URL to open — first non-flag CLI arg, or defaults to the DemoQA practice form
+const START_URL = cliArgs.find((a) => !a.startsWith('--')) || 'https://demoqa.com/automation-practice-form';
+const HEADLESS = cliArgs.includes('--headless') || process.env.HEADLESS === 'true';
+const storageStateFlagIdx = cliArgs.indexOf('--storage-state');
+const STORAGE_STATE = storageStateFlagIdx !== -1 ? cliArgs[storageStateFlagIdx + 1] : undefined;
 
 let page;
 
 // ── Browser setup ─────────────────────────────────────────────────────────────
 
 async function setup() {
-  const browser = await chromium.launch({ headless: false, slowMo: 60 });
-  const context = await browser.newContext();
+  const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 60 });
+  const context = await browser.newContext({ ignoreHTTPSErrors: true, ...(STORAGE_STATE ? { storageState: STORAGE_STATE } : {}) });
   page = await context.newPage();
   page.setDefaultTimeout(30000);
 
@@ -124,6 +149,7 @@ const READ_FIELDS = () =>
       options: el.tagName === 'SELECT'
         ? [...el.options].map(o => ({ value: o.value, text: o.text.trim() }))
         : null,
+      selectedIndex: el.tagName === 'SELECT' ? el.selectedIndex : null,
     };
   });
 
@@ -208,6 +234,74 @@ async function handle(cmd) {
     case 'errors':
       return { ok: true, errors: await page.evaluate(READ_ERRORS) };
 
+    case 'find': {
+      // Generalizes the "find the <select>/button whose shape matches X" fingerprint
+      // pattern every app-specific helper in this repo has reimplemented ad hoc (e.g.
+      // apps/asteron-quote-apply/helpers/adviser-use-helpers.js's getIcRcSelectInfo,
+      // getDefaultAgencySelectInfo, getLifeCoverCategoryInfo) - this is the same three
+      // patterns, made app-agnostic and reusable via tools/verify-finding.js.
+      const kind = cmd.kind;
+      const fp = cmd.fingerprint || {};
+      let candidates;
+
+      if (kind === 'button') {
+        candidates = await page.evaluate(READ_BUTTONS);
+        if (fp.textIncludes) candidates = candidates.filter((b) => b.text.includes(fp.textIncludes));
+      } else {
+        candidates = await page.evaluate(READ_FIELDS);
+        if (kind) candidates = candidates.filter((f) => f.tag === kind || f.type === kind);
+        if (fp.optionsInclude) {
+          candidates = candidates.filter(
+            (f) => f.options && fp.optionsInclude.every((want) => f.options.some((o) => o.text === want))
+          );
+        }
+        if (fp.firstOptionEquals) {
+          candidates = candidates.filter((f) => f.options && f.options[0] && f.options[0].text === fp.firstOptionEquals);
+        }
+        if (fp.optionsMatch) {
+          const re = new RegExp(fp.optionsMatch);
+          candidates = candidates.filter((f) => {
+            if (!f.options || !f.options.length) return false;
+            const rest = fp.firstOptionEquals ? f.options.slice(1) : f.options;
+            return rest.length > 0 && rest.every((o) => re.test(o.text));
+          });
+        }
+        if (fp.nearestLabelIncludes) {
+          const ids = candidates.filter((f) => f.id).map((f) => f.id);
+          const matchedIds = await page.evaluate(
+            ({ ids, labelSubstr }) => {
+              function nearestLabelText(el) {
+                let node = el;
+                for (let depth = 0; depth < 4 && node; depth++) {
+                  let sib = node.previousElementSibling;
+                  while (sib) {
+                    const t = (sib.innerText || '').trim();
+                    if (t) return t.split('\n')[0].slice(0, 60);
+                    sib = sib.previousElementSibling;
+                  }
+                  node = node.parentElement;
+                }
+                return null;
+              }
+              return ids.filter((id) => {
+                const el = document.getElementById(id);
+                if (!el) return false;
+                return (nearestLabelText(el) || '').includes(labelSubstr);
+              });
+            },
+            { ids, labelSubstr: fp.nearestLabelIncludes }
+          );
+          candidates = candidates.filter((f) => matchedIds.includes(f.id));
+        }
+      }
+
+      if (!candidates.length) return { ok: false, error: 'find: no element matched the fingerprint', matchCount: 0 };
+      if (candidates.length > 1) {
+        return { ok: false, error: 'find: fingerprint matched more than one element - refine it', matchCount: candidates.length, matches: candidates };
+      }
+      return { ok: true, match: candidates[0] };
+    }
+
     case 'click': {
       const loc = buildLocator(cmd);
       await loc.scrollIntoViewIfNeeded().catch(() => {});
@@ -231,8 +325,10 @@ async function handle(cmd) {
     }
 
     case 'select': {
+      // cmd.label matches by visible option text (portable - doesn't require knowing an
+      // opaque option value attribute); cmd.value matches by the option's value attribute.
       const sel = cmd.id ? `[id="${cmd.id}"]` : cmd.selector;
-      await page.selectOption(sel, String(cmd.value));
+      await page.selectOption(sel, cmd.label !== undefined ? { label: String(cmd.label) } : String(cmd.value));
       await page.waitForTimeout(400);
       const [fields, errors] = await Promise.all([
         page.evaluate(READ_FIELDS),
@@ -320,30 +416,37 @@ async function handle(cmd) {
     }
 
     case 'calcmask': {
-      // Reliable entry for right-to-left calc-mask fields (Sum Insured, Monthly Benefit)
+      // Reliable entry for masked numeric fields (Sum Insured, Monthly Benefit, Annual
+      // Income). Select-all + one Backspace clears in one action (12x individual
+      // Backspace presses can leave a mask's separator characters behind on some masks -
+      // confirmed live against Asteron's Sum Insured field, which mangled to ".5.0.0..."
+      // under the old backspace-loop approach); then verifies the digits actually landed
+      // instead of trusting a blind Tab - the same self-verifying-interaction discipline
+      // documented in .kiro/steering/test-expansion-process.md, now enforced here too.
       // Usage: { action: "calcmask", id: "field-id", value: "250000" }
       const loc = buildLocator(cmd);
       await loc.scrollIntoViewIfNeeded().catch(() => {});
       await loc.click();
-      await page.waitForTimeout(200);
-      // Clear the field with backspaces
-      for (let i = 0; i < 12; i++) {
-        await page.keyboard.press('Backspace');
-        await page.waitForTimeout(50);
-      }
-      await page.waitForTimeout(200);
-      // Type each digit individually
+      await page.waitForTimeout(150);
+      await page.keyboard.press('Control+A');
+      await page.keyboard.press('Backspace');
       const digits = String(cmd.value).replace(/[^0-9]/g, '');
-      for (const d of digits) {
-        await page.keyboard.press(d);
-        await page.waitForTimeout(60);
-      }
-      await page.waitForTimeout(200);
-      // Tab out to trigger blur/commit
+      await page.keyboard.type(digits, { delay: 20 });
       await page.keyboard.press('Tab');
       await waitForLoad();
+
+      const deadline = Date.now() + 5000;
+      let landed = false;
+      while (Date.now() < deadline) {
+        const current = await loc.inputValue().catch(() => '');
+        if (current.replace(/[^0-9]/g, '') === digits) {
+          landed = true;
+          break;
+        }
+        await page.waitForTimeout(100);
+      }
       const errors = await page.evaluate(READ_ERRORS);
-      return { ok: true, errors };
+      return { ok: landed, errors, ...(landed ? {} : { error: 'calcmask: typed digits did not land in the field - check the selector matched the right element' }) };
     }
 
     case 'eval': {

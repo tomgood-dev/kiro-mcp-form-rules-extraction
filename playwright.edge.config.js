@@ -1,15 +1,18 @@
 const { defineConfig, devices } = require('@playwright/test');
+const { formatRunTimestamp, pendingDir } = require('./tools/artifact-helpers');
+
+// See playwright.config.js for why this exists - shared by outputDir and the run-folder reporter.
+const RUN_TIMESTAMP = formatRunTimestamp();
 
 module.exports = defineConfig({
   testDir: './apps',
-  // Nested under the app, not repo root - only one app exists today; if a second app
-  // is added, this (and playwright.config.js) should become per-app or parameterized.
-  outputDir: './apps/asteron-quote-apply/test-results',
+  // Transient - see playwright.config.js's outputDir comment.
+  outputDir: pendingDir(RUN_TIMESTAMP),
   timeout: 780_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: 0,
-  reporter: [['line']],
+  reporter: [['line'], ['./tools/reporters/run-folder-reporter.js', { runTimestamp: RUN_TIMESTAMP }]],
   use: {
     headless: true,
     actionTimeout: 15_000,

@@ -13,18 +13,33 @@ const path = require('path');
 })();
 
 const { defineConfig, devices } = require('@playwright/test');
+const { formatRunTimestamp, pendingDir } = require('./tools/artifact-helpers');
+
+// Computed once per `playwright test` invocation - shared by outputDir (a transient holding
+// area) and the run-folder reporter, which reorganizes that output into each app's own
+// test-runs/<spec-file>/<RUN_TIMESTAMP>/ and deletes the holding area once done. See
+// "Test-run artifact structure" in .kiro/steering/test-expansion-process.md.
+const RUN_TIMESTAMP = formatRunTimestamp();
 
 module.exports = defineConfig({
   testDir: './apps',
-  // Nested under the app, not repo root - only one app exists today; if a second app
-  // is added, this (and playwright.edge.config.js) should become per-app or parameterized.
-  outputDir: './apps/asteron-quote-apply/test-results',
+  // Transient - the run-folder reporter sorts each test's output into its own app's
+  // test-runs/ (derived from the spec file's path, see tools/artifact-helpers.js
+  // findAppRoot()) and deletes this. Not under any one app since testDir spans all apps.
+  outputDir: pendingDir(RUN_TIMESTAMP),
+  globalSetup: require.resolve('./apps/asteron-quote-apply/global-setup.js'),
   timeout: 240_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: 0,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: './apps/asteron-quote-apply/playwright-report' }]],
+  reporter: [
+    ['list'],
+    ['./tools/reporters/run-folder-reporter.js', { runTimestamp: RUN_TIMESTAMP }],
+    ['html', { open: 'never', outputFolder: './apps/asteron-quote-apply/playwright-report' }],
+  ],
   use: {
+    baseURL: 'https://outsystems-dev.asteronlife.co.nz',
+    storageState: './apps/asteron-quote-apply/.auth/' + (process.env.AUTH_STATE_FILENAME || 'state.json'),
     headless: process.env.HEADLESS !== 'false',
     actionTimeout: 15_000,
     trace: 'retain-on-failure',

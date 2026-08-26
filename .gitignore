@@ -5,3 +5,14 @@ test-results/
 playwright-report/
 **/state.json
 *.log
+.playwright-mcp/
+
+# test-runs/: results.md and bug-reports/*.md ARE meant to be committed (that's the point of
+# the convention) - only the transient holding area and the bulky native trace/attachment
+# copies are excluded. See .kiro/steering/test-expansion-process.md, "Test-run artifact structure".
+.test-runs-pending/
+apps/*/test-runs/**/native/
+
+# tools/verify-finding.js verdicts and tools/draft-bug-report.js scratch input, if run
+# outside a test-runs/ folder - not meant to be committed as loose repo-root files.
+/*.verdict.json
