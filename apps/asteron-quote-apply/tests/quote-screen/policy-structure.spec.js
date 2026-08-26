@@ -10,6 +10,9 @@ const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,
   setMinimumPersonalDetails,
+  activateCover,
+  fillCalcMask,
+  sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 
@@ -19,14 +22,35 @@ test.beforeEach(async ({ page }) => {
   quote = await openNewQuote(page);
 });
 
+// These checkboxes have no real <label> association — just a checkbox followed by a
+// plain sibling text node (confirmed live: getByRole('checkbox', {name: ...}) matches
+// nothing). Identify them by walking up from the matching visible text to the nearest
+// ancestor containing a checkbox, same pattern as numberOfKidsSelect in kids-cover.spec.js.
+async function checkboxByLabel(page, labelText) {
+  const id = await page.evaluate((text) => {
+    const labelEl = [...document.querySelectorAll('*')].find(
+      (e) => e.children.length === 0 && e.innerText && e.innerText.trim() === text
+    );
+    let container = labelEl?.parentElement;
+    for (let i = 0; i < 5 && container; i++) {
+      const cb = container.querySelector('input[type="checkbox"]');
+      if (cb) return cb.id || null;
+      container = container.parentElement;
+    }
+    return null;
+  }, labelText);
+  if (!id) throw new Error(`Checkbox for label "${labelText}" not found`);
+  return page.locator(`#${id}`);
+}
+
 test('POL-01/POL-02: Inflation Adjustment defaults ON, Premium Freeze defaults OFF', async () => {
-  await expect(quote.getByRole('checkbox', { name: /Inflation Adjustment Benefit/ })).toBeChecked();
-  await expect(quote.getByRole('checkbox', { name: /Premium Freeze/ })).not.toBeChecked();
+  await expect(await checkboxByLabel(quote, 'Inflation Adjustment Benefit')).toBeChecked();
+  await expect(await checkboxByLabel(quote, 'Premium Freeze')).not.toBeChecked();
 });
 
 test('POL-05: Inflation Adjustment and Premium Freeze are mutually exclusive (silently)', async () => {
-  const inflation = quote.getByRole('checkbox', { name: /Inflation Adjustment Benefit/ });
-  const freeze = quote.getByRole('checkbox', { name: /Premium Freeze/ });
+  const inflation = await checkboxByLabel(quote, 'Inflation Adjustment Benefit');
+  const freeze = await checkboxByLabel(quote, 'Premium Freeze');
 
   await expect(inflation).toBeChecked();
   await freeze.check();
@@ -51,14 +75,22 @@ test.describe('POL-06 through POL-10 — PROBE: is Personal/Business an add-poli
       return text;
     };
 
+    // These buttons' accessible names carry a leading icon glyph (confirmed live:
+    // exact:true match fails), and a trailing-anchor regex alone is ambiguous — the
+    // wrapping accordion header's own accessible name aggregates all nested button
+    // text, so it also ends in "Personal"/"Business". Intersect with a real <button>
+    // tag filter to exclude that div[role="button"] header.
+    const personalBtn = () => quote.getByRole('button', { name: /Personal$/ }).and(quote.locator('button'));
+    const businessBtn = () => quote.getByRole('button', { name: /Business$/ }).and(quote.locator('button'));
+
     await countAfter(0);
-    await quote.getByRole('button', { name: 'Personal', exact: true }).click();
+    await personalBtn().click();
     await waitForSettle(quote);
     await countAfter(1);
-    await quote.getByRole('button', { name: 'Business', exact: true }).click();
+    await businessBtn().click();
     await waitForSettle(quote);
     await countAfter(2);
-    await quote.getByRole('button', { name: 'Personal', exact: true }).click();
+    await personalBtn().click();
     await waitForSettle(quote);
     const finalCount = await countAfter(3);
 
@@ -72,6 +104,14 @@ test.describe('POL-06 through POL-10 — PROBE: is Personal/Business an add-poli
 
 test.describe('POL-11/POL-12 — Add Life', () => {
   test('POL-11: Add Life creates a fully independent, blank Life 2', async () => {
+    // Per POL-12, Add Life is blocked with a "Cannot proceed" modal if Life 1 doesn't
+    // meet its minimum requirements — meet them first so this test exercises the
+    // normal-success path, not the blocked one (that's POL-12's own probe below).
+    await setMinimumPersonalDetails(quote);
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    await waitForSettle(quote);
+
     await quote.getByRole('button', { name: 'Add life' }).click();
     await waitForSettle(quote);
 

@@ -29,7 +29,8 @@ module.exports = async function globalSetup() {
 
   const authDir = path.join(__dirname, '.auth');
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
-  await page.context().storageState({ path: path.join(authDir, 'state.json') });
+  const filename = process.env.AUTH_STATE_FILENAME || 'state.json';
+  await page.context().storageState({ path: path.join(authDir, filename) });
 
   await browser.close();
 };

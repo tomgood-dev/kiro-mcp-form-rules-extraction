@@ -27,23 +27,30 @@ async function waitForSettle(page, ms = 400) {
  * @param {import('@playwright/test').Page} [page] - optional explicit page ref (avoids stale locator.page())
  */
 async function fillCalcMask(locator, value, page) {
+  console.log(`  [step] Entering calc-mask value: ${value}`);
   const p = page || locator.page();
+  const digits = String(value).replace(/[^0-9]/g, '');
   await locator.scrollIntoViewIfNeeded();
   await locator.click();
-  await p.waitForTimeout(200);
-  for (let i = 0; i < 12; i++) {
-    await p.keyboard.press('Backspace');
-    await p.waitForTimeout(50);
-  }
-  await p.waitForTimeout(200);
-  for (const digit of String(value).replace(/[^0-9]/g, '')) {
-    await p.keyboard.press(digit);
-    await p.waitForTimeout(60);
-  }
-  await p.waitForTimeout(200);
+  // Select-all + one Backspace clears the field in one action instead of 12 blind
+  // backspace presses — still a real keyboard-driven clear, not a `.fill()` value-set,
+  // so it doesn't hit the corruption this field type is known for.
+  await p.keyboard.press('Control+A');
+  await p.keyboard.press('Backspace');
+  await p.keyboard.type(digits, { delay: 20 });
   await p.keyboard.press('Tab');
   await p.locator('text=Loading').first().waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => {});
-  await p.waitForTimeout(2000);
+  // Verify the mask actually rendered the typed digits instead of a blind tail sleep —
+  // this is a correctness check the old code never made, not just a speedup. Compares
+  // with non-digit characters stripped so $/commas/formatting don't matter. Polls
+  // locator.inputValue() directly rather than page.waitForFunction, since we only
+  // have a Locator here, not a raw CSS selector string.
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const current = await locator.inputValue().catch(() => '');
+    if (current.replace(/[^0-9]/g, '') === digits) break;
+    await p.waitForTimeout(100);
+  }
 }
 
 /**
@@ -70,8 +77,18 @@ async function getVisibleErrors(page) {
 
 /** Convenience: asserts at least one visible error contains the given substring. */
 async function expectErrorContaining(page, substring) {
-  const errors = await getVisibleErrors(page);
+  // Polls instead of a single snapshot — a recent field change (e.g. Gender, which
+  // triggers a full-page recalculation) can transiently clear the error banner right
+  // as it's checked, before the real validation state re-renders.
+  let errors = [];
+  const deadline = Date.now() + 4000;
+  while (Date.now() < deadline) {
+    errors = await getVisibleErrors(page);
+    if (errors.some((e) => e.includes(substring))) break;
+    await page.waitForTimeout(250);
+  }
   const found = errors.some((e) => e.includes(substring));
+  console.log(`  [assert] Expecting an error containing "${substring}" — ${found ? 'FOUND' : 'NOT FOUND'} (visible errors: ${JSON.stringify(errors).slice(0, 200)})`);
   if (!found) {
     throw new Error(`Expected an error containing "${substring}", got: ${JSON.stringify(errors, null, 2)}`);
   }

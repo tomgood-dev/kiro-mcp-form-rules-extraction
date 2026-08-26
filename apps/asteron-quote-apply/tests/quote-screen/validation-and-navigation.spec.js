@@ -33,14 +33,22 @@ test('VAL-11: Apply is blocked while Employment Status is still "Select one"', a
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
   await clickApply(quote);
 
-  const stillOnQuote = !(await isOnClientSummary(quote));
-  const errors = await getVisibleErrors(quote);
-  // Employment status wasn't set for this test — some environments only
-  // enforce this at Apply for Disability-cover scenarios, so treat this as a
-  // soft check: if it's enforced, we expect to still be on the Quote screen.
-  if (stillOnQuote) {
-    expect(errors.length).toBeGreaterThan(0);
-  }
+  expect(await isOnClientSummary(quote), 'Apply should not succeed while Employment Status is unset').toBe(false);
+
+  // Per VAL-11/VAL-23, the exact message is "Please complete the client's employment
+  // details before applying" — check both an inline error and a modal dialog (per the
+  // VAL-12 precedent of a similar blocking validation appearing as a modal), since
+  // which surface this specific message uses hasn't been independently pinned down.
+  const found = await quote.evaluate(() => {
+    const inline = document.body.innerText.includes('employment details before applying');
+    const modalSel = '[role="dialog"],[role="alertdialog"],[class*="modal"],[class*="popup"],[class*="overlay"]';
+    const modal = [...document.querySelectorAll(modalSel)].some((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 50 && r.height > 50 && el.innerText?.includes('employment details before applying');
+    });
+    return inline || modal;
+  });
+  expect(found, 'expected "...employment details before applying" as an inline error or modal').toBe(true);
 });
 
 test('VAL-08/VAL-09/VAL-10: a fully valid single-cover configuration allows Apply to proceed', async () => {

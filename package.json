@@ -4,11 +4,13 @@
   "description": "AI-assisted business rules discovery and Playwright test generation for web applications",
   "scripts": {
     "explore": "node tools/server.js",
+    "docs": "node tools/docs-viewer/server.js",
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
     "report": "npx playwright show-report"
   },
   "dependencies": {
-    "@playwright/test": "^1.52.0"
+    "@playwright/test": "^1.52.0",
+    "marked": "^18.0.9"
   }
 }

@@ -1,0 +1,44 @@
+Login OK, 2026-08-24T05:04:57.981Z
+Quote A baseline default: Upfront
+
+--- polling after clicking Update (setting Level 30) ---
+t+0ms  updateDisabled=false  updatedTextFound=null
+t+500ms  updateDisabled=false  updatedTextFound=null
+t+1000ms  updateDisabled=false  updatedTextFound=null
+t+1500ms  updateDisabled=false  updatedTextFound=null
+t+2000ms  updateDisabled=false  updatedTextFound=null
+t+2500ms  updateDisabled=false  updatedTextFound=null
+t+3000ms  updateDisabled=false  updatedTextFound=null
+t+3500ms  updateDisabled=false  updatedTextFound=null
+t+4000ms  updateDisabled=false  updatedTextFound=null
+t+4500ms  updateDisabled=false  updatedTextFound=null
+t+5000ms  updateDisabled=false  updatedTextFound=null
+t+5500ms  updateDisabled=false  updatedTextFound=null
+t+6000ms  updateDisabled=false  updatedTextFound=null
+
+Quote B (same session) default after Update: Upfront
+Login OK, 2026-08-24T05:10:25.658Z
+
+Quote C (fresh login/session) default: Upfront
+
+--- polling after clicking Update (reverting to Upfront) ---
+t+0ms  updateDisabled=false  updatedTextFound=null
+t+500ms  updateDisabled=false  updatedTextFound=null
+t+1000ms  updateDisabled=false  updatedTextFound=null
+t+1500ms  updateDisabled=false  updatedTextFound=null
+t+2000ms  updateDisabled=false  updatedTextFound=null
+t+2500ms  updateDisabled=false  updatedTextFound=null
+t+3000ms  updateDisabled=false  updatedTextFound=null
+t+3500ms  updateDisabled=false  updatedTextFound=null
+t+4000ms  updateDisabled=false  updatedTextFound=null
+t+4500ms  updateDisabled=false  updatedTextFound=null
+t+5000ms  updateDisabled=false  updatedTextFound=null
+t+5500ms  updateDisabled=false  updatedTextFound=null
+t+6000ms  updateDisabled=false  updatedTextFound=null
+
+Quote D (same session) default after revert: Upfront
+Login OK, 2026-08-24T05:15:48.835Z
+
+Quote E (fresh login/session) default after revert: Upfront
+
+[exited with code 0]
