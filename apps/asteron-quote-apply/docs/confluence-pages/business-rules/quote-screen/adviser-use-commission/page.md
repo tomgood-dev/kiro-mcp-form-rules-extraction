@@ -1,8 +1,8 @@
 # Adviser Use / Commission Category
 
 > Child of [Quote Screen](../page.md). Rule ID prefix: `ADV-`
-> Source spec: [User Story - Select Default Commission Category](../../../user-stories/User%20Story-%20Select%20Default%20Commission%20Category.md) (Jira ACB-13175)
-> Tested by: `apps/asteron-quote-apply/tests/select-default-commission-category-part-1-v1.spec.js` ([test doc](../../test-documentation/select-default-commission-category-part-1-v1.md)) and `select-default-commission-category-part-2-v1.spec.js` ([test doc](../../test-documentation/select-default-commission-category-part-2-v1.md)) — originally one 7-part file (`comm-cat-v2.spec.js`), split into two files 2026-08-21 to reduce sustained-session load (see "Retracted findings" below), then both renamed 2026-08-21 to this story-based `part-N` scheme
+> Source spec: [User Story - Select Default Commission Category](../../../../user-stories/User%20Story-%20Select%20Default%20Commission%20Category.md) (Jira ACB-13175)
+> Tested by: `apps/asteron-quote-apply/tests/quote-screen/select-default-commission-category-part-1.spec.js`, `part-2.spec.js`, and `part-3.spec.js` ([test docs](../../../test-documentation/) — part-1/part-2 docs still carry their pre-rename `-v1` filename, part-3 not yet documented) — originally one 7-part file (`comm-cat-v2.spec.js`), split for sustained-session-load reasons (see "Retracted findings" below), then renamed off the `-v1` versioned scheme to this story-based `part-N` scheme.
 > **This feature is treated as already built** — the source doc's Jira Status field is blank,
 > but per `.kiro/steering/test-expansion-process.md` ("acceptance-criteria mode"), a mismatch
 > here is a candidate defect, not evidence the feature isn't shipped. Every mismatch below is
@@ -21,19 +21,29 @@ The Default for Agency setting is **shared across the agency**, not per-quote �
 
 ## Confirmed rules
 
+> ⚠ **Three known regressions, unresolved as of 2026-08-25 — see
+> `test-runs/select-default-commission-category-part-1/2026-08-25T19-26-35/bug-reports/adviser-use-commission-regressions.md`
+> for full evidence (screenshots embedded inline).** `ADV-01`'s agency-number
+> parenthetical, `ADV-07`'s Update-button-starts-disabled behavior, and `ADV-08`/`ADV-09`/
+> `ADV-10`'s single-Upfront-valid-option auto-select all currently fail live, each
+> independently re-confirmed with a second, minimal probe script distinct from the spec
+> file's shared helpers. Not yet confirmed with a BA/PM as regression vs. intentional
+> change. The rule text below still describes the *documented* (not necessarily current
+> live) behavior — do not assume it's accurate until that's resolved.
+
 | Rule ID | Rule |
 |---|---|
-| `ADV-01` | Label reads **"Default for Agency (`<agency numbers>`)"** — a comma-separated list of real agency numbers, confirming AC01. |
+| `ADV-01` | Label reads **"Default for Agency (`<agency numbers>`)"** — a comma-separated list of real agency numbers, confirming AC01. *(Regression 2026-08-25: live testing now shows the label as plain "Default for Agency" with no agency number at all — see callout above.)* |
 | `ADV-02` | Default commission category options are exactly **Upfront / Level 30 / Spread 20** — no "Nil Commission" option is ever offered as a default (AC02, and the doc's explicit "Nil Commission Option" rule). |
 | `ADV-03` | First-time default (no prior agency configuration) is **Upfront** (AC03). |
-| `ADV-04` | When **Flexi Rate = N/A**, the **Select IC/RC** dropdown for a cover has exactly one real option (`IC-100%, RC-100%`) besides "Please Select", and it is **auto-selected** rather than left on "Please Select" (AC14). |
+| `ADV-04` | When **Flexi Rate = N/A**, the **Select IC/RC** dropdown for a cover has exactly one real option (`IC-100%, RC-100%`) besides "Please Select", and it is **auto-selected** rather than left on "Please Select" (AC14). Re-confirmed still working 2026-08-25 (unlike ADV-08/09/10 below). |
 | `ADV-05` | Selecting the **30% Flexi Rate** displays: *"Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected"* (AC11, exact text confirmed). No "Please select IC/RC" validation appears in this state. |
 | `ADV-06` | At 30% Flexi Rate, the per-cover commission rows (**Select IC/RC**, **Select All**, per-cover dropdown) are **removed from the modal entirely** — only the agency-wide Default for Agency dropdown remains. This matches the doc's "Adviser Use Cover display" note that covers are not shown in this scenario. |
-| `ADV-07` | **Update** button starts **disabled**, and only enables once the Default for Agency selection genuinely differs from the currently-saved value; reverting the selection back to the saved value re-disables it (AC04, AC05, and the spirit of AC09). See "Retracted findings" below — this was initially misreported as broken. |
-| `ADV-08` | **Example 1 (2.5% Flexi Rate):** Select IC/RC auto-selects `IC-100%, RC-50%` (the documented Upfront default, the only valid option — AC14); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/06-probe-example1-category-default/`. |
-| `ADV-09` | **Example 2 (7.5% Flexi Rate):** Select IC/RC auto-selects `IC-75%, RC-100%` (the documented Upfront default, the only valid option — AC14), with exactly the 4 documented options. Confirmed via `evidence/08-probe-clean-single-flexirate-7.5pct/` — see "Retracted findings" for why this took two attempts. |
-| `ADV-10` | **Example 3 (15% Flexi Rate):** Select IC/RC auto-selects `IC-50%, RC-50%` (the documented Upfront default, the only valid option — AC14); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/07-probe-examples-3-4/`. |
-| `ADV-11` | **Example 4 (12.5% Flexi Rate, multiple UPFRONT IC/RC rates):** Select IC/RC correctly stays on `Please Select` (does NOT auto-select) with exactly the 4 documented options, since multiple valid IC/RC combinations exist for Upfront at this rate — matches the doc's explicit "the adviser must select an option" instruction and the general principle behind AC15. Confirmed via `evidence/09-probe-clean-single-flexirate-12.5pct/` — see "Retracted findings" for why this took two attempts. |
+| `ADV-07` | **Update** button starts **disabled**, and only enables once the Default for Agency selection genuinely differs from the currently-saved value; reverting the selection back to the saved value re-disables it (AC04, AC05, and the spirit of AC09). See "Retracted findings" below for the 2026-08-19 false-positive report of this same symptom — **but see the callout above: live testing on 2026-08-25, using neither `page.mouse.wheel()` nor any other interaction before the read, found the Update button genuinely starts enabled, not disabled.** This looks like a real, newer regression distinct from the earlier retracted finding, not a repeat of it — same symptom, different (and this time ruled-out) cause. |
+| `ADV-08` | **Example 1 (2.5% Flexi Rate):** Select IC/RC auto-selects `IC-100%, RC-50%` (the documented Upfront default, the only valid option — AC14); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/06-probe-example1-category-default/`. *(Regression 2026-08-25: now stays on "Please Select" — see callout above.)* |
+| `ADV-09` | **Example 2 (7.5% Flexi Rate):** Select IC/RC auto-selects `IC-75%, RC-100%` (the documented Upfront default, the only valid option — AC14), with exactly the 4 documented options. Confirmed via `evidence/08-probe-clean-single-flexirate-7.5pct/` — see "Retracted findings" for why this took two attempts. *(Regression 2026-08-25: now stays on "Please Select" — see callout above.)* |
+| `ADV-10` | **Example 3 (15% Flexi Rate):** Select IC/RC auto-selects `IC-50%, RC-50%` (the documented Upfront default, the only valid option — AC14); the per-cover "Life Cover" row auto-selects `Upfront`. Confirmed via `evidence/07-probe-examples-3-4/`. *(Regression 2026-08-25: now stays on "Please Select" — see callout above.)* |
+| `ADV-11` | **Example 4 (12.5% Flexi Rate, multiple UPFRONT IC/RC rates):** Select IC/RC correctly stays on `Please Select` (does NOT auto-select) with exactly the 4 documented options, since multiple valid IC/RC combinations exist for Upfront at this rate — matches the doc's explicit "the adviser must select an option" instruction and the general principle behind AC15. Confirmed via `evidence/09-probe-clean-single-flexirate-12.5pct/` — see "Retracted findings" for why this took two attempts. Re-confirmed still working 2026-08-25 (unlike ADV-08/09/10 above) — so specifically "pick the one Upfront-valid option among several listed" looks broken, not the whole auto-select mechanism. |
 
 ## Retracted findings (methodology notes, kept for the record)
 
