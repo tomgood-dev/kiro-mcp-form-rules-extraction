@@ -13,10 +13,23 @@ Lump Sum covers pay a one-off sum insured on the relevant event (death, disabili
 
 ## Occupation gating — availability, not just pricing
 
+> ⚠ **Known regression, unresolved as of 2026-08-25 — `LSC-02`/`LSC-03` gating does not
+> currently fire for ANY occupation code.** A full sweep across every Occupation Code
+> option (blank, AM, AA, A1, A2, B, C, S, U, IC), through both the plain "Occupation code"
+> select and the "Occupation" type-ahead search field, found Needlestick, Cancer,
+> Accidental Death, and Specific Injury all activate unconditionally — the documented
+> AA-only/AM-extra-restriction rules below describe the *intended* behavior per earlier
+> reverse-engineering, not what the live app currently does. This was independently
+> observed 2026-08-19 (Needlestick only) and again 2026-08-25 (all four covers, all codes,
+> both input paths) — two agreeing sessions six days apart, so this is not a test
+> artifact. Not yet confirmed with a BA/PM as regression vs. intentional removal — see
+> `docs/bug-reports/occupation-cover-gating-universally-not-enforced.md` for the full
+> evidence. Do not treat the table below as current live behavior until that's resolved.
+
 | Rule ID | Rule |
 |---|---|
-| `LSC-02` | **Needlestick is only functional for Occupation Code = AA.** For every other code (AM, A1, A2, B, C, S, U), the Needlestick button **remains in the DOM** but clicking it is a no-op — no cover card appears, no Sum Insured dropdown is added. For OCC=AA, clicking activates the cover (adds a SI dropdown and Premium Structure select). *(Corrected 2026-08-19: previously stated the button was "completely removed from the DOM" for non-AA — live testing confirms it remains present but functionally inert.)* |
-| `LSC-03` | Occupation Code = **AM** (Armed Forces) additionally disables **Cancer**, **Accidental Death**, and **Specific Injury** (in addition to Needlestick per `LSC-02`) — leaving only Life, TPD, Trauma, and the Business-only covers available. |
+| `LSC-02` | **Needlestick is only functional for Occupation Code = AA.** For every other code (AM, A1, A2, B, C, S, U), the Needlestick button **remains in the DOM** but clicking it is a no-op — no cover card appears, no Sum Insured dropdown is added. For OCC=AA, clicking activates the cover (adds a SI dropdown and Premium Structure select). *(Corrected 2026-08-19: previously stated the button was "completely removed from the DOM" for non-AA — live testing confirms it remains present but functionally inert. Per the regression note above, as of 2026-08-25 this restriction does not fire for any code — Needlestick activates everywhere.)* |
+| `LSC-03` | Occupation Code = **AM** additionally disables **Cancer**, **Accidental Death**, and **Specific Injury** (in addition to Needlestick per `LSC-02`) — leaving only Life, TPD, Trauma, and the Business-only covers available. *(The doc previously glossed AM as "Armed Forces" — live testing 2026-08-25 found no "Occupation" type-ahead title, across every plausible Armed-Forces/military search term, actually resolves to AM; the only Armed-Forces-related titles found resolve to Occupation Code U instead. That gloss should be treated as unconfirmed, not fact, until a canonical occupation-code reference is found. Per the regression note above, this rule also does not currently fire.)* |
 | `LSC-04` | Occupation Code = **IC** ("Individual Consideration") does not disable any cover, but triggers an underwriting-referral warning on all of them and makes Annual Income effectively required — see [Personal Details — PD-21](../personal-details/page.md). |
 
 ## Cover-by-cover reference

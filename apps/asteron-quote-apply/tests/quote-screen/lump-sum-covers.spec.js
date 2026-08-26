@@ -4,7 +4,6 @@ const {
   openNewQuote,
   setMinimumPersonalDetails,
   activateCover,
-  coverButtonExists,
   removeAllCoverCards,
   fillCalcMask,
   getVisibleErrors,
@@ -21,27 +20,71 @@ test.beforeEach(async ({ page }) => {
   await setMinimumPersonalDetails(quote);
 });
 
-test.describe('LSC-02/LSC-03 — Occupation gating on cover availability', () => {
-  test('LSC-02: Needlestick is only available for Occupation Code = AA', async () => {
-    expect(await coverButtonExists(quote, 'Needlestick')).toBe(true);
+// Per LSC-02/LSC-03: a functionally-disabled cover button stays in the DOM — only
+// clicking it is a no-op (no cover card / Sum Insured field gets added). So gating
+// must be checked by attempting activation and confirming no card appeared, not by
+// checking whether the button merely exists (coverButtonExists would be true either way).
+async function countActiveCoverCards(quote) {
+  return quote.evaluate(() => [...document.querySelectorAll('a')].filter((a) => a.innerText.trim() === 'Remove').length);
+}
 
-    await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: 'AM' });
-    await waitForSettle(quote);
-    expect(await coverButtonExists(quote, 'Needlestick')).toBe(false);
-  });
+// Per LSC-02/LSC-03 as documented (see the "known regression" callout at the top of
+// lump-sum-covers/page.md — as of 2026-08-25 this gating does not fire for ANY code, so
+// most of these are EXPECTED TO FAIL until that's resolved one way or the other). This
+// full sweep exists so the regression's exact scope stays visible per-code/per-cover
+// rather than only spot-checking AM, matching what the live investigation actually
+// covered (see docs/bug-reports/occupation-cover-gating-universally-not-enforced.md).
+test.describe('LSC-02/LSC-03 — Occupation gating on cover availability (full sweep)', () => {
+  // 4 activate+cleanup cycles per code needs more headroom than the 240s global default.
+  test.describe.configure({ timeout: 300_000 });
 
-  test('LSC-03: Occupation Code = AM disables Cancer, Accidental Death, and Specific Injury', async () => {
-    await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: 'AM' });
-    await waitForSettle(quote);
+  const EXPECTATIONS = {
+    // AA is the one code Needlestick is documented to work for; LSC-03 only names AM,
+    // so nothing here should be gated at AA.
+    AA: { Needlestick: true, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    // AM: LSC-02 (non-AA) gates Needlestick; LSC-03 additionally gates the other three.
+    AM: { Needlestick: false, Cancer: false, 'Acd. Death': false, 'Specific Injury': false },
+    // Every other non-AA code: LSC-02 gates Needlestick only — LSC-03 is AM-specific.
+    A1: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    A2: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    B: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    C: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    S: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    U: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+    IC: { Needlestick: false, Cancer: true, 'Acd. Death': true, 'Specific Injury': true },
+  };
 
-    for (const cover of ['Cancer', 'Acd. Death', 'Specific Injury']) {
-      expect(await coverButtonExists(quote, cover)).toBe(false);
-    }
-    // Life/TPD/Trauma should remain available regardless.
-    for (const cover of ['Life', 'TPD', 'Trauma']) {
-      expect(await coverButtonExists(quote, cover)).toBe(true);
-    }
-  });
+  for (const [occCode, expected] of Object.entries(EXPECTATIONS)) {
+    test(`LSC-02/LSC-03 @ Occupation Code = ${occCode}: gating matches the documented rule`, async () => {
+      await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: occCode });
+      await waitForSettle(quote);
+
+      for (const [cover, shouldActivate] of Object.entries(expected)) {
+        const before = await countActiveCoverCards(quote);
+        await activateCover(quote, cover);
+        await waitForSettle(quote, 1500); // extra margin — avoid a false no-op from a slow recalculation chain
+        const after = await countActiveCoverCards(quote);
+        const activated = after > before;
+        expect(
+          activated,
+          `${cover} @ OCC=${occCode}: expected ${shouldActivate ? 'ACTIVATE' : 'no-op (gated)'}, got ${activated ? 'ACTIVATE' : 'no-op'}`
+        ).toBe(shouldActivate);
+        await removeAllCoverCards(quote).catch(() => {});
+      }
+    });
+  }
+});
+
+test('LSC-02/LSC-03 control: Life/TPD/Trauma remain unaffected by occupation gating at AM', async () => {
+  await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: 'AM' });
+  await waitForSettle(quote);
+
+  for (const cover of ['Life', 'TPD', 'Trauma']) {
+    const before = await countActiveCoverCards(quote);
+    await activateCover(quote, cover);
+    const after = await countActiveCoverCards(quote);
+    expect(after, `${cover} should still activate normally at Occupation Code = AM`).toBe(before + 1);
+  }
 });
 
 test('LSC-10: TPD maximum Sum Insured per life is $5,000,000', async () => {
@@ -118,14 +161,20 @@ test('LSC-29: Needlestick Sum Insured is a fixed-tier dropdown, not free text', 
   expect(options).toEqual(['$0', '$50,000', '$100,000', '$150,000', '$200,000', '$250,000', '$300,000', '$350,000', '$400,000', '$450,000', '$500,000']);
 });
 
-test('LSC-32/LSC-34: Specific Injury activates independently, with no companion-cover requirement', async () => {
+test('LSC-32/LSC-34: Specific Injury requires a companion cover — adding one unblocks Apply', async () => {
+  // Specific Injury's Sum Insured is a calc-mask free-text input (LSC-32), same as
+  // Life/TPD/Trauma/Cancer — NOT a fixed-tier select like Needlestick's.
   await activateCover(quote, 'Specific Injury');
-  const dropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$500,000' }) }).first();
-  await dropdown.selectOption({ label: '$50,000' });
+  await fillCalcMask(sumInsuredInput(quote, 0), '5000');
   await clickApply(quote);
+  await expectErrorContaining(quote, 'requires one of the following covers');
 
+  // LSC-34: adding any companion cover (Life here) should clear the standalone block.
+  await activateCover(quote, 'Life');
+  await fillCalcMask(sumInsuredInput(quote, 1), '200000');
+  await clickApply(quote);
   const errors = await getVisibleErrors(quote);
-  expect(errors.some((e) => /requires one of the following covers/i.test(e))).toBe(false);
+  expect(errors.some((e) => /requires one of the following covers/i.test(e)), 'adding a companion cover should clear the Specific Injury standalone-block error').toBe(false);
 });
 
 test('LSC-35: TI Support caps at MIN(100% of Life Sum Insured, $300,000)', async () => {
