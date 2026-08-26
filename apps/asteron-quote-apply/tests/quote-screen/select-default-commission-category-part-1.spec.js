@@ -10,6 +10,19 @@
 // OWN fresh quote per the "fresh-quote-per-driving-field-value" rule (switching Flexi
 // Rate and reopening Adviser Use within the same quote can leave a stale Select IC/RC
 // selection from the previous value — see "Stateful-component carryover" in the same doc).
+//
+// THREE OF THESE TESTS ARE EXPECTED TO FAIL as of 2026-08-25/26 — confirmed, real
+// regressions, not test bugs (each independently re-verified with a probe using
+// different code from the shared helpers). Full evidence:
+// test-runs/select-default-commission-category-part-1/2026-08-25T19-26-35/bug-reports/adviser-use-commission-regressions.md
+//   - AC01 (below): the "Default for Agency (<numbers>)" label lost its agency number.
+//   - AC04/AC05 (below): the Update button starts enabled, not disabled.
+//   - ADV-08 (below): Select IC/RC no longer auto-selects the single Upfront-valid
+//     option at 2.5% Flexi Rate (also broken at 7.5%/15% in part-2.spec.js; N/A and
+//     12.5% still work correctly).
+// Per this project's convention, these assertions stay written to the DOCUMENTED
+// (intended) behavior so the suite goes green automatically once the real defects are
+// fixed — do not "fix" them to match the current broken behavior.
 const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,
