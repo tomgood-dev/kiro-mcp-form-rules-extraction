@@ -204,48 +204,115 @@ timestamps by hand. Instead:
   with their real sequence number; the point is reconstructing what happened in order, not a
   clean final list.
 
-### Test-run artifact structure — `.spec.js` runs (distinct from probe evidence above)
+### Test-run artifact structure — the single `report.md` convention
 
-The "Evidence folder structure" above is for **reverse-engineering probe write-ups** — a
-narrative investigation synthesizing several throwaway probe scripts. A `.spec.js` **test
-run** (local Playwright, not Test Console) is a different kind of artifact and uses a
-different, automated convention: **`<app>/test-runs/<spec-file-slug>/<run-timestamp>/`**
-(e.g. `apps/asteron-quote-apply/test-runs/lump-sum-covers/2026-08-25T19-26-35/`) — one
-folder per spec file, one dated subfolder per run, holding *everything from that run
-together*.
+A `.spec.js` **test run** (local Playwright) produces a single, self-contained `report.md`
+per spec file per run: **`<app>/test-runs/<spec-file-slug>/<run-timestamp>/report.md`**
+(e.g. `apps/asteron-quote-apply/test-runs/select-default-commission-category-v1/2026-08-27T10-47-56/report.md`).
 
 This is fully automated by a custom reporter (`tools/reporters/run-folder-reporter.js`,
 app-agnostic, wired up in both `playwright.config.js` and `playwright.edge.config.js`) —
-you don't create these folders by hand:
+you don't create these folders or files by hand.
+
+**What `report.md` contains (in this order):**
+
+1. **Header** — spec file path, run timestamp, environment (from `BASE_URL`), duration,
+   pass/fail summary count.
+2. **Results table** — one row per test: `| # | Test | Status |`. Clean pass/fail at a glance.
+3. **Failed Tests — Detail** — for each failing test:
+   - **Acceptance Criteria (from user story)** — the full verbatim AC text, pulled
+     automatically from the test's `acceptance-criteria` annotation (see "AC annotation
+     convention" below). Includes Steps to reproduce, Expected, and Actual.
+   - **Assertion failure** — the cleaned error message (ANSI codes stripped).
+   - **Screenshot** — embedded inline as base64 (captured at moment of failure).
+4. **Notes** — brief: pass/fail count, and a reminder that assertions are written to the
+   spec's expected behavior.
+
+**There is no separate `results.md`, `known-failures.md`, `bug-reports/` subfolder, or
+`native/` folder.** Everything is in one file. A reader opening `report.md` gets the full
+picture without needing to look anywhere else.
+
+**How the reporter works:**
 - `outputDir` is redirected into a transient, repo-root-level `.test-runs-pending/<timestamp>/`
-  holding area (no more `test-results/` with cryptic hashed folder names).
-- After the run, the reporter creates `<app>/test-runs/<spec-file-slug>/<timestamp>/results.md`
-  (a pass/fail table for every test in that file, failure screenshots embedded inline as
-  base64 — no sibling `.png` files) plus a `native/` subfolder with the original
-  trace.zip/attachments for `npx playwright show-trace`, then deletes the holding area.
-  Which app a spec file's output lands under is derived from the spec file's own path
-  (`tools/artifact-helpers.js`'s `findAppRoot()`) — this works for any app under `apps/`,
-  not just Asteron.
+  holding area during the run.
+- After the run, the reporter creates the final `report.md` in the app's `test-runs/` folder
+  and deletes the holding area.
+- Which app a spec file's output lands under is derived from the spec file's own path
+  (`tools/artifact-helpers.js`'s `findAppRoot()`).
 
-**Where a bug report goes now:** write it directly into that same run folder — e.g.
-`test-runs/<spec-file-slug>/<timestamp>/bug-reports/<slug>.md` — using
-`tools/artifact-helpers.js`'s `embedImage(path, altText)` for any screenshot (yours, or
-the run's own `native/.../test-failed-1.png`), so the report stays fully self-contained
-next to the results table that produced it, instead of a separate flat
-`docs/bug-reports/` folder disconnected from the run that found it. `docs/bug-reports/`
-and its `TEMPLATE.md` still exist and are still the format to follow — only the *location*
-changes for reports produced by an actual spec-file run going forward. Bug reports written
-before this convention existed were left where they are, not migrated.
+### AC annotation convention (mandatory for acceptance-criteria mode tests)
 
-**When a run reproduces an ALREADY-documented finding (mandatory):** do not write a
-second bug report for the same issue. Instead, add a short `known-failures.md` next to
-that run's `results.md`, listing each such failure with a link back to the original
-report and, for acceptance-criteria-mode tests, a quote of the exact AC text the failure
-violates (checked against the source user story directly, not just a downstream
-business-rules doc — see "Testing a Written User Story" above). This is what makes a run
-folder self-explanatory on its own: someone opening `results.md` cold shouldn't see
-unexplained red without a trail to follow. Skip this file entirely when a run has no
-failures, or when every failure is genuinely new (write a fresh bug report instead).
+Every `test()` block in an acceptance-criteria-mode spec file MUST include a
+`test.info().annotations.push(...)` call at the top of the test body that provides:
+
+```javascript
+test('AC04/AC05: Update button disabled until changed', async ({ page }) => {
+  test.info().annotations.push({
+    type: 'acceptance-criteria',
+    description: [
+      'AC04: Given the currently saved default commission category is displayed,',
+      'When no changes have been made by the user, Then the Update button is disabled.',
+      'AC05: Given the user changes the selected commission category,',
+      'When the new selection differs from the saved value,',
+      'Then the Update button becomes enabled.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, open Adviser Use.',
+      '2. Immediately check the Update button disabled state.',
+      '3. Change the Default for Agency selection.',
+      '4. Check enabled.',
+      '5. Revert.',
+      '6. Check disabled again.',
+      '',
+      'Expected: disabled → enabled → disabled.',
+      'Actual (current): Starts enabled (AC04 fails at step 2).',
+    ].join('\n'),
+  });
+  // ... test logic
+});
+```
+
+The annotation `description` field contains:
+- **Verbatim AC text** from the user story (Given/When/Then).
+- **Steps to reproduce** — numbered, exact, followable by someone who has never seen the test code.
+- **Expected** — what the spec says should happen.
+- **Actual (current)** — what the app currently does (for known-failing tests).
+
+The reporter reads this annotation and renders it as a blockquote in the failure detail section
+of `report.md`. This means every run automatically produces a report where each failure shows
+the full requirement, the reproduction steps, and the evidence — no manual post-processing needed.
+
+### Test file structure convention (for acceptance-criteria mode)
+
+For a user-story-based test file with multiple independent checks plus one or more
+state-mutating checks:
+
+```javascript
+test.describe('Feature Name', () => {
+  test.describe.configure({ mode: 'parallel' });
+
+  // Independent tests run in parallel — each opens its own fresh quote/session
+  test('AC01/AC02: ...', async ({ page }) => { /* ... */ });
+  test('AC10/AC14: Flexi Rate 2.5% ...', async ({ page }) => { /* ... */ });
+  test('AC10/AC14: Flexi Rate 7.5% ...', async ({ page }) => { /* ... */ });
+  // ...
+});
+
+// State-mutating tests run AFTER the parallel block (separate describe, default serial mode)
+test.describe('Feature Name — Save & Persistence', () => {
+  test('AC06/AC07/AC08: ...', async ({ page }) => {
+    test.setTimeout(900000); // longer timeout for login/logout flows
+    try {
+      // ... mutating logic
+    } finally {
+      // ... cleanup/revert
+    }
+  });
+});
+```
+
+This keeps runtime low (parallel independent tests) while preventing state-mutating tests
+from contaminating other tests' reads.
 
 ### Test Console constraints (still apply in this mode)
 
@@ -254,6 +321,12 @@ functions, no `let`/`const` inside evaluate blocks — use `function(){}` and `v
 per test, sign out at end. A fail-fast single test means a "confirmed NOT matching" assertion
 placed early in the file will hide later confirmed-passing assertions from every run until it's
 fixed — order matters (see outcome #2 above).
+
+**Exception for acceptance-criteria mode:** user-story-based test files use MULTIPLE `test()`
+blocks per file (see "Test file structure convention" above) so that independent checks run
+in parallel. The Test Console's one-test-per-file constraint applies only to the external
+Test Console runner — locally (via `playwright.edge.config.js`), multi-test files work fine.
+If these tests need to run on Test Console later, they can be split at that point.
 
 ## Critical Rules (do these WITHOUT being asked)
 

@@ -6,6 +6,7 @@ const RUN_TIMESTAMP = formatRunTimestamp();
 
 module.exports = defineConfig({
   testDir: './apps',
+  globalSetup: require.resolve('./apps/asteron-quote-apply/global-setup.js'),
   // Transient - see playwright.config.js's outputDir comment.
   outputDir: pendingDir(RUN_TIMESTAMP),
   timeout: 780_000,
@@ -14,12 +15,14 @@ module.exports = defineConfig({
   retries: 0,
   reporter: [['line'], ['./tools/reporters/run-folder-reporter.js', { runTimestamp: RUN_TIMESTAMP }]],
   use: {
+    baseURL: process.env.BASE_URL || 'https://outsystems-dev.asteronlife.co.nz',
     headless: true,
     actionTimeout: 15_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     ignoreHTTPSErrors: true,
     channel: 'msedge',
+    storageState: './apps/asteron-quote-apply/.auth/' + (process.env.AUTH_STATE_FILENAME || 'state.json'),
   },
   projects: [
     { name: 'edge', use: { ...devices['Desktop Edge'] } },

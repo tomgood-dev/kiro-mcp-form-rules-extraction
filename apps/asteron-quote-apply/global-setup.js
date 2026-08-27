@@ -11,7 +11,7 @@ module.exports = async function globalSetup() {
     throw new Error('Set ASTERON_LOGIN_EMAIL and ASTERON_LOGIN_PASSWORD (see .env.example) before running tests.');
   }
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ channel: 'msedge' });
   const page = await browser.newPage();
 
   await page.goto('https://outsystems-dev.asteronlife.co.nz/CentralPortalsLogin/NewLoginRLANZ');
