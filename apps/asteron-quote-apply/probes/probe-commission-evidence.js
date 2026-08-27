@@ -1,7 +1,7 @@
 /**
  * Evidence capture for 2 confirmed discrepancies vs. the "Select Default Commission
  * Category" user story (ACB-13175), for the Discrepancy Evidence Records in
- * docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md.
+ * docs/business-rules/quote-screen/adviser-use-commission/page.md.
  *
  * Finding 1: Update button already enabled on first Adviser Use open (before any change).
  * Finding 2: Select IC/RC default at 7.5% Flexi Rate does not match user story Example 2.
@@ -21,7 +21,7 @@ const fs = require('fs');
   const BASE_URL = 'https://outsystems-dev.asteronlife.co.nz';
   const LOGIN_EMAIL = process.env.ASTERON_LOGIN_EMAIL;
   const LOGIN_PASSWORD = process.env.ASTERON_LOGIN_PASSWORD;
-  const EVIDENCE_DIR = 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence';
+  const EVIDENCE_DIR = 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence';
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
 
   async function waitSettle(ms) {

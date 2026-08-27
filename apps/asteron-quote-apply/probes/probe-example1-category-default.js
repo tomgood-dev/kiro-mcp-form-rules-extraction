@@ -98,7 +98,7 @@ const { chromium } = require('@playwright/test');
     console.log('--- All labeled selects, Flexi Rate = 2.5%, Upfront agency default ---');
     console.log(JSON.stringify(data, null, 2));
 
-    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/example1-2.5pct-full-modal.png', fullPage: true });
+    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/example1-2.5pct-full-modal.png', fullPage: true });
     console.log('\nScreenshot saved.');
 
   } catch (err) {

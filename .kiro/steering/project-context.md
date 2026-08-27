@@ -26,9 +26,9 @@ extraction — do not produce OutSystems-specific output).
   this app (hardcoded URL/creds/selectors) — run directly with `node`, not via Playwright Test
 - `apps/asteron-quote-apply/helpers/` — shared OutSystems interaction patterns
   (`quote-helpers.js`)
-- `apps/asteron-quote-apply/docs/confluence-pages/business-rules/` — canonical business rules,
+- `apps/asteron-quote-apply/docs/business-rules/` — canonical business rules,
   one `page.md` per topic, Rule-ID-prefixed (e.g. `LSC-`, `DC-`, `PREM-`, `ADV-`)
-- `apps/asteron-quote-apply/docs/confluence-pages/test-documentation/` — one `.md` per test
+- `apps/asteron-quote-apply/docs/test-documentation/` — one `.md` per test
   file, version-matched (e.g. `disability-covers-formulas-and-caps-v1.spec.js` ↔
   `disability-covers-formulas-and-caps-v1.md` — steering doc note: keep these in
   sync when bumping a version; a version-bump rename is often pure Test Console cache-busting
@@ -41,7 +41,7 @@ extraction — do not produce OutSystems-specific output).
   README's "Add Your App" section
 - `sessions/` — dated working-session notes (chronological, all in one place)
 - `archive/` — superseded material: `iteration-001/`, `iteration-002/`, `iteration-003/` (early
-  exploration passes, now superseded by the confluence-pages business rules docs above),
+  exploration passes, now superseded by the business-rules docs above),
   `legacy-scripts/` (pre-`tools/`-framework one-off exploration scripts), `sessions/` merged
   into root `sessions/`
 
@@ -54,7 +54,7 @@ extraction — do not produce OutSystems-specific output).
 | 003 | 2026-08-13 | Gap-closing pass — age-banded limits, dependency/exclusivity rules, multi-tier formulas, cross-field checkbox links, bundling minimums |
 
 These are superseded by the live business-rules docs under
-`apps/asteron-quote-apply/docs/confluence-pages/business-rules/` — treat the iteration folders
+`apps/asteron-quote-apply/docs/business-rules/` — treat the iteration folders
 as historical evidence, not the current source of truth.
 
 ## Key DOM facts (still current)

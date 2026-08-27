@@ -1,4 +1,4 @@
-// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/kids-cover-and-multi-life/page.md
+// Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/kids-cover-and-multi-life/page.md
 const { test, expect } = require('@playwright/test');
 const { openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, clickApply, expectErrorContaining, sumInsuredInput, waitForSettle } = require('../../helpers/quote-helpers');
 

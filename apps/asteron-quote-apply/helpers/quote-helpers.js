@@ -1,7 +1,7 @@
 // Shared interaction helpers for the Quote screen ("Illustration" step) test suite.
 //
 // These encode every interaction gotcha discovered during manual exploration —
-// see apps/asteron-quote-apply/docs/confluence-pages/business-rules/technical-automation-appendix/page.md
+// see apps/asteron-quote-apply/docs/business-rules/technical-automation-appendix/page.md
 // for the narrative version. Reuse these instead of hand-rolling interactions in
 // spec files; the fragile parts (calc-mask fields, occupation search, the
 // disability-cover commitment trap) are easy to get subtly wrong.

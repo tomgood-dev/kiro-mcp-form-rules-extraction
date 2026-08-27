@@ -98,7 +98,7 @@ const { chromium } = require('@playwright/test');
     await page.waitForTimeout(500);
     await sampleUpdateButton('after reverting to Upfront (not clicking Update)');
 
-    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/finding-01-ac05-after-real-change.png' });
+    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/finding-01-ac05-after-real-change.png' });
     console.log('Screenshot saved.');
 
   } catch (err) {

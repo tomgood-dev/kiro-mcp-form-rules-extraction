@@ -1,4 +1,4 @@
-// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md
+// Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/page.md
 // Source user story: docs/user-stories/User Story- Select Default Commission Category.md
 // AC06/AC07/AC08: Update button save, confirmation message, and persistence of the
 // agency-wide default.

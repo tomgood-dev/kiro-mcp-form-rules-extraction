@@ -1,5 +1,5 @@
 /**
- * Local preview server for output/confluence-pages/business-rules/**
+ * Local preview server for output/business-rules/**
  *
  * Renders the page.md hierarchy as it would roughly appear in Confluence:
  * left sidebar page tree, breadcrumbs, Atlassian-ish typography/table styling.

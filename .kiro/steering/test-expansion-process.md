@@ -10,7 +10,7 @@ A false "finding" caused by the test's own interaction technique is worse than n
 wastes review time and can misdirect a real dev fix. 2026-08-20: a probe's own `page.mouse.wheel()`
 call (used only to scroll a screenshot into frame) silently produced a false "Update button always
 enabled" reading, initially written up as a real ACB-13175 defect before being retracted. Full
-investigation trail: `apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/update-button-investigation-raw-output.txt`.
+investigation trail: `apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/update-button-investigation-raw-output.txt`.
 
 **Re-running the same script more times does not catch this class of bug.** A script-induced
 artifact is exactly as reproducible as a real one — it's deterministic given the same faulty
@@ -416,7 +416,7 @@ If it fails → proceed to Step 4.
 - (b) The app behaves differently from the documented business rules
 
 If (b): this is a **new finding**. Write a targeted probe script (`apps/asteron-quote-apply/probes/probe-<topic>.js`) to confirm the behavior at multiple data points. Then:
-- Update the business rules doc (`apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/<category>/page.md`) with the correction, including date stamp and evidence
+- Update the business rules doc (`apps/asteron-quote-apply/docs/business-rules/quote-screen/<category>/page.md`) with the correction, including date stamp and evidence
 - Update `exhaustive-analysis.md` with a new GAP-XX entry
 - THEN fix the test's expected values to match reality
 
@@ -440,7 +440,7 @@ Move-Item "apps/asteron-quote-apply/tests/<old-version>.spec.js" "apps/asteron-q
 
 ### Step 7: Write Test Documentation
 
-Create/update `apps/asteron-quote-apply/docs/confluence-pages/test-documentation/<filename>.md`.
+Create/update `apps/asteron-quote-apply/docs/test-documentation/<filename>.md`.
 **Keep it a scannable matrix, not a prose write-up** — this doc gets read to answer "did it pass,
 what did it check, why," not to relearn the whole test. No links out to other docs (business
 rules pages, steering docs, source user stories) — keep it self-contained; a short inline phrase
@@ -475,7 +475,7 @@ Notes columns instead.
 ### Step 8: Update Business Rules Docs
 
 If Step 4 found discrepancies, ensure these files are updated:
-- `apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/<category>/page.md`
+- `apps/asteron-quote-apply/docs/business-rules/quote-screen/<category>/page.md`
 - `apps/asteron-quote-apply/docs/exhaustive-analysis.md`
 
 All corrections must include:

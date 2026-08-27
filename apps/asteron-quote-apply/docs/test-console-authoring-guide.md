@@ -31,7 +31,7 @@ Before writing a probe script or a test that changes a field via anything other 
 element; raw `dispatchEvent()` value changes must always be followed by an assertion that could
 only be true if the app's own reactive state genuinely updated, not a passive attribute read. A
 2026-08-20 investigation found and retracted a false-positive "defect" caused by exactly this —
-full trail in `docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md`.
+full trail in `docs/business-rules/quote-screen/adviser-use-commission/page.md`.
 
 ---
 

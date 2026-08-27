@@ -142,7 +142,7 @@ All files are in: `https://github.com/tomgood-dev/kiro-mcp-form-rules-extraction
 | `apps/asteron-quote-apply/tests/quote-screen/showcase-business-rules.spec.js` | Showcase business rule tests using shared helpers |
 | `apps/asteron-quote-apply/helpers/quote-helpers.js` | Reusable OutSystems interaction helpers |
 | `apps/asteron-quote-apply/docs/changelog.md` | Full changelog of business rules discovered |
-| `apps/asteron-quote-apply/docs/confluence-pages/business-rules/` | Canonical business rule documentation |
+| `apps/asteron-quote-apply/docs/business-rules/` | Canonical business rule documentation |
 
 ---
 

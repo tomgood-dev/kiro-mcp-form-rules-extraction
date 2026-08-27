@@ -60,7 +60,7 @@ const { chromium } = require('@playwright/test');
     console.log('\n--- DOM DUMP ---');
     console.log(JSON.stringify(dump, null, 2));
 
-    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/gender-control-diagnostic.png', fullPage: true });
+    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/gender-control-diagnostic.png', fullPage: true });
     console.log('\nScreenshot saved.');
 
   } catch (err) {

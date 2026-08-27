@@ -17,7 +17,7 @@
 
 Running the full "Select Default Commission Category" user-story suite (Parts 1-2; Part 3
 is separately, already-documented as expected-to-fail — see its own file header) surfaced
-three distinct mismatches against `docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md`.
+three distinct mismatches against `docs/business-rules/quote-screen/adviser-use-commission/page.md`.
 All three were re-confirmed independently — a second, minimal probe script using its own
 DOM reads (not the shared `adviser-use-helpers.js` functions the spec files use), plus a
 zero-interaction timing re-sample for the one that most resembles a previously-retracted
@@ -165,7 +165,7 @@ modal — no console/network errors were observed for any of the three.
 Confirm with a BA/PM whether any of these three were intentional. If not, file as defects
 with the dev team using this report — they may or may not share a root cause, but are
 independently confirmed regardless. Once resolved either way, update
-`docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md`
+`docs/business-rules/quote-screen/adviser-use-commission/page.md`
 (`ADV-01`, `ADV-07`, `ADV-08`/`ADV-09`/`ADV-10`) and the corresponding spec-file
 assertions to match.
 

@@ -106,7 +106,7 @@ const { chromium } = require('@playwright/test');
     await waitSettle(1500);
     await dumpLabeled('Example 4: Flexi Rate = 12.5%');
 
-    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/example4-12.5pct-modal.png', fullPage: true });
+    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/example4-12.5pct-modal.png', fullPage: true });
     console.log('\nScreenshot saved for Example 4.');
 
   } catch (err) {

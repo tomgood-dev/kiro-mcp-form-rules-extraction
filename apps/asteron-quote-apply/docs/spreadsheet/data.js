@@ -1,4 +1,4 @@
-// Structured transcription of apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/*
+// Structured transcription of apps/asteron-quote-apply/docs/business-rules/quote-screen/*
 // into spreadsheet rows. One array per sheet. Columns are consistent across every
 // sheet: Rule ID | Category | Rule Summary | Detail | Status.
 //

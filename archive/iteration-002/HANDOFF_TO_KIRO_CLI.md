@@ -31,7 +31,7 @@ disagreement, flag it the same way the existing 4 are flagged.
    the user if you don't have these — don't guess or reuse credentials found elsewhere.
 4. Read `.kiro/steering/form-automation-playbook.md` (low-level DOM/interaction mechanics —
    calc-mask fields, click techniques) and
-   `output/confluence-pages/business-rules/technical-automation-appendix/page.md`
+   `output/business-rules/technical-automation-appendix/page.md`
    (higher-level gotchas: the disability-cover focus+blur "commitment" trap, Apply's silent
    same-URL navigation to Client Summary, the multi-policy Personal/Business mechanism). Both
    documents together are the full automation knowledge base — don't skip either.
@@ -178,7 +178,7 @@ confirm Kids Cover premiums are excluded from the bundling discount base (never 
 
 ## 10. Pre-existing open discrepancies (still unresolved, not new to this pass)
 
-These are already flagged in `output/confluence-pages/business-rules/page.md` — re-verify
+These are already flagged in `output/business-rules/page.md` — re-verify
 while you're in there and close them out:
 
 1. Multi-policy mechanism — is "Personal"/"Business" a two-state toggle, or an add-policy
@@ -196,7 +196,7 @@ while you're in there and close them out:
 
 ## 11. Where to write results
 
-- **Confluence pages** (`output/confluence-pages/business-rules/quote-screen/*/page.md`) — the
+- **Confluence pages** (`output/business-rules/quote-screen/*/page.md`) — the
   canonical rule text. Update the specific Rule ID's row/section directly; add new Rule IDs for
   genuinely new rules (age bands, cross-field checkbox links, etc.) following the existing
   `<PREFIX>-NN` convention per page.

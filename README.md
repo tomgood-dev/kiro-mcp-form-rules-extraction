@@ -176,7 +176,7 @@ Log in manually in the headed browser, then the AI drives from there.
 
 `apps/asteron-quote-apply/` contains a complete worked example, reverse-engineered from a live
 OutSystems insurance application with zero source code access. Current live test files (see
-`apps/asteron-quote-apply/docs/confluence-pages/test-documentation/` for full per-file docs —
+`apps/asteron-quote-apply/docs/test-documentation/` for full per-file docs —
 older versions referenced by number are in `apps/asteron-quote-apply/tests/deprecated/`):
 
 | File | Rules Tested |

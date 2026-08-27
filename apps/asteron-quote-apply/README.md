@@ -31,8 +31,8 @@ authoring process.
 | `tests/quote-screen/*.spec.js` | Original per-topic modular suite |
 | `probes/probe-*.js` | Throwaway/retained investigation scripts (run directly with `node`, not via Playwright Test) — see `.kiro/steering/test-expansion-process.md` "Probe & Interaction Safety" before writing new ones |
 | `helpers/quote-helpers.js` | OutSystems interaction patterns (calc-mask, button groups, etc.) |
-| `docs/confluence-pages/business-rules/` | Canonical business rules documentation |
-| `docs/confluence-pages/test-documentation/` | One `.md` per test file (version-matched) |
+| `docs/business-rules/` | Canonical business rules documentation |
+| `docs/test-documentation/` | One `.md` per test file (version-matched) |
 | `docs/user-stories/` | Source Jira/Confluence user stories tested in acceptance-criteria mode |
 | `docs/exhaustive-analysis.md` | Full boundary/validation analysis |
 

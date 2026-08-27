@@ -91,7 +91,7 @@ const { chromium } = require('@playwright/test');
     await page.waitForTimeout(3000); await sampleUpdateButton('t=8.0s');
     await page.waitForTimeout(4000); await sampleUpdateButton('t=12.0s (no interaction since modal opened)');
 
-    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/evidence/finding-01-timing-t12s.png' });
+    await page.screenshot({ path: 'apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/evidence/finding-01-timing-t12s.png' });
     console.log('Screenshot saved at t=12s.');
 
   } catch (err) {

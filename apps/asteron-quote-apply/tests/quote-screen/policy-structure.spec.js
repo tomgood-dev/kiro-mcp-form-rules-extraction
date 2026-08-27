@@ -1,4 +1,4 @@
-// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/policy-structure/page.md
+// Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/policy-structure/page.md
 //
 // Several tests in this file are DELIBERATELY WRITTEN AS PROBES rather than
 // pinned assertions, because the source documentation flags open discrepancies

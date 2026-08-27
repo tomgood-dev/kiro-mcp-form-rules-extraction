@@ -1,4 +1,4 @@
-// Verifies: apps/asteron-quote-apply/docs/confluence-pages/business-rules/quote-screen/adviser-use-commission/page.md
+// Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/adviser-use-commission/page.md
 // Source user story: docs/user-stories/User Story- Select Default Commission Category.md
 // ACB-13175 is treated as already-built per .kiro/steering/test-expansion-process.md's
 // acceptance-criteria mode — a mismatch here is a candidate defect, not evidence the
