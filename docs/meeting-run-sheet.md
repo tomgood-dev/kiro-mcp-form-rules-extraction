@@ -82,23 +82,28 @@ against the live app."
 
 ## 3. Issues the tests have surfaced (~4 min)
 
-🗣️ "The tests have already turned up some real issues in the app. Here's one."
+🗣️ "The tests have already turned up some real issues in the app. Let me show you the latest run."
 
-🖥️ **Show the bug report** (`occupation-cover-gating-universally-not-enforced.md`). Point at:
-- the **header** — severity, component, environment — written so it could be filed as a ticket,
-- the **summary** — an occupation-based eligibility control (`LSC-02`/`LSC-03`) that isn't firing
-  for *any* occupation code,
-- the **exact reproduction steps** — followable without reading any test code,
-- that it was **confirmed across two independent sessions six days apart**.
+🖥️ **Show the latest auto-generated report**
+(`test-runs/select-default-commission-category-v1/2026-08-27T10-47-56/report.md`). Point at:
+- the **results table** — 3 passed, 5 failed at a glance,
+- scroll to a **failure detail** (e.g. AC04/AC05) — show the full verbatim AC text from the user
+  story quoted inline, the steps to reproduce, expected vs actual, and the screenshot,
+- "This is generated automatically every time the tests run — no manual write-up needed."
 
-🗣️ "There's a second one written up too — an Apply step that doesn't complete under a specific
-employment-status condition. Both came out of the acceptance-criteria testing against the
-commission-category story and the cover rules."
+🗣️ "5 of the 8 acceptance criteria we tested are currently failing against the live app. Each
+failure shows exactly what the user story says should happen, what the app actually does, and a
+screenshot at the point of failure. These are confirmed regressions — they've reproduced
+consistently across multiple runs over several days."
+
+🗣️ "For example, AC04 says the Update button should be disabled until the user makes a change.
+Right now it starts enabled — that's a mismatch against the spec. The test is written to the
+spec's expected value, so it'll automatically pass once it's fixed."
 
 🗣️ *(Testers, briefly:)* "One thing I'm careful about — a surprising result has to reproduce on
 two independent clean runs before I write it up. A couple of early 'findings' turned out to be
 caused by my own test scripts, and I caught and dropped those rather than raise a false alarm. So
-when something like this gets written up, it's been checked."
+when something shows as red here, it's been checked."
 
 ---
 

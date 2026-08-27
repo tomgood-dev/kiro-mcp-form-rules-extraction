@@ -1,0 +1,1163 @@
+﻿î
+î¨¿
+
+Parul Singh
+
+ started transcription
+TG
+Tom Good
+0 minutes 4 seconds
+0:04
+Tom Good 0 minutes 4 seconds
+Cool, all right. Yeah, so I'll just be going over what I've been doing and hopefully maybe get some of your inputs and maybe some questions.
+Tom Good 0 minutes 14 seconds
+Um...
+Tom Good 0 minutes 16 seconds
+Yeah, so I'll share my screen.
+Chirag Kharbanda
+0 minutes 18 seconds
+0:18
+Chirag Kharbanda 0 minutes 18 seconds
+Yeah.
+TG
+Tom Good
+0 minutes 25 seconds
+0:25
+Tom Good 0 minutes 25 seconds
+This one.
+Tom Good 0 minutes 27 seconds
+Okay.
+Tom Good 0 minutes 31 seconds
+Alright, so I just spun up a local app that's that shows my.
+Tom Good 0 minutes 41 seconds
+Pretty much my repository with all my documentation and that sort of thing. So, I'll start by showing the, I guess, this business rules page that I've created. So, I've been using Kiro.
+Chirag Kharbanda
+0 minutes 48 seconds
+0:48
+Chirag Kharbanda 0 minutes 48 seconds
+Yeah.
+TG
+Tom Good
+0 minutes 58 seconds
+0:58
+Tom Good 0 minutes 58 seconds
+To extract business rules from the quote and apply screen, and it's a bit of some instructions on how to, I guess, use the documentation or, you know, a brief explanation of what it is.
+Tom Good 1 minute 15 seconds
+And we've got this page index with all of the sections that it's pulled out of the quote and apply screen. So we've got personal details, policy structure and some different covers, as well as some rules around validation and navigation.
+Tom Good 1 minute 34 seconds
+Um...
+Tom Good 1 minute 36 seconds
+So this all isn't really relevant, I don't think so. We'll just stick to the quote and apply. I'll open this up and just show you what it's got. So for personal details, it's generated these rules with the rule ID.
+Tom Good 1 minute 56 seconds
+I guess, for you know, traceability and Jira tickets, confluence, that sort of thing, different fields, type, and it's got a bit more context here for, you know, cover disability and some notes, so...
+Tom Good 2 minutes 18 seconds
+Yeah, that's for...
+Tom Good 2 minutes 23 seconds
+This one, I'll go back and maybe show some more of the different cover ones.
+Tom Good 2 minutes 30 seconds
+Just also stop me if you want to find out some more, or if I'm not, yeah.
+Chirag Kharbanda
+2 minutes 34 seconds
+2:34
+Chirag Kharbanda 2 minutes 34 seconds
+Yeah, Tom. So, Tom, you spin up this using Kiro. Like, what is that? What is the purpose? Is this creating a knowledge fabric? Here is the purpose, or what are we trying to achieve?
+TG
+Tom Good
+2 minutes 38 seconds
+2:38
+Tom Good 2 minutes 38 seconds
+Here I am.
+Tom Good 2 minutes 45 seconds
+So, the Pope?
+Tom Good 2 minutes 47 seconds
+So the purpose is to firstly...
+Tom Good 2 minutes 53 seconds
+Create a source of truth.
+Tom Good 2 minutes 57 seconds
+that testers and that sort of thing can base it off. So once we've got this, I guess, database of business rules, then I'll go into what's next. But so we're hoping to then generate some automated tests based off those business rules.
+Chirag Kharbanda
+2 minutes 57 seconds
+2:57
+Chirag Kharbanda 2 minutes 57 seconds
+Mm.
+Chirag Kharbanda 3 minutes 2 seconds
+Mhm, mhm.
+Chirag Kharbanda 3 minutes 7 seconds
+Yep.
+TG
+Tom Good
+3 minutes 18 seconds
+3:18
+Tom Good 3 minutes 18 seconds
+Um...
+Tom Good 3 minutes 20 seconds
+And yeah, so...
+Chirag Kharbanda
+3 minutes 21 seconds
+3:21
+Chirag Kharbanda 3 minutes 21 seconds
+Mm.
+TG
+Tom Good
+3 minutes 23 seconds
+3:23
+Tom Good 3 minutes 23 seconds
+Does that sort of answer your question?
+Chirag Kharbanda
+3 minutes 26 seconds
+3:26
+Chirag Kharbanda 3 minutes 26 seconds
+Yes, yes. I was just trying to understand the full picture here. So basically...
+TG
+Tom Good
+3 minutes 30 seconds
+3:30
+Tom Good 3 minutes 30 seconds
+Yeah, so.
+Chirag Kharbanda
+3 minutes 37 seconds
+3:37
+Chirag Kharbanda 3 minutes 37 seconds
+This is what a knowledge like this is kind of if you plug in all of your agentic AI stuff, then this is the first layer where you're building your rag here, which is your knowledge fabric, right? That's what you're trying to do. Okay, yeah.
+TG
+Tom Good
+3 minutes 46 seconds
+3:46
+Tom Good 3 minutes 46 seconds
+Guest.
+Tom Good 3 minutes 48 seconds
+Yep, yep, that's right.
+Tom Good 3 minutes 51 seconds
+That's right.
+Tom Good 3 minutes 53 seconds
+So this, yeah, this is also ongoing. So after, I've also got some tests to show you and some outputs of that. But I get the point is that it's sort of creating a bit of a loop where, you know, it has this base set of rules, do some tests.
+Chirag Kharbanda
+4 minutes 1 second
+4:01
+Chirag Kharbanda 4 minutes 1 second
+Thank you.
+TG
+Tom Good
+4 minutes 12 seconds
+4:12
+Tom Good 4 minutes 12 seconds
+enhance that based on further test as well as some user stories.
+Chirag Kharbanda
+4 minutes 19 seconds
+4:19
+Chirag Kharbanda 4 minutes 19 seconds
+Re.
+TG
+Tom Good
+4 minutes 20 seconds
+4:20
+Tom Good 4 minutes 20 seconds
+Yeah, so.
+Tom Good 4 minutes 21 seconds
+I'll go into now.
+Chirag Kharbanda
+4 minutes 26 seconds
+4:26
+Chirag Kharbanda 4 minutes 26 seconds
+So how did you create this business rules? Did you just feed in all the existing user stories and just said, hey, can you just create these business rules around it?
+TG
+Tom Good
+4 minutes 32 seconds
+4:32
+Tom Good 4 minutes 32 seconds
+Yeah.
+Tom Good 4 minutes 36 seconds
+No, so I started off with getting Kiro, the CLI, interacting with Playwright, and it pretty much did a complete scour through of the of the quote and apply screen, so...
+Chirag Kharbanda
+4 minutes 44 seconds
+4:44
+Chirag Kharbanda 4 minutes 44 seconds
+Yeah, yeah.
+Chirag Kharbanda 4 minutes 52 seconds
+So, the code, so the kind of the exploratory stuff, yeah?
+TG
+Tom Good
+4 minutes 55 seconds
+4:55
+Tom Good 4 minutes 55 seconds
+It, yeah, yeah, it explored it a few times after it, you know, it sort of built its context and.
+Chirag Kharbanda
+5 minutes
+5:00
+Chirag Kharbanda 5 minutes
+Mm.
+Chirag Kharbanda 5 minutes 2 seconds
+Yep. Yep.
+TG
+Tom Good
+5 minutes 6 seconds
+5:06
+Tom Good 5 minutes 6 seconds
+Uh, yeah, yeah, so then...
+Chirag Kharbanda
+5 minutes 8 seconds
+5:08
+Chirag Kharbanda 5 minutes 8 seconds
+So it has built the context from the app, not from the user stories.
+TG
+Tom Good
+5 minutes 11 seconds
+5:11
+Tom Good 5 minutes 11 seconds
+No, not yet, but I'll get to that a bit later.
+Chirag Kharbanda
+5 minutes 13 seconds
+5:13
+Chirag Kharbanda 5 minutes 13 seconds
+Okay.
+Chirag Kharbanda 5 minutes 16 seconds
+Mhm.
+TG
+Tom Good
+5 minutes 16 seconds
+5:16
+Tom Good 5 minutes 16 seconds
+Um...
+Tom Good 5 minutes 19 seconds
+So, just bear with me.
+Tom Good 5 minutes 28 seconds
+So I'll show you some of the tests that it's then built from that.
+Tom Good 5 minutes 34 seconds
+I'll start with some of the generic ones.
+Tom Good 5 minutes 38 seconds
+So, with each section that you saw of the business rules, it created a test script for that.
+Chirag Kharbanda
+5 minutes 43 seconds
+5:43
+Chirag Kharbanda 5 minutes 43 seconds
+Yeah.
+Chirag Kharbanda 5 minutes 49 seconds
+Mm.
+TG
+Tom Good
+5 minutes 51 seconds
+5:51
+Tom Good 5 minutes 51 seconds
+And...
+Tom Good 5 minutes 55 seconds
+I mean, you can, I don't know if this makes much sense to you just glancing at it, but I'm more than happy to share the repo with you guys as well if you wish.
+Tom Good 6 minutes 8 seconds
+And so based on those generated tests that I got, we come to these test runs. So let's say for disability covers, it's generated some of these results. This isn't a very detailed one, actually. Maybe I'll backtrack a bit.
+Tom Good 6 minutes 28 seconds
+So I did end up passing it in a user story. I passed in the select default commissions category user story after I...
+Tom Good 6 minutes 38 seconds
+I got Kiro to build a very solid base around the business rules, and so then...
+Chirag Kharbanda
+6 minutes 43 seconds
+6:43
+Chirag Kharbanda 6 minutes 43 seconds
+Hmm.
+TG
+Tom Good
+6 minutes 47 seconds
+6:47
+Tom Good 6 minutes 47 seconds
+Let's go with this latest one.
+Tom Good 6 minutes 51 seconds
+It then built this test report, which will go through, so it's...
+Tom Good 6 minutes 59 seconds
+It's got these.
+Tom Good 7 minutes 2 seconds
+Different tests that it's created, and it's actually...
+Tom Good 7 minutes 8 seconds
+It's actually found some.
+Tom Good 7 minutes 13 seconds
+some issues currently with I guess the dev app and it will go through each of the different tests. It will show the acceptance criteria that is actually linked to it based on the user story.
+Chirag Kharbanda
+7 minutes 17 seconds
+7:17
+Chirag Kharbanda 7 minutes 17 seconds
+Yeah.
+TG
+Tom Good
+7 minutes 26 seconds
+7:26
+Tom Good 7 minutes 26 seconds
+And then also it will give some steps to reproduce for the dev in the end. So it's also showing the assertion failure.
+Chirag Kharbanda
+7 minutes 30 seconds
+7:30
+Chirag Kharbanda 7 minutes 30 seconds
+Mm.
+TG
+Tom Good
+7 minutes 40 seconds
+7:40
+Tom Good 7 minutes 40 seconds
+and a screenshot.
+Tom Good 7 minutes 42 seconds
+Of of that.
+Chirag Kharbanda
+7 minutes 44 seconds
+7:44
+Chirag Kharbanda 7 minutes 44 seconds
+Mm.
+TG
+Tom Good
+7 minutes 47 seconds
+7:47
+Tom Good 7 minutes 47 seconds
+So let's say for this one.
+Tom Good 7 minutes 50 seconds
+When the user views the selects.
+Tom Good 7 minutes 53 seconds
+ICRC field and only the options valid for the selected commission category and flexi rate combination are displayed, which you can see it's failed and there's no default selection. So
+Tom Good 8 minutes 7 seconds
+And.
+Chirag Kharbanda
+8 minutes 11 seconds
+8:11
+Chirag Kharbanda 8 minutes 11 seconds
+Yeah.
+TG
+Tom Good
+8 minutes 12 seconds
+8:12
+Tom Good 8 minutes 12 seconds
+just based on the run actually this morning.
+Parul Singh
+8 minutes 14 seconds
+8:14
+Parul Singh 8 minutes 14 seconds
+When was this run? Sorry, Tom.
+TG
+Tom Good
+8 minutes 16 seconds
+8:16
+Tom Good 8 minutes 16 seconds
+This, this was this morning, so at 10:47.
+Parul Singh
+8 minutes 18 seconds
+8:18
+Parul Singh 8 minutes 18 seconds
+Oh, thank you.
+TG
+Tom Good
+8 minutes 21 seconds
+8:21
+Tom Good 8 minutes 21 seconds
+No, this is Dev, so this isn't this isn't, I guess, actively being applied to QA or any of those higher environments. It's more it's more to build on this testing suite and.
+Parul Singh
+8 minutes 23 seconds
+8:23
+Parul Singh 8 minutes 23 seconds
+Okay.
+Chirag Kharbanda
+8 minutes 34 seconds
+8:34
+Chirag Kharbanda 8 minutes 34 seconds
+Mm.
+Parul Singh
+8 minutes 34 seconds
+8:34
+Parul Singh 8 minutes 34 seconds
+So is it more for the unit testing then?
+TG
+Tom Good
+8 minutes 38 seconds
+8:38
+Tom Good 8 minutes 38 seconds
+It's more, well, now it's just doing some base unit testing and it's going to be ultimately applied as regression once we sort of...
+Tom Good 8 minutes 53 seconds
+Yeah, build it up.
+Chirag Kharbanda
+8 minutes 54 seconds
+8:54
+Chirag Kharbanda 8 minutes 54 seconds
+Mhm.
+Parul Singh
+8 minutes 55 seconds
+8:55
+Parul Singh 8 minutes 55 seconds
+Good.
+Chirag Kharbanda
+8 minutes 57 seconds
+8:57
+Chirag Kharbanda 8 minutes 57 seconds
+Okay, so I got a bit of gist of it. I'll give you a bit of background, you know. So from our enterprise perspectives, so I'm from testing, you can call a TCOE, like Testing Centre of Excellence. So we do the strategy, Governance, all the tooling, frameworks, etc. for enterprise.
+TG
+Tom Good
+9 minutes
+9:00
+Tom Good 9 minutes
+Yeah.
+Tom Good 9 minutes 3 seconds
+Yeah.
+Tom Good 9 minutes 6 seconds
+Yeah.
+Chirag Kharbanda
+9 minutes 17 seconds
+9:17
+Chirag Kharbanda 9 minutes 17 seconds
+Save.
+TG
+Tom Good
+9 minutes 18 seconds
+9:18
+Tom Good 9 minutes 18 seconds
+Yeah.
+Chirag Kharbanda
+9 minutes 18 seconds
+9:18
+Chirag Kharbanda 9 minutes 18 seconds
+So we have a GitHub repo where and we use Playwright. So from our enterprise perspective, we use Playwright for all of our test automation required for a web application, and we mainly focus on the regression stuff. OK, for now.
+TG
+Tom Good
+9 minutes 33 seconds
+9:33
+Tom Good 9 minutes 33 seconds
+Mm.
+Tom Good 9 minutes 37 seconds
+Yep.
+Chirag Kharbanda
+9 minutes 38 seconds
+9:38
+Chirag Kharbanda 9 minutes 38 seconds
+OK, and then I'll tell you the bigger picture as well.
+TG
+Tom Good
+9 minutes 40 seconds
+9:40
+Tom Good 9 minutes 40 seconds
+Okay.
+Chirag Kharbanda
+9 minutes 41 seconds
+9:41
+Chirag Kharbanda 9 minutes 41 seconds
+So we use Playwright for that and for any legacy systems, like, you know, we have passes which are mainframe based, etc. We use Tosca for that. So we have a couple of licences with the Tosca, so we use that and we use Playwright for our web related stuff. So we have been building.
+TG
+Tom Good
+9 minutes 57 seconds
+9:57
+Tom Good 9 minutes 57 seconds
+Yep.
+Chirag Kharbanda
+10 minutes 1 second
+10:01
+Chirag Kharbanda 10 minutes 1 second
+You know, a deterministic automated regression tests.
+Chirag Kharbanda 10 minutes 6 seconds
+which are more functional end-to-end flows for digital portals on the AU policy side of it, not the Astron one, but the digital portals, right? So.
+TG
+Tom Good
+10 minutes 9 seconds
+10:09
+Tom Good 10 minutes 9 seconds
+Mhm.
+Tom Good 10 minutes 18 seconds
+Yeah.
+Chirag Kharbanda
+10 minutes 20 seconds
+10:20
+Chirag Kharbanda 10 minutes 20 seconds
+Me and there is.
+Chirag Kharbanda 10 minutes 23 seconds
+a scope where a baseline needs to be uplifted for Astron because Astron was like, I don't know if you were here before or when did you join? I'm sorry, I don't have a bit of context on that, but.
+TG
+Tom Good
+10 minutes 35 seconds
+10:35
+Tom Good 10 minutes 35 seconds
+Yeah, I've only been here, what, four weeks? Yeah.
+Chirag Kharbanda
+10 minutes 35 seconds
+10:35
+Chirag Kharbanda 10 minutes 35 seconds
+Um...
+Chirag Kharbanda 10 minutes 38 seconds
+Okay, sure, sure. So it was run in a very, what do you call it, an aggressive manner, this project where it needed to get out, but test automation was kind of on the back burner. So we want to get that capability uplifted because there is a couple of things happening like AU integration and an NZ integration where.
+Chirag Kharbanda 10 minutes 59 seconds
+the things from other side of the portals, which is like the MLC side is going to merge on our side and it's going to be on ODC 11 for.
+Chirag Kharbanda 11 minutes 10 seconds
+for all the AU portals and it will be out systems 11 still for the NZ ones.
+Chirag Kharbanda 11 minutes 17 seconds
+And there is a couple of RFPs which has happened recently and we would be finalising the vendor pretty much in two to three weeks, which is like...
+Chirag Kharbanda 11 minutes 28 seconds
+You know, all this shift of AI led quality engineering, like how you have started creating agents, right? So we will be engaging one of these vendors and they will be aggressively working on creating all the agents that are needed in a testing life cycle. For example, if you start from a requirements agent and then...
+TG
+Tom Good
+11 minutes 36 seconds
+11:36
+Tom Good 11 minutes 36 seconds
+Mm.
+Chirag Kharbanda
+11 minutes 50 seconds
+11:50
+Chirag Kharbanda 11 minutes 50 seconds
+test case creation agent and then how that feeds into test execution which would eventually use playwright MCP or playwright CLA and then defect triage agent, like all the agents that are typically needed what a manual tester would do, we will break up those activities and there will be.
+Chirag Kharbanda 12 minutes 11 seconds
+multi-agent workflow, orchestrating it. And the biggest layer would be a knowledge for a bit, like how you create it on your end, right?
+TG
+Tom Good
+12 minutes 14 seconds
+12:14
+Tom Good 12 minutes 14 seconds
+Yeah.
+Tom Good 12 minutes 19 seconds
+Yes, yeah.
+Chirag Kharbanda
+12 minutes 20 seconds
+12:20
+Chirag Kharbanda 12 minutes 20 seconds
+So this is what is happening from enterprise perspective. Now we, and this is in the this is in the pipeline, and this is a bigger picture which will happen for the entire enterprise, not just for one application. Like it would take in on all the mainframe, all the passive stuff, and then digital portal, CMS, etc. Obviously it will take a while.
+TG
+Tom Good
+12 minutes 24 seconds
+12:24
+Tom Good 12 minutes 24 seconds
+Right.
+Tom Good 12 minutes 41 seconds
+Yep.
+Chirag Kharbanda
+12 minutes 44 seconds
+12:44
+Chirag Kharbanda 12 minutes 44 seconds
+to get all of these agents trained and building your rag layer for this whole agentic system to work, which is in the pipeline of about five to six months from now, where vendor finalises and then they do it. Now the whole idea is we don't want to duplicate.
+Chirag Kharbanda 13 minutes 4 seconds
+any of the stuff as well, right? While what you're doing is pretty good and I think it's currently being utilised for more of...
+TG
+Tom Good
+13 minutes 6 seconds
+13:06
+Tom Good 13 minutes 6 seconds
+Yeah.
+Chirag Kharbanda
+13 minutes 14 seconds
+13:14
+Chirag Kharbanda 13 minutes 14 seconds
+system tests rather than the functional tests. So what we what I just wanted to brief and I did some briefing on to Lewis as well that this is what's happening from the organisation from the company perspective.
+TG
+Tom Good
+13 minutes 29 seconds
+13:29
+Tom Good 13 minutes 29 seconds
+Yep.
+Chirag Kharbanda
+13 minutes 30 seconds
+13:30
+Chirag Kharbanda 13 minutes 30 seconds
+So we just want to see what how this lines up, right? Because I already have a few of my team members who are going to start working on building the functional regression tests for for the Astron code and apply and and and the portal stuff because.
+Chirag Kharbanda 13 minutes 51 seconds
+We have built for the AU portals, which also has a common code setting around, so the components could be utilised again. We don't have to write everything from scratch.
+TG
+Tom Good
+14 minutes 1 second
+14:01
+Tom Good 14 minutes 1 second
+Yeah.
+Chirag Kharbanda
+14 minutes 3 seconds
+14:03
+Chirag Kharbanda 14 minutes 3 seconds
+So how do you want to collaborate is probably a question, right? Do you want to collaborate in the same repo that we are already building or?
+TG
+Tom Good
+14 minutes 8 seconds
+14:08
+Tom Good 14 minutes 8 seconds
+Yeah.
+Tom Good 14 minutes 14 seconds
+I think it's going to be more of a separate stream, but...
+Tom Good 14 minutes 20 seconds
+I don't know if collaborate is the right word. I just, I think it would be good to get an idea on...
+Tom Good 14 minutes 28 seconds
+I guess some of your...
+Tom Good 14 minutes 32 seconds
+practises and advice and stuff, and based on what you've seen today. Does that make sense? Is that a bit too vague, I think?
+Chirag Kharbanda
+14 minutes 38 seconds
+14:38
+Chirag Kharbanda 14 minutes 38 seconds
+Hmm.
+Chirag Kharbanda 14 minutes 40 seconds
+Yeah, because this agent take AI stuff, like what you're doing is pretty good and that's what we have in our pipeline as well, right? So these agents would be spun up and then they'll be productionized using Amazon Bedrock, using Amazon Bedrock in the back end. I don't know what your productionization plan is, or you want to keep it in your local host.
+TG
+Tom Good
+14 minutes 44 seconds
+14:44
+Tom Good 14 minutes 44 seconds
+Yeah.
+Tom Good 14 minutes 48 seconds
+Yep, yep.
+Tom Good 14 minutes 54 seconds
+Mhm.
+Chirag Kharbanda
+15 minutes 2 seconds
+15:02
+Chirag Kharbanda 15 minutes 2 seconds
+Running this.
+TG
+Tom Good
+15 minutes 3 seconds
+15:03
+Tom Good 15 minutes 3 seconds
+It's going to be, from what I understand, another four weeks, I think, of this sort of work. This is more experimental, I think, compared to what you have in mind. But yeah, so I just wanted to get sort of the most out of
+Chirag Kharbanda
+15 minutes 15 seconds
+15:15
+Chirag Kharbanda 15 minutes 15 seconds
+Yeah, yeah.
+Chirag Kharbanda 15 minutes 18 seconds
+Yeah.
+TG
+Tom Good
+15 minutes 23 seconds
+15:23
+Tom Good 15 minutes 23 seconds
+This short time and, and yeah, so...
+Chirag Kharbanda
+15 minutes 24 seconds
+15:24
+Chirag Kharbanda 15 minutes 24 seconds
+The short time, yeah.
+Chirag Kharbanda 15 minutes 28 seconds
+Probably you could use this for a while, I would say, but eventually when those agents are spun up, the enterprise agents, which would be on the testing life cycle, I think we are planning for about 18, 20 agents in total. They could be used in isolation or they can be orchestrated in the full workflow.
+TG
+Tom Good
+15 minutes 42 seconds
+15:42
+Tom Good 15 minutes 42 seconds
+Right.
+Chirag Kharbanda
+15 minutes 48 seconds
+15:48
+Chirag Kharbanda 15 minutes 48 seconds
+So eventually, like from the testing.
+Chirag Kharbanda 15 minutes 52 seconds
+Chapter that would that would be the direction to go ahead.
+TG
+Tom Good
+15 minutes 55 seconds
+15:55
+Tom Good 15 minutes 55 seconds
+Mm.
+Chirag Kharbanda
+16 minutes
+16:00
+Chirag Kharbanda 16 minutes
+Yeah, I'm just trying to think.
+Chirag Kharbanda 16 minutes 5 seconds
+how this will be beneficial up until that state where that happens, you know. Because we are trying to do a similar stuff where you build the knowledge factory 1st and then eventually use different MCPs like a Robo MCP to get the user story from Jira directly.
+TG
+Tom Good
+16 minutes 9 seconds
+16:09
+Tom Good 16 minutes 9 seconds
+Yeah.
+Tom Good 16 minutes 10 seconds
+Yeah.
+Chirag Kharbanda
+16 minutes 24 seconds
+16:24
+Chirag Kharbanda 16 minutes 24 seconds
+read through it, iterate it, generate test cases, and then go to playwright MCP, drive it, but there need to be a lot of controls in that. The playwright MCP looks good in the starting, but it can get lost and keep consuming your tokens. So token optimization, there is lots to factor in, right? And when you productionize it,
+TG
+Tom Good
+16 minutes 33 seconds
+16:33
+Tom Good 16 minutes 33 seconds
+Yeah.
+Tom Good 16 minutes 39 seconds
+Mm.
+Tom Good 16 minutes 43 seconds
+Yeah, yeah.
+Chirag Kharbanda
+16 minutes 46 seconds
+16:46
+Chirag Kharbanda 16 minutes 46 seconds
+there will be a cost associated. So until unless this is not.
+Chirag Kharbanda 16 minutes 51 seconds
+in a proper rag fashion and what do you call?
+Chirag Kharbanda 16 minutes 57 seconds
+Like, like self-healing capabilities, there is lots to think about it, how the maintenance side of things will happen, so that will eventually take another five to six months, but...
+TG
+Tom Good
+17 minutes 2 seconds
+17:02
+Tom Good 17 minutes 2 seconds
+Yeah.
+Chirag Kharbanda
+17 minutes 11 seconds
+17:11
+Chirag Kharbanda 17 minutes 11 seconds
+This is, I just wanted to brief up that that's happening from the enterprise perspective, so, so that see the whole idea is we don't duplicate stuff here and we don't, we don't, we don't spend on something which we which is already there in the pipeline, but if if you see that some kind of unit testing or some kind of system testing can be aggravated or helped.
+TG
+Tom Good
+17 minutes 14 seconds
+17:14
+Tom Good 17 minutes 14 seconds
+Yeah, yeah, no, I understand what you're saying, so yeah.
+Chirag Kharbanda
+17 minutes 33 seconds
+17:33
+Chirag Kharbanda 17 minutes 33 seconds
+for the team, then please, please do it, you know.
+TG
+Tom Good
+17 minutes 35 seconds
+17:35
+Tom Good 17 minutes 35 seconds
+Yeah.
+Tom Good 17 minutes 37 seconds
+Yep, alright. Thank you.
+Chirag Kharbanda
+17 minutes 39 seconds
+17:39
+Chirag Kharbanda 17 minutes 39 seconds
+Right.
+TG
+Tom Good
+17 minutes 43 seconds
+17:43
+Tom Good 17 minutes 43 seconds
+And.
+Tom Good 17 minutes 45 seconds
+Now, I...
+Chirag Kharbanda
+17 minutes 45 seconds
+17:45
+Chirag Kharbanda 17 minutes 45 seconds
+So this is so this is so you've spun up the agent and it's currently sitting obviously in your localhost. I can see that.
+TG
+Tom Good
+17 minutes 53 seconds
+17:53
+Tom Good 17 minutes 53 seconds
+This is, yeah, no, this is just a little a node server running, you know, showing these markdown files, so...
+Chirag Kharbanda
+17 minutes 59 seconds
+17:59
+Chirag Kharbanda 17 minutes 59 seconds
+Yeah.
+Chirag Kharbanda 18 minutes 3 seconds
+Yeah.
+TG
+Tom Good
+18 minutes 3 seconds
+18:03
+Tom Good 18 minutes 3 seconds
+It's more for presentation purposes.
+Chirag Kharbanda
+18 minutes 5 seconds
+18:05
+Chirag Kharbanda 18 minutes 5 seconds
+Yeah, cool. So how have you tried using it for any of your progression story? Like, what is your feedback? Like, how good was it? Like, was it spitting really the correct bugs identifying it or?
+TG
+Tom Good
+18 minutes 7 seconds
+18:07
+Tom Good 18 minutes 7 seconds
+Yeah, yeah.
+Tom Good 18 minutes 19 seconds
+Right.
+Tom Good 18 minutes 24 seconds
+At the start, no. It was, to be honest, it was missing some fields throughout the form, which threw, you know, wrong errors, basically. But now I think it's at a point.
+Chirag Kharbanda
+18 minutes 26 seconds
+18:26
+Chirag Kharbanda 18 minutes 26 seconds
+Mm.
+Chirag Kharbanda 18 minutes 30 seconds
+Thank you.
+Chirag Kharbanda 18 minutes 32 seconds
+Yeah.
+Chirag Kharbanda 18 minutes 36 seconds
+Yeah.
+TG
+Tom Good
+18 minutes 40 seconds
+18:40
+Tom Good 18 minutes 40 seconds
+specifically with this select default commission category user story that it's showing actual, you know, minor issues at the moment, but I haven't actually also tested all of the acceptance criteria. So the plan is to get to a point where we can just...
+Chirag Kharbanda
+18 minutes 50 seconds
+18:50
+Chirag Kharbanda 18 minutes 50 seconds
+Mm.
+Chirag Kharbanda 18 minutes 54 seconds
+Yeah.
+Chirag Kharbanda 18 minutes 56 seconds
+I think he.
+TG
+Tom Good
+19 minutes
+19:00
+Tom Good 19 minutes
+plug in a user story and have it properly test with all of the added context, if that makes sense.
+Chirag Kharbanda
+19 minutes 7 seconds
+19:07
+Chirag Kharbanda 19 minutes 7 seconds
+Yeah, yeah, for the progression months here.
+TG
+Tom Good
+19 minutes 9 seconds
+19:09
+Tom Good 19 minutes 9 seconds
+Yeah, yeah, yeah.
+Chirag Kharbanda
+19 minutes 15 seconds
+19:15
+Chirag Kharbanda 19 minutes 15 seconds
+Yeah, just see how it goes.
+TG
+Tom Good
+19 minutes 20 seconds
+19:20
+Tom Good 19 minutes 20 seconds
+Yeah.
+Chirag Kharbanda
+19 minutes 21 seconds
+19:21
+Chirag Kharbanda 19 minutes 21 seconds
+But obviously there is a bigger picture from the enterprise perspective as well. For now, I think obviously we'll, you know, we're gonna spin up our playwright tests. We also use Kiro. We don't, we use Kiro for basically, how we do is basically we just.
+Chirag Kharbanda 19 minutes 40 seconds
+use the playwright recorder for any big new flow, we would do it and then ask Kiro to just refactor into our page object framework like how we have currently the model. So it does it. So we are using basically for as a AI coding assistant, not facilitating all by agentic yet, which is obviously when.
+TG
+Tom Good
+19 minutes 51 seconds
+19:51
+Tom Good 19 minutes 51 seconds
+Mm.
+Chirag Kharbanda
+20 minutes
+20:00
+Chirag Kharbanda 20 minutes
+our vendor finalizes, that's the plan which we have already agreed with them.
+TG
+Tom Good
+20 minutes 5 seconds
+20:05
+Tom Good 20 minutes 5 seconds
+Mm.
+Chirag Kharbanda
+20 minutes 6 seconds
+20:06
+Chirag Kharbanda 20 minutes 6 seconds
+So we can use a deterministic automated tests and then you can also have this running and the more the testing we do, the better it is. But yeah.
+Chirag Kharbanda 20 minutes 19 seconds
+I just wanted to keep you across that, you know, from from the from the Chapter perspective, what's happening, yeah?
+TG
+Tom Good
+20 minutes 21 seconds
+20:21
+Tom Good 20 minutes 21 seconds
+Yeah, that's great. Yeah.
+Tom Good 20 minutes 25 seconds
+Yep, yep. I appreciate it. I think also maybe when Lewis can see this or, you know, he might be able to give a bit more guidance on some of the questions you had, that sort of thing.
+Chirag Kharbanda
+20 minutes 27 seconds
+20:27
+Chirag Kharbanda 20 minutes 27 seconds
+Yeah.
+Chirag Kharbanda 20 minutes 39 seconds
+Team.
+Chirag Kharbanda 20 minutes 42 seconds
+Yeah, it would have been good if he was here.
+TG
+Tom Good
+20 minutes 44 seconds
+20:44
+Tom Good 20 minutes 44 seconds
+Yeah, yeah, maybe.
+Tom Good 20 minutes 47 seconds
+Maybe we'll hear something tomorrow. Or when is he back? Next week?
+Chirag Kharbanda
+20 minutes 49 seconds
+20:49
+Chirag Kharbanda 20 minutes 49 seconds
+I think 29th says he's out of office, but probably we can arrange another catch up and see how he wants to proceed with this, right? Yeah.
+TG
+Tom Good
+20 minutes 51 seconds
+20:51
+Tom Good 20 minutes 51 seconds
+Yeah.
+Tom Good 20 minutes 56 seconds
+Yeah.
+Miguel Silva
+20 minutes 57 seconds
+20:57
+Miguel Silva 20 minutes 57 seconds
+If.
+TG
+Tom Good
+20 minutes 58 seconds
+20:58
+Tom Good 20 minutes 58 seconds
+Yep.
+Tom Good 21 minutes
+Cool. Miguel, anything from you?
+Miguel Silva
+21 minutes 5 seconds
+21:05
+Miguel Silva 21 minutes 5 seconds
+No, just for this particular story.
+Miguel Silva 21 minutes 11 seconds
+So, the default commissions, what we experienced was a lot of changes in the requirements. So, for almost for quite a few days, there was a complete change. So, how, how does...
+TG
+Tom Good
+21 minutes 12 seconds
+21:12
+Tom Good 21 minutes 12 seconds
+Right.
+Chirag Kharbanda
+21 minutes 19 seconds
+21:19
+Chirag Kharbanda 21 minutes 19 seconds
+Review.
+Chirag Kharbanda 21 minutes 24 seconds
+Mm.
+TG
+Tom Good
+21 minutes 27 seconds
+21:27
+Tom Good 21 minutes 27 seconds
+Are you talking like in the last day or two? Yeah.
+Miguel Silva
+21 minutes 30 seconds
+21:30
+Miguel Silva 21 minutes 30 seconds
+Yeah, they actually, this week, every day it's been changing. So how do you deal with that?
+MS
+Miguel Silva
+20 minutes 57 seconds
+20:57
+Miguel Silva 20 minutes 57 seconds
+If.
+MS
+Miguel Silva
+21 minutes 5 seconds
+21:05
+Miguel Silva 21 minutes 5 seconds
+No, just for this particular story.
+MS
+Miguel Silva
+21 minutes 30 seconds
+21:30
+Miguel Silva 21 minutes 30 seconds
+Yeah, they actually, this week, every day it's been changing. So how do you deal with that?
+TG
+Tom Good
+21 minutes 33 seconds
+21:33
+Tom Good 21 minutes 33 seconds
+Yeah, I thought so.
+Tom Good 21 minutes 39 seconds
+Well, it's actually one of the first questions I had for Sam, who also couldn't make it, but he assured me that there wouldn't be any changes to the quote and apply screen, so you could blame him.
+Chirag Kharbanda
+21 minutes 45 seconds
+21:45
+Chirag Kharbanda 21 minutes 45 seconds
+Please.
+MS
+Miguel Silva
+21 minutes 52 seconds
+21:52
+Miguel Silva 21 minutes 52 seconds
+Okay.
+Chirag Kharbanda
+21 minutes 53 seconds
+21:53
+Chirag Kharbanda 21 minutes 53 seconds
+Yeah.
+TG
+Tom Good
+21 minutes 55 seconds
+21:55
+Tom Good 21 minutes 55 seconds
+Yeah, but for, I guess, for...
+Tom Good 21 minutes 59 seconds
+For other applications where there may be people working on it, I would say that you don't do this kind of first step, getting the business rules in the dev environment.
+Chirag Kharbanda
+22 minutes 13 seconds
+22:13
+Chirag Kharbanda 22 minutes 13 seconds
+Yeah, so I think we understand from the chapter testing chapter that this is some of this is a kind of an issue which a tester faces every day, right? Like the requirements change to what do you do now? You would have to run your tests again, etc. So one of our agents when I was talking about our 18 to 20 agents that we are planning to.
+Chirag Kharbanda 22 minutes 34 seconds
+Uh, babe.
+TG
+Tom Good
+22 minutes 36 seconds
+22:36
+Tom Good 22 minutes 36 seconds
+Mmh.
+Chirag Kharbanda
+22 minutes 36 seconds
+22:36
+Chirag Kharbanda 22 minutes 36 seconds
+One of the agents was actually to identify the delta from what last changed and then sync that up and produce what are the new tests that needed to verify, rather than you just testing the whole thing again. What is the delta that needs to be verified and what is the regression around it that needs to be verified. So that was one of the agents as well.
+TG
+Tom Good
+22 minutes 49 seconds
+22:49
+Tom Good 22 minutes 49 seconds
+Yeah.
+Chirag Kharbanda
+22 minutes 56 seconds
+22:56
+Chirag Kharbanda 22 minutes 56 seconds
+But, no.
+TG
+Tom Good
+22 minutes 56 seconds
+22:56
+Tom Good 22 minutes 56 seconds
+Yeah.
+Chirag Kharbanda
+22 minutes 59 seconds
+22:59
+Chirag Kharbanda 22 minutes 59 seconds
+Around the question that Miguel was asking, like, how do, how does it, how does that situation get catered?
+TG
+Tom Good
+22 minutes 59 seconds
+22:59
+Tom Good 22 minutes 59 seconds
+No, that's...
+Tom Good 23 minutes 3 seconds
+Yeah.
+Tom Good 23 minutes 5 seconds
+Yeah.
+Tom Good 23 minutes 7 seconds
+Yeah.
+MS
+Miguel Silva
+23 minutes 10 seconds
+23:10
+Miguel Silva 23 minutes 10 seconds
+But can you not update the business logic easily?
+Miguel Silva 23 minutes 18 seconds
+So, you know, if there's a change on the commission defaults now, how would you reflect that?
+TG
+Tom Good
+23 minutes 20 seconds
+23:20
+Tom Good 23 minutes 20 seconds
+Yeah.
+Tom Good 23 minutes 22 seconds
+Yes, so...
+Tom Good 23 minutes 25 seconds
+Um...
+Tom Good 23 minutes 28 seconds
+Well, good, that's a good, that's a good thought, um, right now.
+Tom Good 23 minutes 35 seconds
+We're just using this the existing default commissions category user story document as a as a source for the agent to use, but yeah, as you said, if there's changes then how do we how do we integrate those? So, that's yeah.
+MS
+Miguel Silva
+23 minutes 53 seconds
+23:53
+Miguel Silva 23 minutes 53 seconds
+Hmm.
+TG
+Tom Good
+23 minutes 54 seconds
+23:54
+Tom Good 23 minutes 54 seconds
+It's something to think about.
+Tom Good 23 minutes 58 seconds
+I guess it's the reason why we're having this meeting, right?
+Parul Singh
+24 minutes
+24:00
+Parul Singh 24 minutes
+So if this gets updated, this user story, then it should be updated, right? The test cases or no? This is just the version which you have clicked.
+MS
+Miguel Silva
+24 minutes
+24:00
+Miguel Silva 24 minutes
+Okay.
+TG
+Tom Good
+24 minutes 8 seconds
+24:08
+Tom Good 24 minutes 8 seconds
+It should be. No, it should be. You're right. It should be updated, but I think it's not at that point yet where we're doing that. We're more, right now I'm more refining, I guess, the earlier stages.
+Tom Good 24 minutes 22 seconds
+So...
+Parul Singh
+24 minutes 26 seconds
+24:26
+Parul Singh 24 minutes 26 seconds
+Yep.
+Chirag Kharbanda
+24 minutes 28 seconds
+24:28
+Chirag Kharbanda 24 minutes 28 seconds
+Yeah.
+Chirag Kharbanda 24 minutes 29 seconds
+Okay, cool. I think we'll try to catch up again with when Lewis is back, but thanks for demoing like what you're trying to do.
+TG
+Tom Good
+24 minutes 32 seconds
+24:32
+Tom Good 24 minutes 32 seconds
+Yeah.
+Tom Good 24 minutes 37 seconds
+Yeah.
+Chirag Kharbanda
+24 minutes 40 seconds
+24:40
+Chirag Kharbanda 24 minutes 40 seconds
+That there is definitely a value we have seen that going shifting our approach to AI led quality engineering has a value in it and that's why I think we agreed for those agents which will be available for from the from the full enterprise perspective.
+Chirag Kharbanda 25 minutes
+for all the apps.
+Chirag Kharbanda 25 minutes 3 seconds
+But yeah, everything takes a bit of while to spin it up and exciting days ahead. We'll talk to Lewis and see, I mean, if what you're doing is there a value in for a specific period of time or how does this want to be different to what?
+TG
+Tom Good
+25 minutes 6 seconds
+25:06
+Tom Good 25 minutes 6 seconds
+Mmh.
+Tom Good 25 minutes 9 seconds
+Yeah.
+Chirag Kharbanda
+25 minutes 22 seconds
+25:22
+Chirag Kharbanda 25 minutes 22 seconds
+is going to be achieved soon, so we'll have those conversations with him. Yeah.
+TG
+Tom Good
+25 minutes 26 seconds
+25:26
+Tom Good 25 minutes 26 seconds
+Yeah, yeah.
+Tom Good 25 minutes 28 seconds
+That would be really helpful. All right. Yeah, all right. Thank you all.
+Chirag Kharbanda
+25 minutes 30 seconds
+25:30
+Chirag Kharbanda 25 minutes 30 seconds
+Cheers. Thanks, guys. I'll just drop off, yeah.
+Chirag Kharbanda 25 minutes 34 seconds
+Bye bye.
+MS
+Miguel Silva
+25 minutes 34 seconds
+25:34
+Miguel Silva 25 minutes 34 seconds
+Bye. Thank you. Bye.
+Parul Singh
+25 minutes 36 seconds
+25:36
+Parul Singh 25 minutes 36 seconds
+Thank you.
+TG
+Tom Good
+25 minutes 36 seconds
+25:36
+Tom Good 25 minutes 36 seconds
+See ya. Bye.
+î
+î¨¿
+
+Parul Singh
+
+ stopped transcription

@@ -69,7 +69,7 @@ let page;
 // ── Browser setup ─────────────────────────────────────────────────────────────
 
 async function setup() {
-  const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 60 });
+  const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 60, channel: 'msedge' });
   const context = await browser.newContext({ ignoreHTTPSErrors: true, ...(STORAGE_STATE ? { storageState: STORAGE_STATE } : {}) });
   page = await context.newPage();
   page.setDefaultTimeout(30000);
