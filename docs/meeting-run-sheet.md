@@ -19,8 +19,8 @@ done so far, then open a discussion with the testers about how they work.
 - [ ] Have these pages ready to navigate to from the sidebar:
   - **Rulebook hub (the map):** `business-rules/page.md`
   - **Disability Covers page** (rule `DC-15`)
-  - **A results matrix:** `test-runs/disability-covers/…/results.md`
-  - **A user-story test doc:** `test-documentation/select-default-commission-category-part-1-v1.md`
+  - **An auto-generated run report:** `test-runs/select-default-commission-category-v1/2026-08-27T10-47-56/report.md`
+  - **The test documentation (AC traceability):** `test-documentation/select-default-commission-category-v1.md`
   - **A bug report:** `bug-reports/occupation-cover-gating-universally-not-enforced.md`
   - **The big picture:** `docs/exhaustive-analysis.md`
 
@@ -53,28 +53,30 @@ now, with a date."
 
 ## 2. It's documented and tested (~4 min)
 
-🖥️ **Show a results matrix** (`test-runs/disability-covers/…/results.md`). Point at the green
-rows — each is a rule checked against the **live app** (screenshots render inline now).
+🖥️ **Show the auto-generated run report**
+(`test-runs/select-default-commission-category-v1/2026-08-27T10-47-56/report.md`). Point at:
+- the **results table** at the top — pass/fail at a glance,
+- a **failure detail** section — the full verbatim AC text from the user story, steps to
+  reproduce, expected vs actual, and a screenshot — all generated automatically from one test run.
 
-🗣️ "The rules aren't just written down — each one has an automated test that checks it against
-the live application. So this stays current: if a future release changed one of these caps, the
-relevant row turns red rather than the doc quietly going out of date."
+🗣️ "Every time the tests run, this report generates itself. The full acceptance criterion is
+quoted directly from the user story so a reader doesn't need to go anywhere else. If it fails,
+you get the requirement, the steps, what happened, and a screenshot — all in one file."
 
-🗣️ "There are matrices like this for the five core areas — age boundaries, lump sum caps,
-disability formulas, premium bundling, and policy/kids-cover rules."
-
-🖥️ **Show a user-story test doc**
-(`test-documentation/select-default-commission-category-part-1-v1.md`). Point at the AC column
+🖥️ **Show the test documentation with AC traceability**
+(`test-documentation/select-default-commission-category-v1.md`). Point at the AC column
 and the Deferred table.
 
-🗣️ "Some of the tests are driven from written user stories rather than reverse-engineered. For
-the commission-category feature we took the Jira story ACB-13175, and generated test scripts
-mapped to its acceptance criteria — each AC becomes a check tagged with its ID. Where an AC can't
-be tested yet, it's listed as deferred with the reason, not silently skipped. So the suite tracks
-directly against the story."
+🗣️ "For the commission-category feature we took the Jira story ACB-13175 and generated test
+scripts mapped to its acceptance criteria — each AC becomes a check tagged with its ID. Where
+an AC can't be tested yet, it's listed as deferred with the reason, not silently skipped. So
+the suite tracks directly against the story."
 
-💬 *"How long to run?"* → "A few minutes each — they genuinely click through the live app end to
-end."
+🗣️ "There are also tested rule matrices for the five core areas we reverse-engineered — age
+boundaries, lump sum caps, disability formulas, premium bundling, and policy/kids-cover rules."
+
+💬 *"How long to run?"* → "About 8 minutes for all 8 checks in this file — they run in parallel
+against the live app."
 
 ---
 
@@ -117,6 +119,19 @@ so this fits in rather than sits beside it." Ask, and take notes:
   template you already use?"
 - **Fit** — "Where would this sit relative to what you already do — does it replace anything,
   complement it, feed into it?"
+- **AC wording & test interpretation** — "One thing I've noticed is that how an AC is worded
+  directly affects how the test gets generated. For example, AC08 says 'when the user exits and
+  later reopens the Adviser Use function' — that wording led to generating a test that signs out
+  and signs back in with a completely fresh session, when maybe the intended behaviour is just
+  navigating away and coming back. Are there conventions around how ACs should be worded to avoid
+  ambiguity? Would it help to flag these back to the story author when they come up?"
+- **Session conflict / environment constraints** — "The dev environment only allows one active
+  session per account. When a test does a sign-out/sign-in flow (like AC06/07/08 requires), it
+  can leave a stale server-side session that blocks the *next* test from authenticating. This
+  makes tests that exercise logout flows fragile and can cascade failures into subsequent tests.
+  Is this a known constraint you work around already? Is there a way to get a dedicated test
+  account that doesn't have this single-session limit, or should we design tests to avoid
+  logout/re-login flows entirely?"
 
 🗣️ *(Note for me: this half is listening, not presenting. Let the testers talk — capture actions.)*
 
