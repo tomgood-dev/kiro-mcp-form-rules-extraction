@@ -336,10 +336,12 @@ If these tests need to run on Test Console later, they can be split at that poin
 4. **Update business rules docs in the same workflow** — if a test reveals a discrepancy, update the business rules page AND the exhaustive analysis doc before moving on.
 5. **No "limitations" that are actually testable** — if something CAN be tested, test it. Only list genuine system constraints (e.g. IP Tier 3 masked by $30k cap) as limitations.
 6. **Commit atomically** — one commit per completed test expansion, including: test file, deprecated old version, test documentation, any business rules corrections.
+7. **NEVER defer an AC out of caution — probe it, then write it.** The point of this operation is EFFECTIVE coverage, not the easy ACs. "It needs extra state setup", "I hadn't wired it", or "the selector is unknown" are NOT acceptable reasons to skip an AC. If it needs state, set the state. If a control's location/selector is unknown, run a targeted probe (`probes/probe-<topic>.js`) to find it, promote the interaction into a reusable helper, then write the test. An AC may only be left untested if you have ACTUALLY ATTEMPTED it (including a probe) and confirmed it cannot be done from the browser on the reachable screen (e.g. requires backend/STP payload, a pre-deployment historic quote, or a control a probe confirmed does not exist). The deferral note must state what was probed and what the probe found — never a guess or an assumption of difficulty.
 
 ## Completion Checklist (must ALL be done before a test is "finished")
 
 - [ ] Full-coverage test written (all variations, boundaries, personas, independence)
+- [ ] Every AC either encoded as a test OR marked blocked with evidence of an actual probe attempt (Critical Rule #7 — no deferring out of caution)
 - [ ] Test passes locally (Edge config)
 - [ ] Old version moved to `deprecated/`
 - [ ] Version bumped (renamed for Test Console cache)

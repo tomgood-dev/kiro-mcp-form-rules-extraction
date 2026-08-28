@@ -1,9 +1,9 @@
 # Test: Lump Sum Life Cover — lump-sum-life-cover-v1
 
 > **Test file:** `lump-sum-life-cover-v1.spec.js`
-> **Last run:** 2026-08-28 (local Edge headless) — ~20 min, 17 tests, 2 workers
+> **Last run:** 2026-08-28 (local Edge headless) — ~20 min, 18 tests, 2 workers
 > **Source:** ACB-2242 user story ("Lump Sum Life Cover"), acceptance-criteria mode
-> **Result:** 17/17 passing (all testable ACs confirmed matching the story)
+> **Result:** 18/18 passing (all testable ACs confirmed matching the story)
 
 ## Results
 
@@ -25,12 +25,12 @@
 | 14 | AC16 | Stepped + SI > $50k + ANB 11–16 → under-17 cap | ANB 14, SI $50,001 | "...under Age Next Birthday 17 is $50,000" | ✅ Pass |
 | 15 | AC19 | Yearly premium < $240 → minimum-premium error | SI $1,000, Apply | "The minimum premium is $240.00..." | ✅ Pass |
 | 16 | AC21 | Premium Freeze unticks Inflation (mutual exclusion) | Tick Premium Freeze | Inflation flips to unchecked | ✅ Pass |
-| 17 | AC23 | Max 3 Life covers — Life button disabled after 3 | Activate Life ×3 | Life button disabled | ✅ Pass |
+| 17 | AC17 | Combined SI > $250k + ANB 17–21 + no income → $250k cap | ANB 19, income 0, SI $250,001 | "...Age Next Birthday 17 - 21, not earning any income is $250,000" | ⏳ Pending run |
+| 18 | AC23 | Max 3 Life covers — Life button disabled after 3 | Activate Life ×3 | Life button disabled | ✅ Pass |
 
-## Deferred (not yet encoded — testable, not blocked)
+## Deferred (testable later — controls found, not yet encoded)
 
-These ACs became testable after probing (frequency / we-pay / flexirate controls found — see
-`probes/probe-life-checkboxes.js`) but are not yet encoded in this v1:
+These became testable after probing (see `probes/probe-life-checkboxes.js`) but are not yet encoded:
 
 | AC | What it needs | Selector found |
 |---|---|---|
@@ -42,8 +42,7 @@ These ACs became testable after probing (frequency / we-pay / flexirate controls
 
 | AC | Reason |
 |---|---|
-| AC17 | Combined SI > $250k, ANB 17–21, no income — needs income/occupation state setup |
-| AC18 | Part-time worker + combined SI > $500k — "part time" input path unclear; needs probe |
+| AC18 | **Probed & confirmed not testable on the quote screen.** `probe-young-income-caps.js` found Employment Status = {Employed, Self-Employed, Employed by own company, Other} (no "part time"), no occupation encodes part-time, and zero "part time" text on the screen. "Part-time work" is an Apply-flow/underwriting concept, not a quote-screen input. |
 
 ## Notes
 

@@ -38,10 +38,25 @@ Parse the story into canonical AC records (internalId, sourceId, given/when/then
 sourceRef). Assign our own stable internal IDs. **Log:** every AC, and any parsing judgment calls
 (e.g. an AC written as prose, a compound AC split into two).
 
-### Step 2 — Classify each AC: testable-now / needs-decision / deferred
-For each AC decide whether it's testable by driving the browser on the reachable screen. **Log:**
-the classification and the reason for anything deferred (backend/STP, saved-quote state, etc.).
-Never silently drop an AC.
+### Step 2 — Classify each AC: testable-now / needs-probe / genuinely-blocked
+For each AC decide whether it's testable by driving the browser on the reachable screen.
+
+**MANDATORY — no deferring out of caution.** The point of this operation is EFFECTIVE coverage,
+not just the easy ACs. An AC may only be left untested if it falls into one of exactly two
+categories, and the reason must be evidenced:
+
+- **needs-probe → then WRITE IT.** If an AC needs extra state setup (e.g. a specific age band +
+  zero income), or a control whose selector/location is unknown, that is NOT a reason to defer.
+  Set up the state. Run a targeted probe (see Step 3) to find the control. THEN write the test.
+  "It needed setup" and "I hadn't wired it" are never acceptable reasons to skip an AC.
+- **genuinely-blocked — only AFTER a probe proves it.** An AC may be marked blocked ONLY if you
+  have actually attempted it and confirmed it cannot be done from the browser on this screen
+  (e.g. requires backend/STP payload inspection, a pre-deployment historic quote, or a control
+  that a probe confirmed does not exist anywhere reachable). The deferral note must state what was
+  probed and what the probe found — not a guess.
+
+**Log:** the classification and, for anything not testable-now, the probe you ran and its result.
+Never silently drop an AC, and never defer one you haven't actually tried.
 
 ### Step 3 — Probe the live app for selectors
 Using the exploration server (`tools/server.js`) and the existing helpers

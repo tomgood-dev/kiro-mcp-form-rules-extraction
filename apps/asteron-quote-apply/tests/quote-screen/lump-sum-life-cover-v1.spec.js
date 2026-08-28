@@ -250,6 +250,27 @@ test.describe('Lump Sum Life Cover', () => {
     expect(inflationChecked, 'AC21: Inflation auto-unticked when Premium Freeze selected').toBe(false);
   });
 
+  test('AC17: Combined SI > $250k, Age Next Birthday 17-21, no income -> $250k cap error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC17: Given I enter SI and select any level or stepped, When combined SI of all policies per life is more than 250000 and age next birthday is between 17 to 21 and (income is zero and any occupation) or (unemployed and no income), Then error "The maximum total Sum Insured per life for Life Cover clients with an Age Next Birthday 17 - 21, not earning any income is $250,000" is displayed.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a new quote, set Age Next Birthday = 19, Occupation AA, Annual Income = 0.',
+      '2. Activate Life, enter SI $250,001 (> $250k).',
+      '3. Click Apply.',
+      '',
+      'Expected: error containing "Age Next Birthday 17 - 21" ... "not earning any income is $250,000".',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote, { age: 19, gender: 'Male', occupationCode: '1', income: 0 });
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '250001');
+    await clickApply(quote);
+    const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
+    const matched = /Age Next Birthday 17\s*-\s*21/i.test(errors) && /not earning any income is \$?250,?000/i.test(errors);
+    expect(matched, `AC17: expected $250k young no-income cap error. Got: ${errors.slice(0, 250)}`).toBe(true);
+  });
+
   test('AC23: Maximum 3 Life covers — Life button disabled after 3', async ({ page }) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC23: Given I want to apply Life cover, When I click the Life button, Then I must be able to enter SI for Life cover and select a maximum of 3 Life covers. And: Given I am in the quote screen, When 3 Life covers are selected, Then the Life button should be disabled (maximum 3).',
