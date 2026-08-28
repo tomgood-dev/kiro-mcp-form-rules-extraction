@@ -25,6 +25,7 @@ const {
   sumInsuredInput,
   getTotalYearlyPremium,
   getVisibleErrors,
+  waitForSettle,
 } = require('../../helpers/quote-helpers');
 const {
   openAdviserUse,
@@ -50,6 +51,27 @@ async function freshPricedQuote(page) {
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
     const premium = await getTotalYearlyPremium(quote);
     expect(premium, 'precondition: quote must price before testing Adviser Use').toBeGreaterThan(0);
+    return quote;
+  });
+}
+
+// Like freshPricedQuote but also sets Employment Status + income, so clicking Apply is not
+// blocked by the earlier "complete the client's employment details" validation — used by tests
+// (e.g. AC16) that need Apply to reach the IC/RC validation specifically.
+async function freshPricedQuoteFullDetails(page) {
+  return test.step('open a fresh priced quote with full employment details', async () => {
+    const quote = await openNewQuote(page);
+    // Mirror the proven VAL-08/09/10 recipe that gets Apply PAST the employment-details
+    // validation: minimum personal details with employmentStatus 'Employed' + a single Life
+    // cover at $200k. (Confirmed working in validation-and-navigation.spec.js VAL-08.)
+    await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed' });
+    await activateCover(quote, 'Life');
+    // SI must be high enough that premium clears the $240/yr minimum EVEN at Flexi 12.5%
+    // (the lowest-cost Flexi Rate). $200k was below the floor at 12.5%; $1M clears it.
+    await fillCalcMask(sumInsuredInput(quote, 0), '1000000');
+    await waitForSettle(quote);
+    const premium = await getTotalYearlyPremium(quote);
+    expect(premium, 'precondition: quote must price').toBeGreaterThan(0);
     return quote;
   });
 }
@@ -249,10 +271,84 @@ test.describe('Select Default Commission Category', () => {
     await closeAdviserUse(quote);
   });
 
-});
+  test('AC09: Update button stays disabled when no change is made', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC09: Given the user has not changed the current commission category selection, When the user views the Adviser Use function, Then the Update button remains disabled And no update action can be performed.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, open Adviser Use.',
+      '2. Make NO change to the Default for Agency selection.',
+      '3. Read the Update button disabled state.',
+      '',
+      'Expected: Update button disabled (no change made).',
+      'Actual (current): Update button starts enabled — same known regression as AC04.',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('open Adviser Use', () => openAdviserUse(quote));
+    const info = await getUpdateButtonInfo(quote);
+    expect(info, 'AC09: Update button present').not.toBeNull();
+    expect(info.disabled, 'AC09: Update disabled with no change').toBe(true);
+    await closeAdviserUse(quote);
+  });
 
-// AC06/07/08 mutates the shared agency-wide Default for Agency setting, so it runs
-// separately after the parallel tests above to avoid contaminating their reads.
+  // AC16 is currently UNREACHABLE from the Quote screen, confirmed by probing (not deferred out
+  // of caution — see .kiro steering Rule #7). The IC/RC-at-Apply validation sits BEHIND the
+  // "Please complete the client's employment details before applying" Apply gate, and that gate
+  // now blocks Apply even when Employment Status = Employed is set (verified twice by
+  // probes/probe-ac16-apply.js: the dropdown reads "Employed" immediately before Apply, yet the
+  // employment-details error still fires). The previously-passing VAL-08 test
+  // (validation-and-navigation.spec.js), which relied on the same "employmentStatus:'Employed'
+  // is enough to proceed" recipe, ALSO now fails ("Apply result: no visible errors" but no
+  // navigation) — i.e. the app's Apply/employment-details gate changed server-side. Reaching the
+  // IC/RC validation requires completing the fuller employment-detail sub-fields that gate now
+  // demands, which are not mapped. Encoded against the spec's expected message; enable once the
+  // Apply employment gate is reachable again (and re-check the VAL-08 regression).
+  test.fixme('AC16: Multiple valid IC/RC + Apply without selecting → validation blocks', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC16: Given multiple valid IC/RC options exist for the selected commission category and Flexi-Rate, When the user attempts to proceed without selecting an IC/RC option, Then "Please select IC/RC in Adviser Use for all policies." is displayed And the user cannot proceed.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, set Flexi Rate = 12.5% (multiple valid Upfront IC/RC → defaults to "Please Select").',
+      '2. Do NOT select an IC/RC option.',
+      '3. Click Apply.',
+      '',
+      'Expected: error "Please select IC/RC in Adviser Use for all policies." and cannot proceed.',
+    ].join('\n') });
+    const quote = await freshPricedQuoteFullDetails(page);
+    await test.step('set Flexi Rate = 12.5%', () => setFlexiRate(quote, '12.5%'));
+    // Do NOT open Adviser Use / pick IC/RC — click Apply directly.
+    await quote.getByRole('button', { name: 'Apply', exact: true }).click();
+    await quote.waitForTimeout(4000);
+    const errors = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    expect(/Please select IC\/RC in Adviser Use for all policies/i.test(errors), `AC16: expected IC/RC validation. Got: ${errors.slice(0, 200)}`).toBe(true);
+  });
+
+  test('AC19: Changing Flexi Rate refreshes IC/RC options / clears now-invalid selection', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC19: Given the user changes the Flexi-Rate or commission category, When the selection changes, Then the available IC/RC options are refreshed immediately And any previously selected IC/RC value that is no longer valid is cleared.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, set Flexi Rate = 2.5%, open Adviser Use, note the IC/RC option list.',
+      '2. Close Adviser Use, change Flexi Rate to 15%, reopen Adviser Use.',
+      '3. Compare the IC/RC option lists.',
+      '',
+      'Expected: the IC/RC option set at 15% differs from 2.5% (options refreshed to match the new Flexi Rate).',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('Flexi Rate 2.5% → read IC/RC options', () => setFlexiRate(quote, '2.5%'));
+    await openAdviserUse(quote);
+    const at25 = await getIcRcSelectInfo(quote);
+    await closeAdviserUse(quote);
+    await test.step('Flexi Rate 15% → read IC/RC options', () => setFlexiRate(quote, '15.0%'));
+    await openAdviserUse(quote);
+    const at15 = await getIcRcSelectInfo(quote);
+    expect(at25, 'AC19: IC/RC list present at 2.5%').not.toBeNull();
+    expect(at15, 'AC19: IC/RC list present at 15%').not.toBeNull();
+    expect(JSON.stringify(at25.options) !== JSON.stringify(at15.options), 'AC19: IC/RC options refreshed when Flexi Rate changed').toBe(true);
+    await closeAdviserUse(quote);
+  });
+
+});
 test.describe('Select Default Commission Category — Save & Persistence', () => {
 
   test('AC06/AC07/AC08: Update button save, confirmation message, persistence', async ({ page }) => {
