@@ -106,6 +106,24 @@ This project has two distinct starting points for a test, and they carry differe
 
 Section "Testing a Written User Story" below is mandatory for mode 2. Everything else in this file applies to both modes.
 
+### Business-rules provenance (both modes feed ONE rulebook)
+
+Both modes contribute rules to the business-rules docs, and **neither is dependent on the other** —
+black-box exploration is the foundation (works with no spec), acceptance-criteria mode enriches it
+with story-asserted, test-confirmed values. Every rule must carry its provenance so the two stay
+healthy together:
+
+- **[Exploration]** — discovered by black-box reverse-engineering of the live app.
+- **[Story ACB-xxxx, YYYY-MM-DD]** — asserted by a user story and confirmed by a passing
+  acceptance-criteria test on that date.
+
+Untagged rules predate this convention and are assumed [Exploration]. When the two sources
+**disagree** about the same rule, FLAG the conflict inline (⚠) — do not silently overwrite one
+with the other. A conflict usually means the app changed or the story and app diverge, which is a
+signal to reconcile (confirm with a probe / BA), not to quietly pick a winner. Do NOT hand-author
+rules with no provenance — a rule in the book should always trace to exploration or to a confirmed
+story, so the rulebook stays an honest record of what the platform established and how.
+
 ## When a passing test starts failing — the app is a moving target (both modes)
 
 Developers actively work on this Quote & Apply form. A business-rules page built by

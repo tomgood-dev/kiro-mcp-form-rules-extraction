@@ -4,6 +4,17 @@
 
 Lump Sum covers pay a one-off sum insured on the relevant event (death, disability, trauma diagnosis, etc.). Activated by clicking a cover button in the "Lump Sum Covers" panel; the panel's accordion header shows a live count of active covers.
 
+> **Rule provenance convention.** Every rule is derived from one of two complementary sources,
+> and each rule notes which (neither source is dependent on the other):
+> - **[Exploration]** — discovered by black-box reverse-engineering of the live app (no spec
+>   needed). This is the foundation and does not depend on any user story existing.
+> - **[Story ACB-xxxx, YYYY-MM-DD]** — asserted by a written user story and *confirmed* by a
+>   passing acceptance-criteria test on the given date. Enriches the rulebook with intent/values
+>   exploration may not have surfaced.
+> Rules with no tag predate this convention and are assumed [Exploration]. Where the two sources
+> disagree about the same rule, the conflict is flagged (not silently overwritten) — that usually
+> means the app changed or the story and app diverge, which is itself a signal worth acting on.
+
 ## Cover menu by policy type
 
 | Rule ID | Policy type | Covers offered |
@@ -44,6 +55,25 @@ Lump Sum covers pay a one-off sum insured on the relevant event (death, disabili
 **Discount bands** (informational, not a hard limit): $150k–$199k / $200k–$249k / $250k–$299k / $300k–$349k / $350k–$399k / $400k–$499k / $500k–$749k / $750k–$999k / $1,000k+
 **No hard maximum Sum Insured was found** for Life — only the discount bands above.
 **Sub-cover/rider buttons:** TI Support, Acc. TPD, Acc. Trauma, Acc. Cancer — see below.
+
+**Life Premium Structure age limits** — each Level-to structure enforces a maximum Age Next
+Birthday, checked on Apply. All confirmed via the ACB-2242 acceptance suite (18/18 passing).
+
+| Rule ID | Rule | Provenance |
+|---|---|---|
+| `LSC-06a` | **Stepped: Age Next Birthday must be between 11 and 75.** Error: *"Age Next Birthday must be between 11 and 75"*. | [Story ACB-2242, 2026-08-28] (AC07) — corroborates existing `PD-11` |
+| `LSC-06b` | **Level to 50: max Age Next Birthday 45.** Error: *"Maximum Age Next Birthday for level to 50 'Life Cover' is 45"*. | [Story ACB-2242, 2026-08-28] (AC08) |
+| `LSC-06c` | **Level to 60: max Age Next Birthday 55.** Error: *"...level to 60 'Life Cover' is 55"*. | [Story ACB-2242, 2026-08-28] (AC09) |
+| `LSC-06d` | **Level to 65: max Age Next Birthday 60.** Error: *"...level to 65 'Life Cover' is 60"*. | [Story ACB-2242, 2026-08-28] (AC10) |
+| `LSC-06e` | **Level to 70: max Age Next Birthday 65.** Error: *"...level to 70 'Life Cover' is 65"*. | [Story ACB-2242, 2026-08-28] (AC11) |
+| `LSC-06f` | **Level to 75: max Age Next Birthday 70.** Error: *"...level to 75 'Life Cover' is 70"*. | [Story ACB-2242, 2026-08-28] (AC12) |
+| `LSC-06g` | **Level to 80: max Age Next Birthday 70.** Error: *"...level to 80 'Life Cover' is 70"*. ⚠ Same cap (70) as Level to 75 — flagged as copy-paste-suspicious in the source story; the live app currently matches it. Confirm intended value with BA/PM. | [Story ACB-2242, 2026-08-28] (AC13) |
+| `LSC-06h` | **Level to 100: max Age Next Birthday 75.** Error: *"...level to 100 'Life Cover' is 75"*. | [Story ACB-2242, 2026-08-28] (AC14) |
+| `LSC-06i` | **Any Level structure: minimum Age Next Birthday 17.** Error: *"Minimum Age Next Birthday for level 'Life Cover' is 17"*. | [Story ACB-2242, 2026-08-28] (AC15) |
+
+*(Note: `PD-32` [Exploration] already documented that all Level-to options stay visible regardless
+of age — client-side shows them, server validates on Apply. The caps above are the server-side
+values behind that validation, newly established via the story.)*
 
 ### TPD (Total & Permanent Disability)
 
@@ -156,7 +186,7 @@ Activating a rider adds its own nested card under the parent Life cover, with it
 
 | Rule ID | Rule |
 |---|---|
-| `LSC-39` | **Life Cover supports multiple instances (at least 2 confirmed, likely 3).** Re-clicking the Life toggle button creates a new instance (not a no-op). Each new instance defaults to the next Premium Structure in sequence: 1st = Stepped, 2nd = Level to 50, 3rd = requires 2nd instance to have Sum Insured filled first (*"Please complete the 'Sum Insured' field in the above row"*). The Life button remains enabled after 2 instances. For all other Lump Sum cover types, re-clicking the toggle button after activation is a no-op: no duplicate is created and the existing row is untouched. Deactivation of any cover must go through the "Remove" link inside the cover's own card. *(Corrected in iteration 003 — see changelog)* |
+| `LSC-39` | **Life Cover supports multiple instances (at least 2 confirmed, likely 3).** Re-clicking the Life toggle button creates a new instance (not a no-op). Each new instance defaults to the next Premium Structure in sequence: 1st = Stepped, 2nd = Level to 50, 3rd = requires 2nd instance to have Sum Insured filled first (*"Please complete the 'Sum Insured' field in the above row"*). The Life button remains enabled after 2 instances. For all other Lump Sum cover types, re-clicking the toggle button after activation is a no-op: no duplicate is created and the existing row is untouched. Deactivation of any cover must go through the "Remove" link inside the cover's own card. *(Corrected in iteration 003 — see changelog)* ⚠ **Provenance conflict to reconcile:** Story ACB-2242 AC23 [Story, 2026-08-28] asserts a hard **maximum of 3 Life covers** with the Life button **disabled** after the 3rd — and that acceptance test passes live. This `LSC-39` [Exploration] text ("button remains enabled after 2 instances", max "likely 3") predates that and may now be stale. Not silently overwritten — needs a confirming check of the exact 3-cover disable behaviour, then this rule updated to match. |
 | `LSC-40` | **A Lump Sum cover left with its Sum Insured never filled in (still showing the empty `.` placeholder) does NOT silently disappear on Apply** — unlike some Disability covers (see [Disability Covers](../disability-covers/page.md)). It persists in a "zombie" state: its toggle button loses its active/highlighted styling, but the cover row itself remains on screen with a Remove link. Clicking Apply in this state surfaces *"The minimum premium is $240.00 per year per Life insured"* and, on a second Apply attempt, additionally *"Please complete the 'Sum Insured' field in the above row."* The cover must be explicitly fixed (fill Sum Insured) or explicitly removed — it will not resolve itself. |
 | `LSC-41` | **Needlestick standalone blocked.** Requires at least one companion cover: Life, Trauma Recovery, Cancer, TPD, or Income Protection (narrower list than Specific Injury — excludes Acd. Death, M&L, and Workability). Exact error: *"Needlestick Cover requires one of the following covers to also be selected: Life, Trauma Recovery, Cancer, TPD or Income Protection"*. See also `LSC-31b`. |
 | `LSC-42` | **Needlestick uses a select dropdown for Sum Insured** ($0–$500,000 in $50,000 increments, 11 options), NOT a calc-mask free-text input. This is confirmed to be the same fixed-tier mechanism documented in `LSC-29`. |
