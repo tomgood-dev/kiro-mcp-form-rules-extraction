@@ -42,7 +42,7 @@ These became testable after probing (see `probes/probe-life-checkboxes.js`) but 
 
 | AC | Reason |
 |---|---|
-| AC18 | **Probed & confirmed not testable on the quote screen.** `probe-young-income-caps.js` found Employment Status = {Employed, Self-Employed, Employed by own company, Other} (no "part time"), no occupation encodes part-time, and zero "part time" text on the screen. "Part-time work" is an Apply-flow/underwriting concept, not a quote-screen input. |
+| AC18 | **Probed thoroughly & confirmed not testable on the quote screen.** `probe-part-time-hunt.js` cycled through every Employment Status (Employed / Self-Employed / Other) and enumerated the full field set after each — it never changes and never includes a part-time / work-pattern / hours field. The quote screen's only income/employment inputs are Employment Status {Employed, Self-Employed, Employed by own company, Other} and Pre-tax annual income ($). "Part-time work" is captured later (Apply-flow occupation/financial details) or via underwriting — not on the quote screen. Not a quote-screen test. |
 
 ## Notes
 
