@@ -75,6 +75,32 @@ Write the spec following the mandatory conventions:
 **Log:** any AC where the intended behaviour was ambiguous and the agent had to make a call
 (flag these — they may need author clarification, per the AC-wording feedback loop).
 
+**MANDATORY — input-correctness checklist (every threshold/scenario test).** A test whose inputs
+don't actually reach the state the AC describes is worse than no test: it can pass for the wrong
+reason and give false confidence. For EACH test, before finalising, verify all six — a wrong input
+usually comes from one of these (the AC12/ACB-2926 bug was #1 + #2: values borrowed from a sibling
+test summed to $80k when the AC needed >$250k, and the min-premium rule fired first):
+
+1. **Threshold values derived from THIS AC's own numbers** — never borrowed by analogy from a
+   nearby test. State the arithmetic in a comment (e.g. `// $200k + $100k = $300k > $250k cap`).
+2. **No interacting rule fires first** — ask "could a *different* rule trigger with these inputs?"
+   (min premium $240, a lower cap, an age/occupation gate). Keep dimensions NOT under test in a
+   clean range so only the target rule can fire.
+3. **Every clause of the AC's Given/When is satisfied** — age band, gender, occupation, cover
+   combination, premium structure. An AC about "ANB 17-21" tested at 40 is silently wrong.
+4. **All required precondition state is established** — prior cover active, field pre-filled,
+   income set, etc. (overlaps Critical Rule #7).
+5. **Correct field/index when multiple similar controls exist** — e.g. the Nth Sum Insured input
+   (Trauma vs Major Trauma vs TPD-on-Trauma). Verify the value landed in the intended one.
+6. **Strict assertion (the detective backstop)** — assert the EXACT expected message/value, and
+   treat a *different* error/result as a FAILURE, not a pass. This is what catches any wrong input
+   the five preventive checks above miss — it is why the AC12 bug surfaced instead of going
+   silently green. Never assert merely that "some error appeared".
+
+Checks 1-5 PREVENT wrong inputs; check 6 GUARANTEES we catch whatever slips through. This list is
+the best-known preventive set; it is not claimed exhaustive — the strict-assertion backstop is the
+guarantee, and the list is extended whenever a new wrong-input class is found in the wild.
+
 ### Step 5 — Run against the live app
 Run via `playwright.edge.config.js`. **Log:** pass/fail per test, runtime, any environment issues
 (session conflicts, hangs).
