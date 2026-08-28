@@ -274,6 +274,75 @@ function sumInsuredInput(page, index = 0) {
   return page.locator('input[id*="SumInsured"]').nth(index);
 }
 
+// ── Lump Sum cover benefit controls (discovered via probe-life-checkboxes.js) ──
+// Stable-ish OutSystems element IDs on the Life (and other lump sum) cover cards:
+//   Checkbox_InflationAdjustmentBenefit — auto-ticked on Life activation
+//   Checkbox_PremiumFreeze              — off by default; ticking it unticks Inflation (mutual exclusion)
+//   Dropdown_Premiums                   — "We Pay Your Premiums" select (default "None")
+//   Dropdown_FlexiRate                  — Flexi Rate select (default "N/A")
+//   PaymentFrequencyDropdown            — premium payment frequency (Monthly/Yearly/etc.)
+// The Premium Structure select has an OPAQUE, position-generated id (e.g.
+// "b23-l2-1472_0-b7-Dropdown1") that must NOT be relied on — locate it by its distinctive
+// option set (Stepped + Level to 50..100) instead. This is the fingerprint pattern.
+
+/** Reads the Inflation Adjustment Benefit checkbox state (true/false), or null if absent. */
+async function getInflationAdjustmentChecked(page) {
+  return page.evaluate(() => {
+    const cb = document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]');
+    return cb ? cb.checked : null;
+  });
+}
+
+/** Reads the Premium Freeze checkbox state (true/false), or null if absent. */
+async function getPremiumFreezeChecked(page) {
+  return page.evaluate(() => {
+    const cb = document.querySelector('input[id*="Checkbox_PremiumFreeze"]');
+    return cb ? cb.checked : null;
+  });
+}
+
+/** Ticks the Premium Freeze checkbox (real click to fire the OutSystems handler) and settles. */
+async function setPremiumFreeze(page) {
+  console.log('  [step] Ticking Premium Freeze...');
+  await page.evaluate(() => {
+    const cb = document.querySelector('input[id*="Checkbox_PremiumFreeze"]');
+    if (cb && !cb.checked) { cb.scrollIntoView({ block: 'center' }); cb.click(); }
+  });
+  await waitForSettle(page, 1500);
+}
+
+// Finds the Premium Structure select's opaque id by fingerprint (options include Stepped +
+// Level to 100). Returns the id string, or null. Cached-free — cheap enough to re-find.
+async function findPremiumStructureSelectId(page) {
+  return page.evaluate(() => {
+    const sel = [...document.querySelectorAll('select')].find((s) => {
+      const opts = [...s.options].map((o) => o.text.trim());
+      return opts.includes('Stepped') && opts.some((o) => o === 'Level to 100');
+    });
+    return sel ? sel.id : null;
+  });
+}
+
+/** Reads the current Premium Structure selected option text (e.g. "Stepped"), or null. */
+async function getPremiumStructure(page) {
+  return page.evaluate(() => {
+    const sel = [...document.querySelectorAll('select')].find((s) => {
+      const opts = [...s.options].map((o) => o.text.trim());
+      return opts.includes('Stepped') && opts.some((o) => o === 'Level to 100');
+    });
+    return sel ? sel.options[sel.selectedIndex].text.trim() : null;
+  });
+}
+
+/** Sets Premium Structure by visible label (Stepped, Level to 50/60/65/70/75/80/100). */
+async function setPremiumStructure(page, label) {
+  console.log(`  [step] Setting Premium Structure = ${label}`);
+  const id = await findPremiumStructureSelectId(page);
+  if (!id) throw new Error('Premium Structure select not found (no Stepped/Level-to options)');
+  await page.locator(`[id="${id}"]`).selectOption({ label });
+  await waitForSettle(page, 1000);
+}
+
 module.exports = {
   openNewQuote,
   waitForSettle,
@@ -294,4 +363,9 @@ module.exports = {
   getBundlingDiscount,
   isOnClientSummary,
   sumInsuredInput,
+  getInflationAdjustmentChecked,
+  getPremiumFreezeChecked,
+  setPremiumFreeze,
+  getPremiumStructure,
+  setPremiumStructure,
 };

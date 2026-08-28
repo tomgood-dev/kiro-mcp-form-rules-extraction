@@ -65,20 +65,52 @@ const storageStateFlagIdx = cliArgs.indexOf('--storage-state');
 const STORAGE_STATE = storageStateFlagIdx !== -1 ? cliArgs[storageStateFlagIdx + 1] : undefined;
 
 let page;
+let lastAction = '(none)';        // for the status endpoint
+let authState = 'unknown';        // 'authenticated' | 'login-page' | 'unknown'
+
+function log(msg) {
+  const ts = new Date().toISOString().slice(11, 19);
+  console.log(`[${ts}] ${msg}`);
+}
 
 // ── Browser setup ─────────────────────────────────────────────────────────────
 
 async function setup() {
-  const browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 60, channel: 'msedge' });
+  log(`Launching Edge (headless=${HEADLESS})...`);
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: HEADLESS, slowMo: HEADLESS ? 0 : 60, channel: 'msedge' });
+  } catch (e) {
+    log(`FATAL: Edge failed to launch: ${e.message}`);
+    log('Hint: close any stray msedge processes and retry, or the profile may be locked.');
+    throw e;
+  }
+  log('Edge launched OK.');
+
   const context = await browser.newContext({ ignoreHTTPSErrors: true, ...(STORAGE_STATE ? { storageState: STORAGE_STATE } : {}) });
   page = await context.newPage();
   page.setDefaultTimeout(30000);
+  if (STORAGE_STATE) log(`Seeded with storage state: ${STORAGE_STATE}`);
 
-  console.log(`[setup] Opening ${START_URL}`);
+  log(`Navigating to ${START_URL} ...`);
   await page.goto(START_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
 
-  console.log('[setup] Ready. Server listening on http://localhost:' + PORT);
+  // Verify where we actually landed — the #1 silent failure was sitting on the login
+  // page because the seeded auth was missing/stale. Report it loudly instead.
+  const landedUrl = page.url();
+  if (/login|NewLoginRLANZ|CentralPortalsLogin/i.test(landedUrl)) {
+    authState = 'login-page';
+    log('⚠ NOT AUTHENTICATED — landed on the login page.');
+    log('  The seeded storage state is missing or stale. Refresh it via global-setup');
+    log('  and relaunch with --storage-state, or log in manually in the window.');
+  } else {
+    authState = 'authenticated';
+    log(`✓ Authenticated — landed on: ${landedUrl}`);
+  }
+
+  log('Ready. Server listening on http://localhost:' + PORT);
+  log('Poll {action:"status"} at any time to see current url / auth / last action.');
 }
 
 // ── DOM readers (run in browser) ──────────────────────────────────────────────
@@ -201,6 +233,13 @@ function buildLocator(cmd) {
 
 async function handle(cmd) {
   switch (cmd.action) {
+
+    case 'status': {
+      // Liveness + auth + where-are-we, on demand. Cheap; never hangs.
+      const url = page.url();
+      const onLogin = /login|NewLoginRLANZ|CentralPortalsLogin/i.test(url);
+      return { ok: true, alive: true, url, authenticated: !onLogin, authState, lastAction };
+    }
 
     case 'state': {
       // Scroll to ensure all sections are accessible before reading
@@ -472,12 +511,15 @@ async function main() {
       try {
         const cmd = JSON.parse(body);
         const label = [cmd.action, cmd.selector || (cmd.id ? `#${cmd.id}` : ''), cmd.value !== undefined ? `= "${cmd.value}"` : ''].filter(Boolean).join(' ');
-        console.log(`→ ${label}`);
+        lastAction = label;
+        if (cmd.action !== 'status') log(`→ ${label}`);
+        const started = Date.now();
         const result = await handle(cmd);
+        if (cmd.action !== 'status') log(`  ✓ ${cmd.action} (${Date.now() - started}ms)`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(result));
       } catch (e) {
-        console.error('Error:', e.message);
+        log(`  ✗ Error: ${e.message}`);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
