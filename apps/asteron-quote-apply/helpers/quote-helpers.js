@@ -343,6 +343,53 @@ async function setPremiumStructure(page, label) {
   await waitForSettle(page, 1000);
 }
 
+// ── Generic label-fingerprinted controls (avoid opaque OutSystems ids) ──
+// A checkbox is identified by the visible text near it (its container's innerText). Returns the
+// element's id, or null. Works for Trauma optional benefits (Early Trauma / Trauma Reinstatement /
+// Continuous Trauma) whose ids are position-generated (e.g. ..._2927_1-Checkbox1).
+async function findCheckboxIdByLabel(page, labelSubstr) {
+  return page.evaluate((sub) => {
+    const cb = [...document.querySelectorAll('input[type="checkbox"]')].find((c) => {
+      let cont = c.parentElement, txt = '';
+      for (let d = 0; d < 4 && cont; d++) { txt = (cont.innerText || '').trim(); if (txt) break; cont = cont.parentElement; }
+      return txt.toLowerCase().includes(sub.toLowerCase());
+    });
+    return cb ? cb.id : null;
+  }, labelSubstr);
+}
+
+/** Reads a checkbox's {checked, disabled} by nearby label, or null if not found. */
+async function getCheckboxStateByLabel(page, labelSubstr) {
+  return page.evaluate((sub) => {
+    const cb = [...document.querySelectorAll('input[type="checkbox"]')].find((c) => {
+      let cont = c.parentElement, txt = '';
+      for (let d = 0; d < 4 && cont; d++) { txt = (cont.innerText || '').trim(); if (txt) break; cont = cont.parentElement; }
+      return txt.toLowerCase().includes(sub.toLowerCase());
+    });
+    return cb ? { checked: cb.checked, disabled: cb.disabled } : null;
+  }, labelSubstr);
+}
+
+/** Ticks a checkbox identified by nearby label (real click for the OutSystems handler). */
+async function tickCheckboxByLabel(page, labelSubstr) {
+  console.log(`  [step] Ticking checkbox: ${labelSubstr}`);
+  const id = await findCheckboxIdByLabel(page, labelSubstr);
+  if (!id) throw new Error(`Checkbox not found near label: ${labelSubstr}`);
+  await page.evaluate((cid) => { const c = document.getElementById(cid); if (c && !c.checked) { c.scrollIntoView({ block: 'center' }); c.click(); } }, id);
+  await waitForSettle(page, 1500);
+}
+
+/** Reads the TPD-on-Trauma Definition select's {selected, options}, or null. Fingerprint: {Own, Any}. */
+async function getTpdOnTraumaDefinition(page) {
+  return page.evaluate(() => {
+    const sel = [...document.querySelectorAll('select')].find((s) => {
+      const o = [...s.options].map((x) => x.text.trim());
+      return o.length <= 3 && o.includes('Own') && o.includes('Any');
+    });
+    return sel ? { selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()), id: sel.id } : null;
+  });
+}
+
 module.exports = {
   openNewQuote,
   waitForSettle,
@@ -368,4 +415,8 @@ module.exports = {
   setPremiumFreeze,
   getPremiumStructure,
   setPremiumStructure,
+  findCheckboxIdByLabel,
+  getCheckboxStateByLabel,
+  tickCheckboxByLabel,
+  getTpdOnTraumaDefinition,
 };

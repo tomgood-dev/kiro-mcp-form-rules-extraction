@@ -20,6 +20,9 @@ const {
   getVisibleErrors,
   clickApply,
   waitForSettle,
+  getCheckboxStateByLabel,
+  tickCheckboxByLabel,
+  getTpdOnTraumaDefinition,
 } = require('../../helpers/quote-helpers');
 
 // Trauma Premium Structure select: fingerprint by its distinctive 3-option set.
@@ -309,6 +312,141 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     expect(/maximum Age Next Birthday for TPD on Trauma is 60/i.test(e), `AC26. Got: ${e.slice(0, 200)}`).toBe(true);
+  });
+
+  test('AC04: Major Trauma inherits Premium Structure from Trauma + own SI field', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC04: Given Trauma Cover, When I select Major Trauma, Then I can enter its Sum Insured, And its Premium Structure is pre-populated the same as Trauma Cover.',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, ANB 40, activate Trauma, SI $100,000.',
+      '2. Activate Major Trauma.',
+      '3. Confirm a 2nd SI field appears and the structure matches Trauma (Stepped).',
+      '',
+      'Expected: Major Trauma has its own SI; structure = Stepped (mirrors Trauma).',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '100000');
+    await activateCover(quote, 'Major Trauma');
+    expect(await sumInsuredInput(quote, 1).isVisible(), 'AC04: Major Trauma SI field present').toBe(true);
+    // Major Trauma structure is locked to Stepped (matches Trauma default) — LSC-18.
+    const mtStepped = await quote.evaluate(() => {
+      const sels = [...document.querySelectorAll('select')].filter((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.length === 1 && o[0] === 'Stepped'; });
+      return sels.length > 0;
+    });
+    expect(mtStepped, 'AC04: Major Trauma Premium Structure = Stepped (mirrors Trauma)').toBe(true);
+  });
+
+  test('AC05/AC27: TPD on Trauma exposes SI + structure + Definition {Own default, Any}', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC05: Given Trauma Cover, When I select TPD on Trauma, Then I see SI (same as Trauma), Premium Structure (same as Trauma), and a Definition dropdown {Own (default), Any}.',
+      'AC27: Given Trauma Cover, When ANB 17-21 and I select TPD on Trauma and definition is not Modified TPD, Then error "Age Next Birthday 17-21 is only eligible for Modified TPD".',
+      '',
+      'Steps to reproduce (AC05):',
+      '1. New quote, ANB 40, activate Trauma, SI $100,000.',
+      '2. Activate TPD on Trauma.',
+      '3. Confirm Definition dropdown = {Own (default), Any}.',
+      '',
+      'Expected (AC05): Definition present, default Own, options Own/Any.',
+      'NOTE on AC27: the Definition dropdown offers only {Own, Any} — there is NO "Modified" option, so the AC27 scenario (non-Modified at 17-21 → error) cannot select Modified. AC27 is encoded separately below as expected-behaviour check.',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '100000');
+    await activateCover(quote, 'TPD on Trauma');
+    const def = await getTpdOnTraumaDefinition(quote);
+    expect(def, 'AC05: TPD on Trauma Definition dropdown present').not.toBeNull();
+    expect(def.selected, 'AC05: Definition default Own').toBe('Own');
+    expect(def.options.includes('Own') && def.options.includes('Any'), 'AC05: Definition options include Own and Any').toBe(true);
+  });
+
+  test('AC27: ANB 17-21 + TPD on Trauma (non-Modified) → Modified-TPD eligibility error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC27: Given Trauma Cover, When ANB 17-21 and I select TPD on Trauma and definition is not Modified TPD, Then error "Age Next Birthday 17-21 is only eligible for Modified TPD".',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, ANB 19, activate Trauma, SI $100,000.',
+      '2. Activate TPD on Trauma (Definition defaults to Own — not Modified).',
+      '3. Apply.',
+      '',
+      'Expected: error containing "only eligible for Modified TPD".',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 19, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '100000');
+    await activateCover(quote, 'TPD on Trauma');
+    await clickApply(quote);
+    const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    expect(/only eligible for Modified TPD/i.test(e), `AC27. Got: ${e.slice(0, 200)}`).toBe(true);
+  });
+
+  test('AC20: Trauma Reinstatement and Continuous Trauma are mutually exclusive', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC20: Given AC03 active, When I select Trauma Reinstatement OR Continuous Trauma Benefit, Then the other must be greyed out/disabled — both cannot be selected simultaneously.',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, ANB 40, activate Trauma.',
+      '2. Tick Trauma Reinstatement.',
+      '3. Check Continuous Trauma Benefit is now disabled.',
+      '',
+      'Expected: ticking one disables the other.',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '100000');
+    await tickCheckboxByLabel(quote, 'Trauma Reinstatement');
+    const continuous = await getCheckboxStateByLabel(quote, 'Continuous Trauma');
+    expect(continuous, 'AC20: Continuous Trauma checkbox present').not.toBeNull();
+    expect(continuous.disabled, 'AC20: Continuous Trauma disabled after selecting Reinstatement').toBe(true);
+  });
+
+  // AC11-AC13, AC15-AC17: combined-cap variants (Trauma + Cancer / + Major Trauma) at the two age bands.
+  const combined = [
+    { ac: 'AC11', age: 19, covers: ['Cancer'], sis: ['250000', '1'], cap: '250,000', msg: /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i },
+    { ac: 'AC12', age: 19, covers: ['Major Trauma'], sis: ['200000', '100000'], cap: '250,000', msg: /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i },
+    { ac: 'AC15', age: 40, covers: ['Cancer'], sis: ['1500000', '600000'], cap: '2,000,000', msg: /Trauma Recovery Cover, including Cancer Cover, is \$?2,?000,?000/i },
+    { ac: 'AC16', age: 40, covers: ['Major Trauma'], sis: ['1500000', '600000'], cap: '2,000,000', msg: /including Cancer Cover, is \$?2,?000,?000/i },
+  ];
+  for (const c of combined) {
+    test(`${c.ac}: Trauma + ${c.covers.join(' + ')} combined SI over $${c.cap} (ANB ${c.age}) → cap error`, async ({ page }) => {
+      test.info().annotations.push({ type: 'acceptance-criteria', description: [
+        `${c.ac}: Given Trauma + ${c.covers.join(' + ')}, When ANB ${c.age <= 21 ? '17-21' : '22-70'} and combined Sum Insured exceeds $${c.cap}, Then the combined-cap error is displayed.`,
+        '',
+        'Steps to reproduce:',
+        `1. New quote, ANB ${c.age}, activate Trauma, SI $${c.sis[0]}.`,
+        `2. Activate ${c.covers.join(' + ')}, SI $${c.sis[1]} (combined > $${c.cap}).`,
+        '3. Read the error (Apply if needed).',
+        '',
+        `Expected: combined-cap error mentioning $${c.cap}.`,
+      ].join('\n') });
+      const quote = await freshTraumaQuote(page, { age: c.age, gender: 'Male', occupationCode: '1' });
+      await fillCalcMask(sumInsuredInput(quote, 0), c.sis[0]);
+      for (const cover of c.covers) await activateCover(quote, cover);
+      await fillCalcMask(sumInsuredInput(quote, 1), c.sis[1]);
+      await clickApply(quote);
+      const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+      expect(c.msg.test(e), `${c.ac}: expected $${c.cap} cap error. Got: ${e.slice(0, 250)}`).toBe(true);
+    });
+  }
+
+  test('AC24: Sum Insured "?" tooltip shows the Trauma discount-bands text', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC24: Given the Trauma cover section, When I click the "?" icon next to a label, Then the corresponding tooltip is displayed. (Checked for the Sum Insured tooltip: discount bands $100,000-$249,999 / $250,000-$499,999 / $500k+.)',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, ANB 40, activate Trauma.',
+      '2. Hover/click the "?" next to Sum Insured.',
+      '3. Read the tooltip text.',
+      '',
+      'Expected: tooltip mentions the Trauma discount bands (e.g. "$250,000").',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    // Tooltip text may render in the DOM (title attr / hidden tooltip node). Search for the
+    // discount-band phrase anywhere on the page after activating Trauma.
+    const hasTooltipText = await quote.evaluate(() => {
+      const body = document.body.innerText || '';
+      const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title')).join(' ');
+      const hay = (body + ' ' + titles).toLowerCase();
+      return hay.includes('discount band') || (hay.includes('$250,000') && hay.includes('$500'));
+    });
+    expect(hasTooltipText, 'AC24: Trauma Sum Insured discount-band tooltip text present in DOM').toBe(true);
   });
 
   test('AC19: Trauma cover can be added and removed, premium reflects it', async ({ page }) => {
