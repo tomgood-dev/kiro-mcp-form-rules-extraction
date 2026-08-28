@@ -105,6 +105,19 @@ guarantee, and the list is extended whenever a new wrong-input class is found in
 Run via `playwright.edge.config.js`. **Log:** pass/fail per test, runtime, any environment issues
 (session conflicts, hangs).
 
+**CRITICAL invocation rule — redirect output to a file, never pipe through `Select-String`.**
+The custom reporter writes `report.md` in its `onEnd` hook. Piping Playwright's output through
+`Select-String` (to filter the console) interferes with the process lifecycle and can prevent
+`onEnd`'s file writes from completing — this was the real cause of "no report generated" on
+several runs (the reporter code was fine all along; workers=1 and workers=2 both work). Always run
+like:
+```
+node node_modules/@playwright/test/cli.js test "<spec>" --workers=2 --config=playwright.edge.config.js *> run-output.txt
+```
+then read `run-output.txt` and the auto-generated `test-runs/<slug>/<timestamp>/report.md`. Do NOT
+`| Select-String` the live run. The report is produced automatically on every run (pass or fail);
+never hand-write it.
+
 ### Step 6 — Self-verify surprising results
 Apply the "verify before writing up" discipline (test-expansion-process.md): a surprising
 result must reproduce on a second, minimal check before being trusted as a real finding — rule
