@@ -126,6 +126,66 @@ async function bodyContainsConfirmationMessage(page) {
   return page.evaluate(() => document.body.innerText.includes('Your default commission structure setting has been updated.'));
 }
 
+/**
+ * Reads the "Select All" bulk-apply commission category select inside Adviser Use.
+ * Fingerprint: nearest-label === "Select All". Returns disabled + selected + options,
+ * or null if not present. Used by AC13/AC17 (the category pick lists that enable only
+ * after an IC/RC is chosen).
+ */
+async function getSelectAllCategoryInfo(page) {
+  return page.evaluate(() => {
+    function nearestLabelText(el) {
+      var node = el;
+      for (var depth = 0; depth < 5 && node; depth++) {
+        var sib = node.previousElementSibling;
+        while (sib) { var t = (sib.innerText || '').trim(); if (t) return t.split('\n')[0].slice(0, 50); sib = sib.previousElementSibling; }
+        node = node.parentElement;
+      }
+      return null;
+    }
+    var match = [...document.querySelectorAll('select')].find(function (s) { return (nearestLabelText(s) || '') === 'Select All'; });
+    if (!match) return null;
+    return { id: match.id, disabled: match.disabled, selectedIndex: match.selectedIndex,
+      selected: match.options[match.selectedIndex] ? match.options[match.selectedIndex].text : null,
+      options: [...match.options].map(function (o) { return o.text; }) };
+  });
+}
+
+/**
+ * Reads a per-cover commission category select by its cover-row label
+ * (e.g. "Life Cover"). Returns disabled + selected + options, or null.
+ */
+async function getCoverCategoryInfo(page, coverLabel) {
+  return page.evaluate(function (label) {
+    function nearestLabelText(el) {
+      var node = el;
+      for (var depth = 0; depth < 5 && node; depth++) {
+        var sib = node.previousElementSibling;
+        while (sib) { var t = (sib.innerText || '').trim(); if (t) return t.split('\n')[0].slice(0, 50); sib = sib.previousElementSibling; }
+        node = node.parentElement;
+      }
+      return null;
+    }
+    var match = [...document.querySelectorAll('select')].find(function (s) { return (nearestLabelText(s) || '').includes(label); });
+    if (!match) return null;
+    return { id: match.id, disabled: match.disabled, selectedIndex: match.selectedIndex,
+      selected: match.options[match.selectedIndex] ? match.options[match.selectedIndex].text : null,
+      options: [...match.options].map(function (o) { return o.text; }) };
+  }, coverLabel);
+}
+
+/**
+ * Selects an IC/RC option by its exact label (e.g. 'IC-100%, RC-50%') on the Select IC/RC
+ * pick list. Uses locator.selectOption (native), then settles so the downstream category
+ * pick lists recalculate.
+ */
+async function setIcRc(page, label) {
+  const info = await getIcRcSelectInfo(page);
+  if (!info) throw new Error('Select IC/RC pick list not found');
+  await page.locator(`#${info.id}`).selectOption({ label });
+  await waitForSettle(page, 1500);
+}
+
 module.exports = {
   openAdviserUse,
   closeAdviserUse,
@@ -138,4 +198,7 @@ module.exports = {
   clickUpdate,
   setDefaultAgency,
   bodyContainsConfirmationMessage,
+  getSelectAllCategoryInfo,
+  getCoverCategoryInfo,
+  setIcRc,
 };

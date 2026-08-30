@@ -39,6 +39,9 @@ const {
   setDefaultAgency,
   clickUpdate,
   bodyContainsConfirmationMessage,
+  getSelectAllCategoryInfo,
+  getCoverCategoryInfo,
+  setIcRc,
 } = require('../../helpers/adviser-use-helpers');
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
@@ -346,6 +349,119 @@ test.describe('Select Default Commission Category', () => {
     expect(at15, 'AC19: IC/RC list present at 15%').not.toBeNull();
     expect(JSON.stringify(at25.options) !== JSON.stringify(at15.options), 'AC19: IC/RC options refreshed when Flexi Rate changed').toBe(true);
     await closeAdviserUse(quote);
+  });
+
+  test('AC13: Adviser Use defaults for an invalid default+Flexi combo (Spread 20 @ 2.5%)', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC13: Given an adviser has selected a Flexi-Rate for which their default commission category is not valid,',
+      'When the adviser opens the Adviser Use page, Then the Select IC/RC pick list must be enabled and display "Please Select"',
+      'and only the IC/RC options available for the selected Flexi-Rate, while all commission category pick lists',
+      '(including Select All) remain disabled until an IC/RC option is selected; and upon selecting an IC/RC option,',
+      'the commission category pick lists must be enabled and display only the commission category associated with',
+      'that selected IC/RC option.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, set Flexi Rate = 2.5% (Spread 20 is NOT valid for 2.5%).',
+      '2. Open Adviser Use, set Default for Agency = Spread 20 (in-quote; do NOT click Update).',
+      '3. BEFORE picking an IC/RC: read Select IC/RC (enabled, "Please Select", only valid IC/RC),',
+      '   Select All (disabled) and Life Cover (disabled).',
+      '4. Pick IC/RC = IC-100%, RC-50%.',
+      '5. AFTER picking: read Select All and Life Cover (enabled, options = only the associated category = Upfront).',
+      '',
+      'Expected: before → IC/RC enabled "Please Select" with only [IC-100% RC-50%, IC-75% RC-100%], categories disabled;',
+      'after → categories enabled showing [Please Select, Upfront].',
+      '',
+      'Actual (current — CONFIRMED DISCREPANCY): with Default = Spread 20 at FR 2.5% the app AUTO-SELECTS',
+      'IC-75%, RC-100% (instead of "Please Select") and immediately ENABLES the per-cover category showing',
+      'Level 30 — i.e. it does not gate the category pick lists behind a manual IC/RC choice as AC13 requires.',
+      'Reconciled via native-selectOption probe (probe-ac13-ac17-categories.js, evidence 15) which agrees with',
+      'this test; the earlier "Please Select / disabled" reading was a raw-dispatchEvent probe artifact.',
+      'This test is EXPECTED TO FAIL until the AC13 gating behavior is implemented.',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 2.5%', () => setFlexiRate(quote, '2.5%'));
+    await openAdviserUse(quote);
+    await test.step('set Default for Agency = Spread 20 (in-quote, no Update)', () => setDefaultAgency(quote, 'Spread 20'));
+
+    // BEFORE picking IC/RC
+    const icrcBefore = await getIcRcSelectInfo(quote);
+    expect(icrcBefore, 'AC13: Select IC/RC present').not.toBeNull();
+    expect(icrcBefore.options[icrcBefore.selectedIndex], 'AC13: IC/RC defaults to Please Select').toBe('Please Select');
+    expect(icrcBefore.options, 'AC13: only Flexi-2.5%-valid IC/RC options shown').toEqual(['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%']);
+    const selectAllBefore = await getSelectAllCategoryInfo(quote);
+    const lifeBefore = await getCoverCategoryInfo(quote, 'Life Cover');
+    expect(selectAllBefore, 'AC13: Select All present').not.toBeNull();
+    expect(selectAllBefore.disabled, 'AC13: Select All disabled before IC/RC picked').toBe(true);
+    expect(lifeBefore, 'AC13: Life Cover category present').not.toBeNull();
+    expect(lifeBefore.disabled, 'AC13: Life Cover category disabled before IC/RC picked').toBe(true);
+
+    // AFTER picking IC-100%, RC-50% → only Upfront becomes available
+    await test.step('pick IC-100%, RC-50%', () => setIcRc(quote, 'IC-100%, RC-50%'));
+    const selectAllAfter = await getSelectAllCategoryInfo(quote);
+    const lifeAfter = await getCoverCategoryInfo(quote, 'Life Cover');
+    expect(selectAllAfter.disabled, 'AC13: Select All enabled after IC/RC picked').toBe(false);
+    expect(lifeAfter.disabled, 'AC13: Life Cover category enabled after IC/RC picked').toBe(false);
+    expect(lifeAfter.options, 'AC13: only the IC/RC-associated category (Upfront) available').toEqual(['Please Select', 'Upfront']);
+    await closeAdviserUse(quote);
+  });
+
+  test('AC17: Multiple categories selectable per benefit when the Flexi Rate supports them (15%)', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC17: Given a Flexi-Rate supports more than one commission category, When the user edits commission details',
+      'for a benefit, Then the user may select from any valid commission category available for that Flexi-Rate.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh priced quote, set Flexi Rate = 15% (supports Upfront, Level 30, Spread 20 via IC-50%, RC-50%).',
+      '2. Open Adviser Use.',
+      '3. Pick IC/RC = IC-50%, RC-50% (the split that permits all three categories per the story Example 3).',
+      '4. Read the Life Cover per-benefit commission category pick list options.',
+      '',
+      'Expected: the per-benefit category pick list offers all three valid categories: Upfront, Level 30, Spread 20.',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 15%', () => setFlexiRate(quote, '15.0%'));
+    await openAdviserUse(quote);
+    await test.step('pick IC-50%, RC-50% (multi-category split)', () => setIcRc(quote, 'IC-50%, RC-50%'));
+    const life = await getCoverCategoryInfo(quote, 'Life Cover');
+    expect(life, 'AC17: Life Cover category present').not.toBeNull();
+    expect(life.disabled, 'AC17: per-benefit category enabled at 15% with IC-50% RC-50%').toBe(false);
+    // All three categories must be selectable (order-independent).
+    const cats = life.options.filter((o) => o !== 'Please Select').sort();
+    expect(cats, 'AC17: all three valid categories selectable per benefit').toEqual(['Level 30', 'Spread 20', 'Upfront']);
+    await closeAdviserUse(quote);
+  });
+
+  // AC12 is blocked for the SAME reason as AC16 (confirmed by probing, not deferred out of caution):
+  // it asserts the "Please select IC/RC in Adviser Use for all policies." validation that fires on
+  // clicking Apply — and Apply is currently blocked earlier by the "complete the client's employment
+  // details" gate, which no longer passes with just Employment Status = Employed (see
+  // evidence/14-probe-ac16-apply-employment-gate/, and the VAL-08 regression). AC12 additionally
+  // requires Spread 20 to be the SAVED agency default, which needs a genuine Update-click that
+  // mutates an agency-wide shared setting on the dev environment. Encoded against the spec's expected
+  // message; enable once the Apply employment gate is reachable and a dedicated agency/account is
+  // available to set Spread 20 as the saved default.
+  test.fixme('AC12: Spread 20 default + invalid Flexi (2.5%) → Apply blocked with IC/RC validation', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC12: Given an adviser has Spread 20 configured as their default commission category and selects a policy',
+      'with a Flexi-Rate of 2.5%, 10%, 17.50%, or 25%, When the adviser clicks Apply without visiting the Adviser',
+      'Use screen to select a valid commission category and commission percentages, Then the application must',
+      'prevent processing and display the message: "Please select IC/RC in Adviser Use for all policies."',
+      '',
+      'Steps to reproduce:',
+      '1. With Spread 20 saved as the agency default, open a fresh priced quote and set Flexi Rate = 2.5%.',
+      '2. Do NOT open Adviser Use / select an IC/RC.',
+      '3. Click Apply.',
+      '',
+      'Expected: error "Please select IC/RC in Adviser Use for all policies." and cannot proceed.',
+      'Blocked: Apply is gated earlier by "complete the client\'s employment details" (see AC16 / evidence 14);',
+      'also needs Spread 20 as the SAVED agency default (Update mutates agency-wide shared state).',
+    ].join('\n') });
+    const quote = await freshPricedQuoteFullDetails(page);
+    await test.step('set Flexi Rate = 2.5%', () => setFlexiRate(quote, '2.5%'));
+    await quote.getByRole('button', { name: 'Apply', exact: true }).click();
+    await quote.waitForTimeout(4000);
+    const errors = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    expect(/Please select IC\/RC in Adviser Use for all policies/i.test(errors), `AC12: expected IC/RC validation. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
 });
