@@ -51,20 +51,17 @@ PROGRESS rows). The list is async/lazy-loaded and rows open via a JS list-widget
 
 | AC(s) | Verdict | Reason |
 |---|---|---|
-| AC18 | **Reachable — not yet wired** | Save carries the chosen IC/RC + category; reading it back needs the list row-open widget interaction (async list + JS row action). Feasible; not blocked. |
-| AC23, AC25 | **Reachable — not yet wired** | Existing QUOTE rows are present in the dashboard list; needs the same row-open interaction. |
-| AC24 | **Reachable — not yet wired** | "APPLICATION IN PROGRESS" rows are present; needs the same row-open interaction. |
+| AC18, AC23, AC24, AC25 | **Blocked in practice (investigated, evidence 17)** | Reachable *in principle* — Save exists and the dashboard "Quotes and Applications" list is a plain HTML `<table>` (rows are `<tr class="table-row">` with client-name anchors, so clicking a row is trivial). BUT the list's data rows render **unreliably under automation**: after login + dashboard load, the `<tr>` rows populated on two early ad-hoc runs but were **absent on ~6 later runs** — a patient 40s no-interaction wait, `networkidle`, "Refresh content" ×6, and explicit Status/page-size filters all failed to force them. Same class of environment flakiness already documented for this app. Row identification is NOT the blocker; list-render reliability is. |
 | AC20, AC21 | **Partially blocked** | Require quotes/applications created *before the feature was deployed* — that temporal precondition can't be manufactured now (feature already live); only verifiable by inspecting genuinely pre-deployment rows, by comparison. |
 | AC12 | **Blocked (probed)** | `test.fixme` — same employment-details Apply gate as AC16 (evidence 14); also needs Spread 20 as the *saved* agency default. |
 | AC16 | **Blocked (probed)** | `test.fixme` — IC/RC-at-Apply validation behind the "complete the client's employment details" Apply gate (evidence 14). |
 | AC26 | **Blocked** | Data integrity post-deployment — backend/DB verification, no browser path. |
 | AC27 | **Blocked** | STP/LIFE400 payload — backend payload inspection, no browser path. |
 
-**Next step to close AC18/AC23/AC24/AC25:** crack the dashboard list row-open — wait for
-`networkidle` (or click "Refresh content"), locate a data row by its Reference/Client-name text,
-invoke the widget's row action, confirm the quote screen loads; then read/modify the persisted
-commission category. AC22 (the one in this group that needs no save/reopen) is now encoded and
-passing.
+**To pursue AC18/AC23/AC24/AC25 later:** the row-open click itself is solved (plain `<table>`);
+what's needed is a *reliable* list render — retry against a lighter-loaded environment / dedicated
+account, or drive the list's underlying data endpoint instead of the rendered widget (evidence 17).
+AC22 (the one in this group needing no save/reopen) is encoded and passing.
 
 ## Confirmed failing (expected-to-fail, on purpose)
 
