@@ -3,7 +3,7 @@
 > **Test file:** `select-default-commission-category-v1.spec.js`
 > **Last run:** 2026-08-31 (local Edge headless, **`--workers=1`**) — 38.0 min
 > **Source:** ACB-13175 user story ("Select Default Commission Category"), acceptance-criteria mode
-> **Result:** 10/14 passing, 2 confirmed failing (AC06/07/08 persistence, AC13 gating), 2 blocked (AC12, AC16 — Apply gate unreachable)
+> **Result:** 11/15 passing, 2 confirmed failing (AC06/07/08 persistence, AC13 gating), 2 blocked (AC12, AC16 — Apply gate unreachable)
 >
 > **⚠ Run with `--workers=1`.** The AC06/07/08 test mutates the *agency-wide* Default for Agency
 > (a shared server-side setting) mid-run and reverts it in a `finally`. Under `--workers=2` a second
@@ -38,16 +38,33 @@ Each row shows the verbatim acceptance criterion from the user story, what the t
 | AC16 | "When the user attempts to proceed without selecting an IC/RC option Then 'Please select IC/RC in Adviser Use for all policies.' is displayed and the user cannot proceed" | Click Apply on a Flexi-12.5% quote with no IC/RC picked; assert the IC/RC validation message | 🚫 Blocked | `test.fixme` — IC/RC-at-Apply validation sits behind the "complete the client's employment details" Apply gate, which now blocks Apply even with Employment Status = Employed set (probed twice). The old VAL-08 recipe that used to pass the gate now also fails — app-side gate change. See evidence `14-probe-ac16-apply-employment-gate/`. |
 | AC17 | "Given a Flexi-Rate supports more than one commission category ... the user may select from any valid commission category available for that Flexi-Rate" | FR 15% + IC-50%, RC-50%: per-cover category pick list offers all three categories | ✅ Pass | Confirmed matching — options = Upfront, Level 30, Spread 20 (evidence 15) |
 | AC19 | "When the selection changes Then the available IC/RC options are refreshed immediately and any previously selected IC/RC value that is no longer valid is cleared" | IC/RC option set at Flexi 15% differs from the set at 2.5% (options refreshed on Flexi change) | ✅ Pass | |
+| AC22 | "Given an agency default commission category has been configured, When a new quote is created, Then the default commission category must be automatically applied to the quote" | New quote at FR 2.5%: per-cover Life Cover category resolves to the agency default (Upfront) | ✅ Pass | Category resolves a beat after the IC/RC auto-selects — test polls until settled to avoid a flaky early read |
 
 ## Deferred / Blocked (not yet encoded)
 
-| AC(s) | Reason |
-|---|---|
-| AC12 | **Blocked (probed):** encoded but `test.fixme`. Asserts the "Please select IC/RC…" validation on Apply, which is behind the same employment-details Apply gate as AC16 (evidence 14). Also needs Spread 20 as the *saved* agency default (Update mutates agency-wide shared state). |
-| AC16 | **Blocked (probed):** encoded but `test.fixme`. IC/RC-at-Apply validation behind the "complete the client's employment details" Apply gate, which now blocks Apply even with Employment Status = Employed (evidence 14). Enable once the Apply employment gate is reachable again. |
-| AC18, AC20–AC25 | Existing/saved/pre-existing quotes unchanged after a default change — requires pre-existing saved quotes or historic applications; likely not reachable from a fresh browser session. Needs a probe to confirm blocked-vs-testable. |
-| AC26 | Data integrity post-deployment — requires backend verification (no browser path). |
-| AC27 | STP/LIFE400 payload — requires backend/payload inspection (no browser path). |
+Reachability of the "existing/saved quotes & applications" ACs was probed 2026-08-31
+(evidence `16-probe-save-reopen-reachability/`). Findings: a **Save** action exists on the quote
+screen (carries IC/RC + per-cover category, needs a fully-valid client), and the dashboard has a
+**"Quotes and Applications" list of real existing quotes AND applications** (QUOTE / APPLICATION IN
+PROGRESS rows). The list is async/lazy-loaded and rows open via a JS list-widget handler (no
+`QuoteId` URL) — reopening a saved row is feasible but that widget interaction is not yet cracked.
+
+| AC(s) | Verdict | Reason |
+|---|---|---|
+| AC18 | **Reachable — not yet wired** | Save carries the chosen IC/RC + category; reading it back needs the list row-open widget interaction (async list + JS row action). Feasible; not blocked. |
+| AC23, AC25 | **Reachable — not yet wired** | Existing QUOTE rows are present in the dashboard list; needs the same row-open interaction. |
+| AC24 | **Reachable — not yet wired** | "APPLICATION IN PROGRESS" rows are present; needs the same row-open interaction. |
+| AC20, AC21 | **Partially blocked** | Require quotes/applications created *before the feature was deployed* — that temporal precondition can't be manufactured now (feature already live); only verifiable by inspecting genuinely pre-deployment rows, by comparison. |
+| AC12 | **Blocked (probed)** | `test.fixme` — same employment-details Apply gate as AC16 (evidence 14); also needs Spread 20 as the *saved* agency default. |
+| AC16 | **Blocked (probed)** | `test.fixme` — IC/RC-at-Apply validation behind the "complete the client's employment details" Apply gate (evidence 14). |
+| AC26 | **Blocked** | Data integrity post-deployment — backend/DB verification, no browser path. |
+| AC27 | **Blocked** | STP/LIFE400 payload — backend payload inspection, no browser path. |
+
+**Next step to close AC18/AC23/AC24/AC25:** crack the dashboard list row-open — wait for
+`networkidle` (or click "Refresh content"), locate a data row by its Reference/Client-name text,
+invoke the widget's row action, confirm the quote screen loads; then read/modify the persisted
+commission category. AC22 (the one in this group that needs no save/reopen) is now encoded and
+passing.
 
 ## Confirmed failing (expected-to-fail, on purpose)
 

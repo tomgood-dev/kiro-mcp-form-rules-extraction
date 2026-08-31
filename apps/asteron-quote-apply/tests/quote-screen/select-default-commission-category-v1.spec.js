@@ -464,6 +464,35 @@ test.describe('Select Default Commission Category', () => {
     expect(/Please select IC\/RC in Adviser Use for all policies/i.test(errors), `AC12: expected IC/RC validation. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
+  test('AC22: A new quote automatically has the agency default commission category applied', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC22: Given an agency default commission category has been configured, When a new quote is created,',
+      'Then the default commission category must be automatically applied to the quote.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a fresh new quote (agency default is Upfront per AC03).',
+      '2. Set Flexi Rate = 2.5% (single valid IC/RC for Upfront → auto-selects IC-100%, RC-50%).',
+      '3. Open Adviser Use.',
+      '4. Read the per-cover Life Cover commission category.',
+      '',
+      'Expected: the Life Cover category on the new quote is the agency default = Upfront.',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 2.5%', () => setFlexiRate(quote, '2.5%'));
+    await openAdviserUse(quote);
+    // At 2.5% for the Upfront default the single valid IC/RC auto-selects and the cover category
+    // then resolves to the default (Upfront). The category resolves a beat AFTER the IC/RC
+    // auto-selects, so poll until it settles (a too-early read sees a transient "Please Select").
+    let life = await getCoverCategoryInfo(quote, 'Life Cover');
+    for (let i = 0; i < 10 && (!life || life.selected === 'Please Select'); i++) {
+      await quote.waitForTimeout(1000);
+      life = await getCoverCategoryInfo(quote, 'Life Cover');
+    }
+    expect(life, 'AC22: Life Cover category present').not.toBeNull();
+    expect(life.selected, 'AC22: new quote shows the agency default (Upfront) on the cover').toBe('Upfront');
+    await closeAdviserUse(quote);
+  });
+
 });
 test.describe('Select Default Commission Category — Save & Persistence', () => {
 
