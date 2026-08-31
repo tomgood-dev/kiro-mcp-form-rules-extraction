@@ -16,6 +16,20 @@ Personal Details is a per-life section (each Life tab has its own, independent c
 | `PD-06` | Smoking status (incl. vapes & e-cigarettes) | Button group (Yes/No) | Not observed to block pricing | Not observed to block pricing | Defaults to "No"; affects premium rate, not eligibility |
 | `PD-07` | Occupation | Searchable type-ahead (virtual-select widget) | **Yes** (or Occupation Code as an alternative) | **Yes** | Selecting an option auto-fills and **disables** Occupation Code below it. Also gates cover *availability* — see [Lump Sum Covers §Occupation gating](../lump-sum-covers/page.md) and [Disability Covers §Occupation gating](../disability-covers/page.md) |
 | `PD-08` | Occupation code | Native select: (blank), AM, AA, A1, A2, B, C, S, U, IC | Alternative to Occupation | Alternative to Occupation | Becomes disabled/locked once Occupation is chosen via search |
+
+> ⚠ **Confirmed discrepancy, 2026-09-01 — the reverse direction of PD-07/PD-08 does not
+> hold.** Selecting Occupation directly (type-ahead) correctly locks Occupation Code
+> (`PD-07`, confirmed working). But selecting **Occupation Code first** does NOT
+> prepopulate the Occupation type-ahead field — it remains on the placeholder "Select...".
+> This contradicts `AC07` of the "Create a New Business Quote" user story (Jira ACB-2240),
+> which explicitly requires the reverse direction to also prepopulate. Confirmed live via
+> native `selectOption()` (not a raw-`dispatchEvent` artifact) and encoded as a failing
+> test: `apps/asteron-quote-apply/tests/quote-screen/create-a-new-business-quote-v1.spec.js`
+> → "AC07: selecting Occupation Code instead prepopulates the Occupation field". Not yet
+> confirmed with a BA/PM as regression vs. intentional (the relationship may simply be
+> one-directional by design — Occupation Code as a fallback for when Occupation isn't
+> known, not necessarily meant to resolve back to a specific title). See
+> `test-runs/create-a-new-business-quote-v1/` for the run report and generation log.
 | `PD-09` | Employment status | Native select: Select one / Employed / Self-Employed / Employed by own company / Other | Not required | **Required** | *(Corrected 2026-08-26 — see `PD-20` below: the Disability Covers section/buttons are visible and enabled regardless of this field's value; Employment Status still blocks Apply if a Disability cover is priced without it set.)* |
 | `PD-10` | Pre-tax annual income ($) | Masked currency input | Not required | **Required** | Marked `*`. Drives the income-percentage formulas throughout Disability Covers. See tooltip text below |
 
