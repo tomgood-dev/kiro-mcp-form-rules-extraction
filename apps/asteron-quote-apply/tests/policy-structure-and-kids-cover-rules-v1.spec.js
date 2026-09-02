@@ -281,13 +281,25 @@ test('POL/KID full coverage: mutual exclusion, policies, kids dependency, tiers,
     if (!kidDOB)
       throw new Error('FAILED [KID-05]: Kid DOB field not found');
 
-    // Min should be roughly 21 years ago, Max should be today or near today
+    // RE-CORRECTED 2026-09-02: an earlier "correction" (2026-08-26) claimed this field was
+    // a rolling 64-year span identical to the adult's own Age Next Birthday DOB field
+    // (PD-11) - that turned out to be WRONG, most likely because that investigation
+    // accidentally read the ADULT's DOB field bounds instead of the kid's. Disambiguated
+    // live (2026-09-02) by reading BOTH fields side by side in the same page state: the
+    // known adult field (id="b15-Input_BirthDate") showed min=1952/max=2016 (a genuine
+    // 64-year span), while the genuinely different kid field showed min=2005/max=2026 (a
+    // genuine 21-year span) - confirming the ORIGINAL ~21-year-window finding was correct
+    // all along. See kids-cover-and-multi-life/page.md's KID-12 entry for the full history.
+    // Both bounds are computed relative to "now" (not hardcoded) so this doesn't go stale
+    // again as the year changes.
     var minYear = parseInt(kidDOB.min.split('-')[0]);
     var maxYear = parseInt(kidDOB.max.split('-')[0]);
-    if (maxYear !== 2026)
-      throw new Error('FAILED [KID-05 max]: Kid DOB max year should be 2026. Got: ' + maxYear);
-    if (minYear < 2004 || minYear > 2006)
-      throw new Error('FAILED [KID-05 min]: Kid DOB min year should be ~2005 (21yr window). Got: ' + minYear);
+    var currentYear = new Date().getFullYear();
+    if (Math.abs(maxYear - currentYear) > 1)
+      throw new Error('FAILED [KID-12 max]: Kid DOB max year should be ~' + currentYear + ' (rolling, today). Got: ' + maxYear);
+    var expectedMinYear = maxYear - 21;
+    if (Math.abs(minYear - expectedMinYear) > 1)
+      throw new Error('FAILED [KID-12 min]: Kid DOB min year should be ~' + expectedMinYear + ' (21yr window before max ' + maxYear + '). Got: ' + minYear);
 
     // ════════════════════════════════════════════════════════════════
     // PART 6: KID-11 — Max 9 kids + KID-01 dropdown options

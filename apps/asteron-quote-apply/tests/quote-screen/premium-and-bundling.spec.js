@@ -54,6 +54,36 @@ test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
   });
 });
 
+// Added 2026-09-02, closing a gap flagged in a full boundary-coverage audit: PREM-26 (M&L
+// bundling threshold, previously only documented as "$500-$1,000/mo, not narrowed
+// further") had no boundary test anywhere. A one-shot probe (probe-prem26-ml-bundling-
+// threshold.js) pinned the exact cutover: $999/mo -> "None", $1000/mo -> qualifies -
+// exactly $1,000/mo, confirming the doc's own "likely $1,000/mo" guess. Also reproduces
+// the already-documented bundling-percentage regression (shows "12.5%" not "15%" for 2
+// covers) an 8th time - not re-asserted here since PREM-19/20's tests above already own
+// that finding; this test only asserts the COUNT LABEL crossing None -> a qualifying tier,
+// which is the part PREM-26 is actually about (the threshold, not the percentage).
+test('PREM-26: Mortgage & Living counts toward bundling only once Monthly Benefit reaches $1,000', async ({}, testInfo) => {
+  // M&L is a Disability cover - Employment Status + Income needed for it to price at all
+  // (the file's beforeEach only sets minimum Lump-Sum-level details).
+  await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed', income: '100000' });
+  await activateCover(quote, 'Life');
+  await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+  await activateCover(quote, 'Mortgage & Living');
+
+  await fillCalcMask(sumInsuredInput(quote, 1), '999');
+  await waitForSettle(quote);
+  const discountBelow = await getBundlingDiscount(quote);
+  recordCheck(testInfo, { label: 'Bundling Discount with M&L Monthly Benefit at $999 (below the $1,000 threshold)', expected: 'None', actual: discountBelow });
+  expect(discountBelow).toBe('None');
+
+  await fillCalcMask(sumInsuredInput(quote, 1), '1000');
+  await waitForSettle(quote);
+  const discountAt = await getBundlingDiscount(quote);
+  recordCheck(testInfo, { label: 'Bundling Discount with M&L Monthly Benefit at exactly $1,000 (now qualifies as a 2nd committed cover)', expected: 'not "None"', actual: discountAt });
+  expect(discountAt).not.toBe('None');
+});
+
 test('PREM-18: Fortnightly premium = Yearly ÷ 26, independently rounded per period', async ({}, testInfo) => {
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');

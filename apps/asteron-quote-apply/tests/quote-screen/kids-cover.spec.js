@@ -1,6 +1,6 @@
 // Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/kids-cover-and-multi-life/page.md
 const { test, expect } = require('@playwright/test');
-const { openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, clickApply, expectErrorContaining, sumInsuredInput, waitForSettle } = require('../../helpers/quote-helpers');
+const { openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, clickApply, expectErrorContaining, sumInsuredInput, waitForSettle, getTotalYearlyPremium } = require('../../helpers/quote-helpers');
 const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
@@ -51,4 +51,50 @@ test('KID-07: Kid Sum Insured tier list runs $50,000 (Free) to $200,000 in $10,0
   expect(options.at(-1)).toBe('$200,000');
   recordCheck(testInfo, { label: 'Kid Sum Insured tier list has 16 options ($50,000 (Free) to $200,000 in $10,000 steps)', expected: 16, actual: options.length });
   expect(options).toHaveLength(16);
+});
+
+// Sets the kid's Date of birth via the native value-setter + dispatch pattern (same
+// convention as the adult DOB field in personal-details.spec.js's PD-15/16 test),
+// disambiguated from the adult's own DOB field by excluding its known id.
+async function setKidDob(page, dateStr) {
+  await page.evaluate((val) => {
+    const kidInput = [...document.querySelectorAll('input[type="date"]')].find((i) => i.id !== 'b15-Input_BirthDate');
+    if (!kidInput) throw new Error('Kid DOB input not found');
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(kidInput, val);
+    kidInput.dispatchEvent(new Event('input', { bubbles: true }));
+    kidInput.dispatchEvent(new Event('change', { bubbles: true }));
+    kidInput.dispatchEvent(new Event('blur', { bubbles: true }));
+  }, dateStr);
+}
+
+// Added 2026-09-02, closing a gap flagged in a full boundary-coverage audit: KID-10 (Kids
+// Cover premium only charged once Sum Insured exceeds the free $50,000 tier) had no
+// boundary test anywhere — KID-07 confirms the tier LIST shape but never checks the actual
+// premium impact of crossing from the free tier into the first paid one.
+test('KID-10: Kids Cover premium is only charged once Sum Insured exceeds the free $50,000 tier', async ({}, testInfo) => {
+  await activateCover(quote, 'Life');
+  await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+  await waitForSettle(quote);
+  const premiumBeforeKids = await getTotalYearlyPremium(quote);
+
+  await numberOfKidsSelect(quote).selectOption('1');
+  await waitForSettle(quote);
+  // A kid DOB is required for the cover to price at all once it's non-free (confirmed live:
+  // leaving it unset at a paid tier zeroed the ENTIRE quote's premium, not just the kid's
+  // own line) - set one now, safely within the ~21-year window (KID-12), well before
+  // reaching the paid tier below.
+  await setKidDob(quote, '2018-06-15');
+  await waitForSettle(quote);
+  // Default SI tier is $50,000 (Free) per KID-07 - premium should be unchanged.
+  const premiumAtFreeTier = await getTotalYearlyPremium(quote);
+  recordCheck(testInfo, { label: 'Total yearly premium unchanged with Kids Cover at the $50,000 (Free) tier', expected: premiumBeforeKids, actual: premiumAtFreeTier });
+  expect(premiumAtFreeTier).toBe(premiumBeforeKids);
+
+  const tierDropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$50,000 (Free)' }) }).first();
+  await tierDropdown.selectOption({ label: '$60,000' });
+  await waitForSettle(quote);
+  const premiumAtNextTier = await getTotalYearlyPremium(quote);
+  recordCheck(testInfo, { label: 'Total yearly premium increases once Kid Sum Insured exceeds the $50,000 free tier (next tier: $60,000)', expected: `> ${premiumBeforeKids}`, actual: premiumAtNextTier });
+  expect(premiumAtNextTier).toBeGreaterThan(premiumBeforeKids);
 });

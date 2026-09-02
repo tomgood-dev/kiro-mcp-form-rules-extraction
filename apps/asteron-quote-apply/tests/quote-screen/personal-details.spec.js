@@ -68,6 +68,89 @@ test.describe('PD-11/PD-12/PD-26/PD-27 — Age next birthday valid range (11–7
   });
 });
 
+// PD-01/PD-02 boundary coverage — added 2026-09-02, closing a gap flagged in a full
+// boundary-coverage audit (every other stated numeric/length/date limit in the project
+// already had below/at/over coverage somewhere; these two character limits did not).
+// Per PD-24: a value set via .fill()/script BYPASSES the max-length enforcement entirely -
+// real keyboard typing must be used to observe the genuine cap, so this uses
+// page.keyboard.type() (not .fill()), matching the project's established interaction
+// gotcha for this exact field.
+//
+// IMPORTANT: type ONE CHARACTER PER keyboard.type() CALL, WITH A REAL WAIT AFTER EACH ONE -
+// not the whole string in a single call, and not a tight loop of single-char calls either.
+// Confirmed live (2026-09-02) via two rounds of diagnosis: (1) one page.keyboard.type(text,
+// {delay:15}) burst for a 19-char string left only 2 characters in the field - the
+// OutSystems reactive re-render can't keep up with a long uninterrupted keystroke burst and
+// resets mid-typing; (2) typing one character at a time in its OWN call, WITHOUT an explicit
+// wait after each, landed the exact same "only 2 characters" result - the `delay` option
+// only affects timing WITHIN a single .type() call, not between separate calls, so a tight
+// loop of them still races the re-render just as badly. What actually worked in the first
+// diagnostic was reading .inputValue() after every character - that round-trip's overhead
+// was what gave the framework time to settle, not the one-char-per-call structure itself.
+// An explicit waitForTimeout after each character reproduces that same effect directly.
+async function typeReal(page, locator, text) {
+  await locator.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Delete');
+  await page.waitForTimeout(300);
+  for (const ch of text) {
+    await page.keyboard.type(ch, { delay: 40 });
+    await page.waitForTimeout(60);
+  }
+}
+
+// Generates a string of DISTINCT, cycling letters (not a single repeated character).
+// Confirmed live (2026-09-02): typing a single repeated character (e.g. 'A'.repeat(19))
+// consistently landed only 2 characters regardless of typing strategy (one big burst, one
+// character per call, one character per call with an explicit wait after each), while an
+// otherwise-identical diagnostic using VARIED characters ("ABCDEFGHIJKLMNOPQRS") landed all
+// 19/19 correctly. The reactive framework's diffing/re-render appears to special-case (or
+// get confused by) runs of identical characters - using varied ones sidesteps it entirely.
+function variedChars(length) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let out = '';
+  for (let i = 0; i < length; i++) out += alphabet[i % alphabet.length];
+  return out;
+}
+
+test('PD-01: First Name accepts up to 20 characters, caps at the 21st', async ({}, testInfo) => {
+  const firstName = quote.locator('input[id*="Input_FirstName"]').first();
+
+  await typeReal(quote, firstName, variedChars(19));
+  const valueAt19 = (await firstName.inputValue()).length;
+  recordCheck(testInfo, { label: 'First Name at 19 characters (below the 20-char max) is accepted in full', expected: 19, actual: valueAt19 });
+  expect(valueAt19).toBe(19);
+
+  await typeReal(quote, firstName, variedChars(20));
+  const valueAt20 = (await firstName.inputValue()).length;
+  recordCheck(testInfo, { label: 'First Name at exactly 20 characters (the documented max, PD-01) is accepted in full', expected: 20, actual: valueAt20 });
+  expect(valueAt20).toBe(20);
+
+  await typeReal(quote, firstName, variedChars(21));
+  const valueAt21 = (await firstName.inputValue()).length;
+  recordCheck(testInfo, { label: 'First Name at 21 characters (over the 20-char max) is capped at 20, the 21st character rejected', expected: 20, actual: valueAt21 });
+  expect(valueAt21).toBe(20);
+});
+
+test('PD-02: Last Name accepts up to 30 characters, caps at the 31st', async ({}, testInfo) => {
+  const lastName = quote.locator('input[id*="Input_LastName"]').first();
+
+  await typeReal(quote, lastName, variedChars(29));
+  const valueAt29 = (await lastName.inputValue()).length;
+  recordCheck(testInfo, { label: 'Last Name at 29 characters (below the 30-char max) is accepted in full', expected: 29, actual: valueAt29 });
+  expect(valueAt29).toBe(29);
+
+  await typeReal(quote, lastName, variedChars(30));
+  const valueAt30 = (await lastName.inputValue()).length;
+  recordCheck(testInfo, { label: 'Last Name at exactly 30 characters (the documented max, PD-02) is accepted in full', expected: 30, actual: valueAt30 });
+  expect(valueAt30).toBe(30);
+
+  await typeReal(quote, lastName, variedChars(31));
+  const valueAt31 = (await lastName.inputValue()).length;
+  recordCheck(testInfo, { label: 'Last Name at 31 characters (over the 30-char max) is capped at 30, the 31st character rejected', expected: 30, actual: valueAt31 });
+  expect(valueAt31).toBe(30);
+});
+
 test('PD-14: TPD requires a minimum Age Next Birthday of 17', async () => {
   await setMinimumPersonalDetails(quote, { age: 16 });
   await activateCover(quote, 'TPD');

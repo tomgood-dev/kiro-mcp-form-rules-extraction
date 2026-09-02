@@ -111,6 +111,28 @@ test('LSC-10: TPD maximum Sum Insured per life is $5,000,000', async ({}, testIn
   expect(errors.some((e) => e.includes('maximum total Sum Insured'))).toBe(false);
 });
 
+// Added 2026-09-02, closing a gap flagged in a full boundary-coverage audit: LSC-11b (TPD
+// max Age Next Birthday 65) had no boundary test anywhere, unlike the equivalent age-cap
+// rules for Life's Level-to variants or Accidental Death/Needlestick/Specific Injury.
+test('LSC-11b: TPD (Stepped) maximum Age Next Birthday is 65', async ({}, testInfo) => {
+  await setMinimumPersonalDetails(quote, { age: 66 });
+  await activateCover(quote, 'TPD');
+  await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+  await clickApply(quote);
+  await expectErrorContaining(quote, 'maximum Age Next Birthday for Stepped');
+
+  await setMinimumPersonalDetails(quote, { age: 65 });
+  await waitForSettle(quote);
+  const errors = await getVisibleErrors(quote);
+  const hasMaxAgeError = errors.some((e) => e.includes('maximum Age Next Birthday for Stepped'));
+  recordCheck(testInfo, {
+    label: 'No "maximum Age Next Birthday for Stepped" error when TPD is priced at exactly ANB 65',
+    expected: false,
+    actual: hasMaxAgeError,
+  });
+  expect(hasMaxAgeError).toBe(false);
+});
+
 test('LSC-17: Trauma and Cancer share a combined $2,000,000 per-life cap', async () => {
   await activateCover(quote, 'Trauma');
   await fillCalcMask(sumInsuredInput(quote, 0), '1500000');
