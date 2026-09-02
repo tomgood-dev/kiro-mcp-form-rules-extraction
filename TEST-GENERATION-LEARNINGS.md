@@ -4,6 +4,40 @@ Appended after each run of `TEST-GENERATION-PROCESS.md`, per its Step 7. Each en
 "what to improve next time" note, newest first. Not a replay of the generation log — see each
 story's `test-runs/<slug>/generation-log-*.md` for the full detail behind each entry.
 
+## 2026-09-02 — Multi Lives and Policies (ACB-4394)
+
+- **A per-life "premium" read is a race under load — assert stable structural signals instead.**
+  MLP-05/MLP-17 initially asserted the second life's premium > 0 via `getTotalYearlyPremium`. It
+  passed in isolation but read 0/blank for the 2nd life in the full suite (OutSystems reactive
+  re-render hadn't settled). `fillCalcMask` already self-verifies the SI digits landed, so the
+  robust check is: assert the first/active life's premium (stable) + `lifeTabCount === 2` + the
+  all-lives total label is present. Don't chase a just-recalculated per-life figure.
+- **When the app throws a modal/backdrop during bulk building, a normal `.click()` can't win.**
+  MLP-13 (build 10 lives) failed 6× across 3 strategies because a transient `<div class="popup-
+  backdrop">` intercepts pointer events deep in the build (~life 5-7) — the documented sustained-
+  session-load instability. A DIAGNOSTIC probe that built 5 lives *in isolation* showed ZERO
+  backdrop, proving it's load-induced, not a defect. Lesson: (1) run a bulk-op DIAGNOSTIC in
+  isolation early to separate "app can't" from "load flakiness"; (2) a test needing many heavy
+  ops in one session should be a dedicated split file/session from the start (the steering rule),
+  not retrofitted after it flakes; (3) evaluate-based field entry bypasses pointer interception
+  but then needs a real server-recalculated self-verify, which itself gets flaky under the same
+  load. When all three of those are hit, blocked-with-evidence is the honest call — keep the
+  assertion (goes green when a reliable build exists) and cite the sibling limit test that passes.
+- **Distinguish "the modal has no OK inside a [role=dialog]" from "no modal".** The app's "Cannot
+  proceed" popup is NOT a `[role="dialog"]`; a modal-capture helper scoped to that selector
+  returns false-negatives, and the vscomp typeahead ("Select...") is a false-positive. Scope modal
+  reads to a real backdrop + known message strings, and verify the capture helper on a KNOWN modal
+  before trusting a "no modal" result (recon-2 wasted a run on a `.vscomp` false match).
+- **An AC's precondition may be unreachable from the reachable screen — that's blocked-with-
+  evidence, not a fail.** MLP-26/MLP-29 both need a "policy has an error" state that a blank or
+  over-cap Sum Insured does NOT produce pre-Apply (no visible error at all). The error-HIGHLIGHT
+  mechanism was separately confirmed to exist, so the AC isn't wrong — the browser just can't reach
+  its trigger. Encode to the story value but mark it needs-BA-clarification, don't pretend-pass.
+- **Reuse a strong sibling spec — it collapsed Step-3 probing.** `create-a-new-business-quote-v1`
+  already proved Add life / Personal / Business / premium-panel patterns, so 5 combined recon
+  probes (not dozens) covered a 29-AC story. Checking the sibling FIRST is what the prior run's
+  learning said to do, and it paid off.
+
 ## 2026-09-01 — Premium Details in the Quote Screen (ACB-2286)
 
 - When a DOM-query probe finds "nothing" for a control the AC explicitly describes, treat that as
