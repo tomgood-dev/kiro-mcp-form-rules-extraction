@@ -12,6 +12,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -55,7 +56,7 @@ test.describe('LSC-02/LSC-03 — Occupation gating on cover availability (full s
   };
 
   for (const [occCode, expected] of Object.entries(EXPECTATIONS)) {
-    test(`LSC-02/LSC-03 @ Occupation Code = ${occCode}: gating matches the documented rule`, async () => {
+    test(`LSC-02/LSC-03 @ Occupation Code = ${occCode}: gating matches the documented rule`, async ({}, testInfo) => {
       await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: occCode });
       await waitForSettle(quote);
 
@@ -65,6 +66,11 @@ test.describe('LSC-02/LSC-03 — Occupation gating on cover availability (full s
         await waitForSettle(quote, 1500); // extra margin — avoid a false no-op from a slow recalculation chain
         const after = await countActiveCoverCards(quote);
         const activated = after > before;
+        recordCheck(testInfo, {
+          label: `${cover} @ OCC=${occCode}: cover activation gating`,
+          expected: shouldActivate ? 'ACTIVATE' : 'no-op (gated)',
+          actual: activated ? 'ACTIVATE' : 'no-op',
+        });
         expect(
           activated,
           `${cover} @ OCC=${occCode}: expected ${shouldActivate ? 'ACTIVATE' : 'no-op (gated)'}, got ${activated ? 'ACTIVATE' : 'no-op'}`
@@ -75,7 +81,7 @@ test.describe('LSC-02/LSC-03 — Occupation gating on cover availability (full s
   }
 });
 
-test('LSC-02/LSC-03 control: Life/TPD/Trauma remain unaffected by occupation gating at AM', async () => {
+test('LSC-02/LSC-03 control: Life/TPD/Trauma remain unaffected by occupation gating at AM', async ({}, testInfo) => {
   await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: 'AM' });
   await waitForSettle(quote);
 
@@ -83,11 +89,12 @@ test('LSC-02/LSC-03 control: Life/TPD/Trauma remain unaffected by occupation gat
     const before = await countActiveCoverCards(quote);
     await activateCover(quote, cover);
     const after = await countActiveCoverCards(quote);
+    recordCheck(testInfo, { label: `${cover} should still activate normally at Occupation Code = AM`, expected: before + 1, actual: after });
     expect(after, `${cover} should still activate normally at Occupation Code = AM`).toBe(before + 1);
   }
 });
 
-test('LSC-10: TPD maximum Sum Insured per life is $5,000,000', async () => {
+test('LSC-10: TPD maximum Sum Insured per life is $5,000,000', async ({}, testInfo) => {
   await activateCover(quote, 'TPD');
   await fillCalcMask(sumInsuredInput(quote, 0), '5000001');
   await clickApply(quote);
@@ -96,6 +103,11 @@ test('LSC-10: TPD maximum Sum Insured per life is $5,000,000', async () => {
   await fillCalcMask(sumInsuredInput(quote, 0), '5000000');
   await waitForSettle(quote);
   const errors = await getVisibleErrors(quote);
+  recordCheck(testInfo, {
+    label: 'No "maximum total Sum Insured" error when TPD Sum Insured is exactly $5,000,000',
+    expected: false,
+    actual: errors.some((e) => e.includes('maximum total Sum Insured')),
+  });
   expect(errors.some((e) => e.includes('maximum total Sum Insured'))).toBe(false);
 });
 
@@ -108,12 +120,17 @@ test('LSC-17: Trauma and Cancer share a combined $2,000,000 per-life cap', async
   await expectErrorContaining(quote, 'including Cancer Cover, is $2,000,000');
 });
 
-test('LSC-23/LSC-24: Cancer prices independently, with no hard dependency on Trauma', async () => {
+test('LSC-23/LSC-24: Cancer prices independently, with no hard dependency on Trauma', async ({}, testInfo) => {
   await activateCover(quote, 'Cancer');
   await fillCalcMask(sumInsuredInput(quote, 0), '50000');
   await clickApply(quote);
 
   const errors = await getVisibleErrors(quote);
+  recordCheck(testInfo, {
+    label: 'Cancer Cover has no hard dependency on Trauma (no "requires/must be purchased with/depend" error)',
+    expected: false,
+    actual: errors.some((e) => /requires|must be purchased with|depend/i.test(e)),
+  });
   expect(errors.some((e) => /requires|must be purchased with|depend/i.test(e))).toBe(false);
 });
 
@@ -127,7 +144,7 @@ test.describe('LSC-19/LSC-20 — Major Trauma cap formula', () => {
     await expectErrorContaining(quote, '$60000');
   });
 
-  test('LSC-20: at/above $25,000 TRC, Major Trauma has no % cap — only the shared $2,000,000 ceiling applies', async () => {
+  test('LSC-20: at/above $25,000 TRC, Major Trauma has no % cap — only the shared $2,000,000 ceiling applies', async ({}, testInfo) => {
     await activateCover(quote, 'Trauma');
     await fillCalcMask(sumInsuredInput(quote, 0), '25000');
     await activateCover(quote, 'Major Trauma');
@@ -138,6 +155,11 @@ test.describe('LSC-19/LSC-20 — Major Trauma cap formula', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '1975000'); // 25,000 + 1,975,000 = 2,000,000 exactly
     await clickApply(quote);
     let errors = await getVisibleErrors(quote);
+    recordCheck(testInfo, {
+      label: 'No $2,000,000 combined cap error when Trauma + Major Trauma sum to exactly $2,000,000',
+      expected: false,
+      actual: errors.some((e) => e.includes('$2,000,000')),
+    });
     expect(errors.some((e) => e.includes('$2,000,000'))).toBe(false);
 
     await fillCalcMask(sumInsuredInput(quote, 1), '1975001'); // now exceeds the combined cap by $1
@@ -153,15 +175,20 @@ test('LSC-27: Accidental Death maximum Sum Insured is a flat $1,000,000', async 
   await expectErrorContaining(quote, '$1,000,000');
 });
 
-test('LSC-29: Needlestick Sum Insured is a fixed-tier dropdown, not free text', async () => {
+test('LSC-29: Needlestick Sum Insured is a fixed-tier dropdown, not free text', async ({}, testInfo) => {
   await activateCover(quote, 'Needlestick');
   const dropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$500,000' }) }).first();
   await expect(dropdown).toBeVisible();
   const options = await dropdown.locator('option').allInnerTexts();
+  recordCheck(testInfo, {
+    label: 'Needlestick Sum Insured dropdown offers fixed $0-$500,000 tiers only',
+    expected: ['$0', '$50,000', '$100,000', '$150,000', '$200,000', '$250,000', '$300,000', '$350,000', '$400,000', '$450,000', '$500,000'],
+    actual: options,
+  });
   expect(options).toEqual(['$0', '$50,000', '$100,000', '$150,000', '$200,000', '$250,000', '$300,000', '$350,000', '$400,000', '$450,000', '$500,000']);
 });
 
-test('LSC-32/LSC-34: Specific Injury requires a companion cover — adding one unblocks Apply', async () => {
+test('LSC-32/LSC-34: Specific Injury requires a companion cover — adding one unblocks Apply', async ({}, testInfo) => {
   // Specific Injury's Sum Insured is a calc-mask free-text input (LSC-32), same as
   // Life/TPD/Trauma/Cancer — NOT a fixed-tier select like Needlestick's.
   await activateCover(quote, 'Specific Injury');
@@ -174,6 +201,11 @@ test('LSC-32/LSC-34: Specific Injury requires a companion cover — adding one u
   await fillCalcMask(sumInsuredInput(quote, 1), '200000');
   await clickApply(quote);
   const errors = await getVisibleErrors(quote);
+  recordCheck(testInfo, {
+    label: 'adding a companion cover should clear the Specific Injury standalone-block error',
+    expected: false,
+    actual: errors.some((e) => /requires one of the following covers/i.test(e)),
+  });
   expect(errors.some((e) => /requires one of the following covers/i.test(e)), 'adding a companion cover should clear the Specific Injury standalone-block error').toBe(false);
 });
 
@@ -186,7 +218,7 @@ test('LSC-35: TI Support caps at MIN(100% of Life Sum Insured, $300,000)', async
   await expectErrorContaining(quote, '$200,000');
 });
 
-test('LSC-39: activating an already-active top-level cover is a no-op (no duplicate instance)', async () => {
+test('LSC-39: activating an already-active top-level cover is a no-op (no duplicate instance)', async ({}, testInfo) => {
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
 
@@ -194,10 +226,15 @@ test('LSC-39: activating an already-active top-level cover is a no-op (no duplic
   await activateCover(quote, 'Life');
   const countAfter = await quote.locator('input[id*="SumInsured"]').count();
 
+  recordCheck(testInfo, {
+    label: 'activating an already-active top-level cover does not add a duplicate Sum Insured field',
+    expected: countBefore,
+    actual: countAfter,
+  });
   expect(countAfter).toBe(countBefore);
 });
 
-test('LSC-40: an activated Lump Sum cover left with no Sum Insured persists (zombie state) instead of vanishing', async () => {
+test('LSC-40: an activated Lump Sum cover left with no Sum Insured persists (zombie state) instead of vanishing', async ({}, testInfo) => {
   await activateCover(quote, 'Life');
   // Deliberately do NOT fill Sum Insured.
   await clickApply(quote);
@@ -205,6 +242,11 @@ test('LSC-40: an activated Lump Sum cover left with no Sum Insured persists (zom
   const cardStillPresent = await quote.evaluate(() =>
     [...document.querySelectorAll('a')].some((a) => a.innerText.trim() === 'Remove')
   );
+  recordCheck(testInfo, {
+    label: 'an activated Lump Sum cover card persists (zombie state) when left with no Sum Insured',
+    expected: true,
+    actual: cardStillPresent,
+  });
   expect(cardStillPresent).toBe(true);
   await expectErrorContaining(quote, 'minimum premium is $240.00');
 });

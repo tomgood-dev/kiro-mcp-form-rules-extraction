@@ -12,6 +12,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -27,13 +28,15 @@ test('VAL-24: total premium below $240/year per life shows the minimum-premium b
   await expectErrorContaining(quote, 'minimum premium is $240.00');
 });
 
-test('VAL-11: Apply is blocked while Employment Status is still "Select one"', async () => {
+test('VAL-11: Apply is blocked while Employment Status is still "Select one"', async ({}, testInfo) => {
   await setMinimumPersonalDetails(quote);
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
   await clickApply(quote);
 
-  expect(await isOnClientSummary(quote), 'Apply should not succeed while Employment Status is unset').toBe(false);
+  const stayedOnIllustration = await isOnClientSummary(quote);
+  recordCheck(testInfo, { label: 'Apply should not succeed while Employment Status is unset', expected: false, actual: stayedOnIllustration });
+  expect(stayedOnIllustration, 'Apply should not succeed while Employment Status is unset').toBe(false);
 
   // Per VAL-11/VAL-23, the exact message is "Please complete the client's employment
   // details before applying" — check both an inline error and a modal dialog (per the
@@ -48,10 +51,11 @@ test('VAL-11: Apply is blocked while Employment Status is still "Select one"', a
     });
     return inline || modal;
   });
+  recordCheck(testInfo, { label: 'expected "...employment details before applying" as an inline error or modal', expected: true, actual: found });
   expect(found, 'expected "...employment details before applying" as an inline error or modal').toBe(true);
 });
 
-test('VAL-08/VAL-09/VAL-10: a fully valid single-cover configuration allows Apply to proceed', async () => {
+test('VAL-08/VAL-09/VAL-10: a fully valid single-cover configuration allows Apply to proceed', async ({}, testInfo) => {
   await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed' });
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
@@ -67,16 +71,20 @@ test('VAL-08/VAL-09/VAL-10: a fully valid single-cover configuration allows Appl
   // log the URL comparison for information.
   console.log(`  [info] URL before: ${urlBefore}`);
   console.log(`  [info] URL after:  ${urlAfter}`);
+  recordCheck(testInfo, { label: 'Apply proceeds to Client Summary for a fully valid single-cover configuration', expected: true, actual: navigated });
   expect(navigated).toBe(true);
 });
 
-test('VAL-10: an invalid configuration keeps you on the Illustration screen with error text shown', async () => {
+test('VAL-10: an invalid configuration keeps you on the Illustration screen with error text shown', async ({}, testInfo) => {
   await setMinimumPersonalDetails(quote);
   await activateCover(quote, 'TPD');
   await fillCalcMask(sumInsuredInput(quote, 0), '9999999'); // over the $5,000,000 max
   await clickApply(quote);
 
-  expect(await isOnClientSummary(quote)).toBe(false);
+  const navigatedToSummary = await isOnClientSummary(quote);
+  recordCheck(testInfo, { label: 'Apply blocked for an invalid configuration (sum insured over the $5,000,000 max)', expected: false, actual: navigatedToSummary });
+  expect(navigatedToSummary).toBe(false);
   const stillOnIllustration = await quote.evaluate(() => document.body.innerText.includes('Illustration'));
+  recordCheck(testInfo, { label: 'Illustration screen still shown after Apply is blocked', expected: true, actual: stillOnIllustration });
   expect(stillOnIllustration).toBe(true);
 });

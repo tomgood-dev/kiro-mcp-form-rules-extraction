@@ -235,15 +235,29 @@ you don't create these folders or files by hand.
 **What `report.md` contains (in this order):**
 
 1. **Header** — spec file path, run timestamp, environment (from `BASE_URL`), duration,
-   pass/fail summary count.
-2. **Results table** — one row per test: `| # | Test | Status |`. Clean pass/fail at a glance.
+   pass/fail/skip summary count.
+2. **Results table** — one row per test: `| # | Test | Status |`. Kept minimal on purpose —
+   full evidence lives in the collapsible/detail sections below, not forced into every row.
 3. **Failed Tests — Detail** — for each failing test:
    - **Acceptance Criteria (from user story)** — the full verbatim AC text, pulled
      automatically from the test's `acceptance-criteria` annotation (see "AC annotation
      convention" below). Includes Steps to reproduce, Expected, and Actual.
+   - **What was compared** — a `Check | Expected | Actual` table, if the test recorded any
+     (see "Recording compared values" below). Optional/additive — older tests without it just
+     don't get this table.
    - **Assertion failure** — the cleaned error message (ANSI codes stripped).
    - **Screenshot** — embedded inline as base64 (captured at moment of failure).
-4. **Notes** — brief: pass/fail count, and a reminder that assertions are written to the
+4. **Skipped / Blocked Tests — Detail** — for each skipped test: the AC annotation (if present)
+   and a **Why skipped** line, pulled from the test's `fixme`/`skip` annotation reason (see "AC
+   annotation convention" below — this only works with the correct `test.fixme(true, reason)`
+   form). This is what makes a blocked AC's reason visible in the report itself, instead of
+   something a reader has to go find in the generation log.
+5. **What Each Passing Test Checked** — one collapsed `<details>` block per PASSING test that
+   recorded values (see "Recording compared values" below), each containing the same `Check |
+   Expected | Actual` table. Collapsed by default so the report stays scannable; a reader clicks
+   to see real evidence for any specific test rather than being shown a wall of tables. Tests
+   that haven't adopted `recordCheck` yet are silently omitted here, not shown as empty.
+6. **Notes** — brief: pass/fail/skip count, and a reminder that assertions are written to the
    spec's expected behavior.
 
 **There is no separate `results.md`, `known-failures.md`, `bug-reports/` subfolder, or
@@ -299,6 +313,63 @@ The annotation `description` field contains:
 The reporter reads this annotation and renders it as a blockquote in the failure detail section
 of `report.md`. This means every run automatically produces a report where each failure shows
 the full requirement, the reproduction steps, and the evidence — no manual post-processing needed.
+
+**For a blocked/deferred AC, use `test.fixme(true, 'reason')` (the INLINE conditional form),
+never `test.fixme('title', asyncFn)` (the STATIC form).** This is not a style preference — the
+static form **never executes its body at all**, so a `test.info().annotations.push(...)` call
+inside it is dead code. Confirmed empirically (2026-09-02): Playwright records only a bare
+`{type: 'fixme'}` annotation with no description for the static form — the reason is
+structurally unrecoverable from the test run, forcing anyone reading the report to go dig through
+the generation log instead. The inline form fixes this correctly:
+
+```javascript
+test('AC01: Landing page — select agency, then click create quote', async ({ page }) => {
+  test.info().annotations.push({
+    type: 'acceptance-criteria',
+    description: [ /* full AC text, steps, expected — same as any other test */ ].join('\n'),
+  });
+  test.fixme(true, 'No agency-selection UI found on the landing page — this test account is evidently tied to a single agency.');
+  // Anything below this line never runs while fixme(true, ...) is in effect — that's fine,
+  // it's identical to the old behavior, this only fixes the lost-reason bug.
+});
+```
+Push the `acceptance-criteria` annotation FIRST, then call `test.fixme(true, reason)` last —
+both annotations land on the test and the reporter renders both (the full AC context plus the
+short reason) in `report.md`'s "Skipped / Blocked Tests — Detail" section.
+
+### Recording compared values (MANDATORY for new specs, additive — for showing real evidence on EVERY test)
+
+A pass/fail dot in the results table doesn't tell a reader (e.g. a PM asking "are these tests
+actually valuable?") what was actually checked. To make that visible without cluttering every
+test with report-formatting concerns, call `recordCheck` (from `tools/artifact-helpers.js`)
+**alongside**, not instead of, a normal `expect()`:
+
+```javascript
+const { recordCheck } = require('../../../tools/artifact-helpers');
+// ... inside a test:
+const actual = await getBundlingDiscount(quote);
+recordCheck(testInfo, { label: 'Bundling discount (2 covers)', expected: '15% (2 covers)', actual });
+expect(actual, 'Bundling discount (2 covers)').toBe('15% (2 covers)');
+```
+
+This is deliberately additive, not a replacement for `expect()` — wrapping/replacing `expect`
+to capture this automatically would risk subtly changing assertion behavior across every spec in
+the repo for a reporting feature, which isn't worth the blast radius. `recordCheck` never
+asserts anything; it only records what was compared so the reporter can render a `Check |
+Expected | Actual` table for that test, whether it passes, fails, or (partially, before hitting
+a `test.fixme`) is skipped.
+
+**MANDATORY going forward (2026-09-02):** every `test()` in a newly-generated acceptance-criteria-
+mode spec MUST call `recordCheck` alongside every `expect()` that checks a meaningful value
+(not required for a bare presence/existence check like `expect(el).not.toBeNull()` with no
+comparison value worth surfacing). This is now part of Step 4 of `TEST-GENERATION-PROCESS.md`'s
+generation procedure, not optional polish. Write the `label` as a plain, business-readable
+sentence (e.g. `"Bundling discount (2 covers)"`, not a variable name) — a tester, BA, or PM
+reading `report.md` should understand what was checked without reading the test code.
+
+Retrofitting *existing* specs written before this convention is a separate, tracked effort (see
+`TEST-GENERATION-LEARNINGS.md`) — not required to touch an old spec just to add `recordCheck`,
+but do add it if you're already editing that spec for another reason.
 
 ### Test file structure convention (for acceptance-criteria mode)
 

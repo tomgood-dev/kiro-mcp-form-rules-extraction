@@ -72,12 +72,20 @@ Write the spec following the mandatory conventions:
 - Each test has a `test.info().annotations.push({type:'acceptance-criteria', description: ...})`
   with verbatim AC text + steps to reproduce + expected + actual.
 - Assertions written to the SPEC's expected value (so confirmed-failing ACs stay red until fixed).
+- **Every meaningful `expect()` (anything comparing a real value, not a bare presence check) is
+  paired with a `recordCheck(testInfo, {label, expected, actual})` call** (from
+  `tools/artifact-helpers.js`) — mandatory, see test-expansion-process.md's "Recording compared
+  values" section. This is what lets `report.md` show a plain-language `Check | Expected | Actual`
+  table for every test, not just failures.
+- A blocked/deferred AC uses `test.fixme(true, 'reason')` (inline conditional form) INSIDE a
+  regular `test()` block — never `test.fixme('title', asyncFn)` (static form), which silently
+  never runs its body. See test-expansion-process.md's AC annotation convention for why.
 **Log:** any AC where the intended behaviour was ambiguous and the agent had to make a call
 (flag these — they may need author clarification, per the AC-wording feedback loop).
 
 **MANDATORY — input-correctness checklist (every threshold/scenario test).** A test whose inputs
 don't actually reach the state the AC describes is worse than no test: it can pass for the wrong
-reason and give false confidence. For EACH test, before finalising, verify all six — a wrong input
+reason and give false confidence. For EACH test, before finalising, verify all seven — a wrong input
 usually comes from one of these (the AC12/ACB-2926 bug was #1 + #2: values borrowed from a sibling
 test summed to $80k when the AC needed >$250k, and the min-premium rule fired first):
 
@@ -96,10 +104,20 @@ test summed to $80k when the AC needed >$250k, and the min-premium rule fired fi
    treat a *different* error/result as a FAILURE, not a pass. This is what catches any wrong input
    the five preventive checks above miss — it is why the AC12 bug surfaced instead of going
    silently green. Never assert merely that "some error appeared".
+7. **Boundary coverage for any stated limit.** If the AC or the business-rules doc states a
+   numeric/length/date limit for a field (e.g. "max 20 chars", "ANB 11-75", "$100,000 minimum"),
+   one arbitrary in-range value is NOT sufficient coverage. Test at minimum three points: just
+   below the limit (valid), exactly at the limit (valid boundary), and just over the limit
+   (invalid). This is the difference between "the field exists and roughly works" and "the stated
+   limit is actually enforced" — a PM/reviewer asking "are these tests actually valuable?" is
+   asking exactly this question. Some existing specs check only presence, not boundaries (e.g.
+   First Name's documented 20-char max was never tested at 20/21 chars) — don't repeat that
+   pattern in new specs, and treat it as a real gap worth closing when revisiting old ones.
 
-Checks 1-5 PREVENT wrong inputs; check 6 GUARANTEES we catch whatever slips through. This list is
-the best-known preventive set; it is not claimed exhaustive — the strict-assertion backstop is the
-guarantee, and the list is extended whenever a new wrong-input class is found in the wild.
+Checks 1-5 PREVENT wrong inputs; check 6 GUARANTEES we catch whatever slips through; check 7
+ensures a stated limit is actually exercised, not just assumed. This list is the best-known
+preventive set; it is not claimed exhaustive — the strict-assertion backstop is the guarantee, and
+the list is extended whenever a new wrong-input class is found in the wild.
 
 ### Step 5 — Run against the live app
 Run via `playwright.edge.config.js`. **Log:** pass/fail per test, runtime, any environment issues

@@ -90,6 +90,28 @@ function embedImage(imagePath, altText = '') {
   return `![${altText}](data:image/${ext};base64,${base64})`;
 }
 
+/**
+ * Records a labeled expected/actual comparison for the report, independent of pass/fail.
+ * Call this ALONGSIDE (not instead of) a normal expect() call right next to it — this never
+ * asserts anything itself, it only records what was compared so the reporter can show real
+ * evidence (values, not just a pass/fail dot) for every test, including passing ones.
+ *
+ * Additive by design: existing specs already write `expect(actual, 'label').toBe(expected)`
+ * everywhere. Wrapping/replacing expect() to capture this automatically would risk subtly
+ * changing assertion behavior across every spec in the repo for a reporting feature — too much
+ * blast radius for the benefit. Calling recordCheck() next to an existing expect() is zero-risk
+ * and can be adopted incrementally, spec by spec.
+ *
+ * @param {import('@playwright/test').TestInfo} testInfo
+ * @param {{label: string, expected: unknown, actual: unknown}} check
+ */
+function recordCheck(testInfo, { label, expected, actual }) {
+  testInfo.annotations.push({
+    type: 'value-check',
+    description: JSON.stringify({ label, expected, actual }),
+  });
+}
+
 module.exports = {
   REPO_ROOT,
   PENDING_ROOT,
@@ -99,4 +121,5 @@ module.exports = {
   getRunDir,
   pendingDir,
   embedImage,
+  recordCheck,
 };

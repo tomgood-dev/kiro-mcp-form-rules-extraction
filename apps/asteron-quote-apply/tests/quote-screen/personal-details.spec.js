@@ -15,6 +15,7 @@ const {
   waitForSettle,
   sumInsuredInput,
 } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -45,21 +46,25 @@ test.describe('PD-11/PD-12/PD-26/PD-27 — Age next birthday valid range (11–7
     await expectErrorContaining(quote, 'between 11 and 75');
   });
 
-  test('PD-11: boundary ages 11 and 75 are both accepted', async () => {
+  test('PD-11: boundary ages 11 and 75 are both accepted', async ({}, testInfo) => {
     for (const age of [11, 75]) {
       await setAge(quote, age);
       await setGender(quote, 'Male');
       const errors = await getVisibleErrors(quote);
-      expect(errors.some((e) => e.includes('between 11 and 75'))).toBe(false);
+      const hasRangeError = errors.some((e) => e.includes('between 11 and 75'));
+      recordCheck(testInfo, { label: `Age ${age}: no "between 11 and 75" range error shown`, expected: false, actual: hasRangeError });
+      expect(hasRangeError).toBe(false);
     }
   });
 
-  test('PD-12: both client-side and server-side range error text appear together for an out-of-range age', async () => {
+  test('PD-12: both client-side and server-side range error text appear together for an out-of-range age', async ({}, testInfo) => {
     await priceAndApply(5);
     const errors = await getVisibleErrors(quote);
     const hasClientMsg = errors.some((e) => e.includes('Age next birthday should be between 11 and 75'));
     const hasServerMsg = errors.some((e) => e.includes('Age Next Birthday must be between 11 and 75'));
-    expect(hasClientMsg || hasServerMsg).toBe(true);
+    const hasEitherRangeMsg = hasClientMsg || hasServerMsg;
+    recordCheck(testInfo, { label: 'Client-side or server-side age range error message shown for an out-of-range age', expected: true, actual: hasEitherRangeMsg });
+    expect(hasEitherRangeMsg).toBe(true);
   });
 });
 
@@ -71,7 +76,7 @@ test('PD-14: TPD requires a minimum Age Next Birthday of 17', async () => {
   await expectErrorContaining(quote, 'minimum Age Next Birthday');
 });
 
-test('PD-15/PD-16: DOB auto-calculates Age, and manually typing Age clears DOB', async () => {
+test('PD-15/PD-16: DOB auto-calculates Age, and manually typing Age clears DOB', async ({}, testInfo) => {
   const dob = quote.getByLabel('Date of birth');
   const ageField = quote.locator('input[id*="Input_AgeNextBirthday"]').first();
 
@@ -85,10 +90,14 @@ test('PD-15/PD-16: DOB auto-calculates Age, and manually typing Age clears DOB',
     el.dispatchEvent(new Event('blur', { bubbles: true }));
   });
   await waitForSettle(quote);
+  const ageAfterDob = await ageField.inputValue();
+  recordCheck(testInfo, { label: 'Age Next Birthday auto-populated after Date of birth is set', expected: 'not blank', actual: ageAfterDob });
   await expect(ageField).not.toHaveValue('');
 
   // Manually typing Age (via the proven click+clear+type+tab pattern, not .fill()) should clear DOB.
   await setAge(quote, 40);
+  const dobAfterManualAge = await dob.inputValue();
+  recordCheck(testInfo, { label: 'Date of birth cleared after manually typing Age Next Birthday', expected: '', actual: dobAfterManualAge });
   await expect(dob).toHaveValue('');
 });
 
@@ -96,12 +105,13 @@ test('PD-15/PD-16: DOB auto-calculates Age, and manually typing Age clears DOB',
 // Disability Covers section) was confirmed false live - the buttons are visible and
 // enabled before Employment Status is ever touched. Employment Status's real, confirmed
 // effect is blocking Apply once a Disability cover is actually priced without it set.
-test('PD-20: Disability Covers buttons are visible regardless of Employment Status, but Employment Status blocks Apply once a Disability cover is priced', async () => {
+test('PD-20: Disability Covers buttons are visible regardless of Employment Status, but Employment Status blocks Apply once a Disability cover is priced', async ({}, testInfo) => {
   await setMinimumPersonalDetails(quote); // Employment Status left unset
   const visibility = await quote.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find((b) => b.innerText.trim().split('\n')[0] === 'Mortgage & Living');
     return { present: !!btn, visible: btn ? btn.getBoundingClientRect().width > 0 : false, disabled: btn ? btn.disabled : null };
   });
+  recordCheck(testInfo, { label: 'Disability cover buttons are visible/enabled before Employment Status is set', expected: { present: true, visible: true, disabled: false }, actual: visibility });
   expect(visibility, 'PD-20: Disability cover buttons are visible/enabled before Employment Status is set').toEqual({ present: true, visible: true, disabled: false });
 
   await activateCover(quote, 'Mortgage & Living');
@@ -120,11 +130,12 @@ test('PD-21: Occupation Code = IC triggers an underwriting-referral warning', as
   await expectErrorContaining(quote, 'Individual Consideration');
 });
 
-test('Sanity: minimum Personal Details + a $200,000 Life cover prices successfully', async () => {
+test('Sanity: minimum Personal Details + a $200,000 Life cover prices successfully', async ({}, testInfo) => {
   await setMinimumPersonalDetails(quote);
   await activateCover(quote, 'Life');
   await fillCalcMask(quote.locator('input[id*="SumInsured"]').first(), '200000');
   await waitForSettle(quote);
   const premium = await getTotalYearlyPremium(quote);
+  recordCheck(testInfo, { label: 'Total yearly premium for a $200,000 Life cover is greater than zero', expected: '> 0', actual: premium });
   expect(premium).toBeGreaterThan(0);
 });

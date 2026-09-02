@@ -16,6 +16,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -25,13 +26,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('DC-01/DC-02/DC-03 — The commitment trap', () => {
-  test('DC-01/DC-02: an activated Disability cover with a never-focused benefit field contributes $0 and does not persist', async () => {
+  test('DC-01/DC-02: an activated Disability cover with a never-focused benefit field contributes $0 and does not persist', async ({}, testInfo) => {
     const before = await getTotalYearlyPremium(quote);
 
     await activateCover(quote, 'Income Protection');
     // Deliberately do NOT click into the benefit field at all.
     await waitForSettle(quote);
     const duringActivation = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'DC-01/DC-02: premium unchanged while benefit field is never focused', expected: before ?? 0, actual: duringActivation });
     expect(duringActivation).toBe(before ?? 0);
 
     await clickApply(quote);
@@ -42,15 +44,17 @@ test.describe('DC-01/DC-02/DC-03 — The commitment trap', () => {
       return el ? el.innerText.trim() : null;
     });
     // Should have reverted to "Disability Covers" with no trailing count digit (i.e. 0 active).
+    recordCheck(testInfo, { label: 'DC-01/DC-02: Disability Covers tile reverts to 0 active covers after Apply', expected: '"Disability Covers" or "Disability Covers0"', actual: disabilityCoverCount });
     expect(disabilityCoverCount === 'Disability Covers' || disabilityCoverCount === 'Disability Covers0').toBeTruthy();
   });
 
-  test('DC-03: focusing and blurring the benefit field with nothing typed triggers the auto-default max', async () => {
+  test('DC-03: focusing and blurring the benefit field with nothing typed triggers the auto-default max', async ({}, testInfo) => {
     await activateCover(quote, 'Income Protection');
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote);
 
     const premium = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'DC-03: auto-defaulted benefit produces a non-zero premium', expected: '> 0', actual: premium });
     expect(premium).toBeGreaterThan(0);
   });
 });
@@ -97,18 +101,19 @@ test.describe('DC-27/DC-28 — Workability', () => {
     await expectErrorContaining(quote, 'not available to be taken in conjunction with');
   });
 
-  test('DC-28 (contrast check): Mortgage & Living and Income Protection CAN coexist', async () => {
+  test('DC-28 (contrast check): Mortgage & Living and Income Protection CAN coexist', async ({}, testInfo) => {
     await activateCover(quote, 'Mortgage & Living');
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await activateCover(quote, 'Income Protection');
     await commitWithoutTyping(sumInsuredInput(quote, 1));
     await clickApply(quote);
     const errors = await getVisibleErrors(quote);
+    recordCheck(testInfo, { label: "DC-28 (contrast check): no 'not available to be taken in conjunction with' error when combining Mortgage & Living and Income Protection", expected: false, actual: errors.some((e) => e.includes('not available to be taken in conjunction with')) });
     expect(errors.some((e) => e.includes('not available to be taken in conjunction with'))).toBe(false);
   });
 });
 
-test('PREM-20/PREM-21 cross-check: 2 committed covers (1 Lump Sum + 1 Disability) trigger the 15% bundling discount', async () => {
+test('PREM-20/PREM-21 cross-check: 2 committed covers (1 Lump Sum + 1 Disability) trigger the 15% bundling discount', async ({}, testInfo) => {
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
   await activateCover(quote, 'Income Protection');
@@ -116,6 +121,7 @@ test('PREM-20/PREM-21 cross-check: 2 committed covers (1 Lump Sum + 1 Disability
   await waitForSettle(quote);
 
   const discount = await getBundlingDiscount(quote);
+  recordCheck(testInfo, { label: 'PREM-20/PREM-21: 2 committed covers (1 Lump Sum + 1 Disability) trigger the 15% bundling discount', expected: '15%', actual: discount });
   expect(discount).toContain('15%');
 });
 

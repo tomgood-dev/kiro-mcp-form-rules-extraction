@@ -10,6 +10,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -19,23 +20,27 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
-  test('1 committed cover -> "None"', async () => {
+  test('1 committed cover -> "None"', async ({}, testInfo) => {
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote);
-    expect(await getBundlingDiscount(quote)).toBe('None');
+    const discount1Cover = await getBundlingDiscount(quote);
+    recordCheck(testInfo, { label: 'Bundling Discount with 1 committed cover', expected: 'None', actual: discount1Cover });
+    expect(discount1Cover).toBe('None');
   });
 
-  test('2 committed covers -> "15% (2 covers)"', async () => {
+  test('2 committed covers -> "15% (2 covers)"', async ({}, testInfo) => {
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await activateCover(quote, 'TPD');
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote);
-    expect(await getBundlingDiscount(quote)).toContain('15%');
+    const discount2Covers = await getBundlingDiscount(quote);
+    recordCheck(testInfo, { label: 'Bundling Discount with 2 committed covers', expected: '15% (2 covers)', actual: discount2Covers });
+    expect(discount2Covers).toContain('15%');
   });
 
-  test('3 committed covers -> "20% (3 covers or more)"', async () => {
+  test('3 committed covers -> "20% (3 covers or more)"', async ({}, testInfo) => {
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await activateCover(quote, 'TPD');
@@ -43,11 +48,13 @@ test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
     await activateCover(quote, 'Trauma');
     await fillCalcMask(sumInsuredInput(quote, 2), '100000');
     await waitForSettle(quote);
-    expect(await getBundlingDiscount(quote)).toContain('20%');
+    const discount3Covers = await getBundlingDiscount(quote);
+    recordCheck(testInfo, { label: 'Bundling Discount with 3 committed covers', expected: '20% (3 covers or more)', actual: discount3Covers });
+    expect(discount3Covers).toContain('20%');
   });
 });
 
-test('PREM-18: Fortnightly premium = Yearly ÷ 26, independently rounded per period', async () => {
+test('PREM-18: Fortnightly premium = Yearly ÷ 26, independently rounded per period', async ({}, testInfo) => {
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '200000');
   await waitForSettle(quote);
@@ -76,12 +83,14 @@ test('PREM-18: Fortnightly premium = Yearly ÷ 26, independently rounded per per
   // formula error - the app likely derives this via its own per-period rounding chain
   // rather than a single yearly/26 division, matching this test's own comment below
   // about the Fortnightly-view "Total Yearly Premium" figure legitimately differing too.
+  recordCheck(testInfo, { label: 'Fortnightly Total premium = Yearly premium ÷ 26 (rounded)', expected: expectedFortnightly, actual: fortnightlyAmount });
   expect(fortnightlyAmount).toBeCloseTo(expectedFortnightly, 1);
 
   // The "Total Yearly Premium" figure shown while in Fortnightly mode is its
   // OWN rounded-per-period-derived total, and can legitimately differ slightly
   // from the Monthly-derived figure — assert they're close, not identical.
   const fortnightlyDerivedYearly = Number(fortnightlyYearlyMatch[1].replace(/,/g, ''));
+  recordCheck(testInfo, { label: 'Fortnightly-view Total Yearly Premium matches Monthly-view Total Yearly Premium (within $1)', expected: yearlyFromMonthlyView, actual: fortnightlyDerivedYearly });
   expect(Math.abs(fortnightlyDerivedYearly - yearlyFromMonthlyView)).toBeLessThan(1);
 });
 

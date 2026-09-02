@@ -29,6 +29,7 @@ const {
   getPremiumStructure,
   setPremiumStructure,
 } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 async function freshLifeQuote(page, personal) {
   return test.step('open a fresh quote + activate Life', async () => {
@@ -60,7 +61,7 @@ test.describe('Lump Sum Life Cover', () => {
     expect(await sumInsuredInput(quote, 0).isVisible(), 'AC01: activating Life exposes a Sum Insured field').toBe(true);
   });
 
-  test('AC03: Selecting Life exposes Sum Insured, auto-ticks Inflation, defaults Premium Structure to Stepped', async ({ page }) => {
+  test('AC03: Selecting Life exposes Sum Insured, auto-ticks Inflation, defaults Premium Structure to Stepped', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC03: Given I am in the lump sum cover section, When I select Life, Then I must be able to enter the Sum Insured (digits only), And "Inflation adjustment" should be auto-ticked, And the premium structure dropdown must be pre-populated and defaulted to Stepped.',
       '',
@@ -75,12 +76,14 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     expect(await sumInsuredInput(quote, 0).isVisible(), 'AC03: Sum Insured field present').toBe(true);
     const inflationChecked = await getInflationAdjustmentChecked(quote);
+    recordCheck(testInfo, { label: 'Inflation Adjustment auto-ticked when Life cover is selected', expected: true, actual: inflationChecked });
     expect(inflationChecked, 'AC03: Inflation Adjustment auto-ticked').toBe(true);
     const structureDefault = await getPremiumStructure(quote);
+    recordCheck(testInfo, { label: 'Premium Structure default value when Life cover is selected', expected: 'Stepped', actual: structureDefault });
     expect(structureDefault, 'AC03: Premium Structure defaults to Stepped').toBe('Stepped');
   });
 
-  test('AC05: Entering Sum Insured calculates and displays a premium', async ({ page }) => {
+  test('AC05: Entering Sum Insured calculates and displays a premium', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC05: Given AC04, When I enter a Sum Insured amount, Then premium should be calculated and displayed, And the total premium for all lives should be displayed in the Premium section.',
       '',
@@ -94,10 +97,11 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
     const premium = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'Life cover premium calculated for $500,000 Sum Insured', expected: '> 0', actual: premium });
     expect(premium, 'AC05: premium calculated and > 0').toBeGreaterThan(0);
   });
 
-  test('AC06: A cover can be added and removed, with premium reflecting the change', async ({ page }) => {
+  test('AC06: A cover can be added and removed, with premium reflecting the change', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC06: Given I am in the quote screen, When I have selected the cover type, Then I must be able to add or remove the cover type, And view the premium changes.',
       '',
@@ -110,13 +114,16 @@ test.describe('Lump Sum Life Cover', () => {
     ].join('\n') });
     const quote = await freshLifeQuote(page);
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
-    expect(await getTotalYearlyPremium(quote), 'AC06: premium after add').toBeGreaterThan(0);
+    const premiumAfterAdd = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'Life cover premium calculated after adding cover', expected: '> 0', actual: premiumAfterAdd });
+    expect(premiumAfterAdd, 'AC06: premium after add').toBeGreaterThan(0);
     await removeAllCoverCards(quote);
     const after = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'Premium cleared after cover removed', expected: 'null or 0', actual: after });
     expect(after === null || after === 0, 'AC06: premium cleared after remove').toBe(true);
   });
 
-  test('AC07: Stepped, Age Next Birthday outside 11-75 → age-range error on Apply', async ({ page }) => {
+  test('AC07: Stepped, Age Next Birthday outside 11-75 → age-range error on Apply', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC07: Given I enter SI and select "Stepped", When Age Next Birthday is not between 11 and 75 and I click Apply, Then error "Age Next Birthday must be between 11 and 75" is displayed.',
       '',
@@ -132,6 +139,7 @@ test.describe('Lump Sum Life Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const errors = await getVisibleErrors(quote);
+    recordCheck(testInfo, { label: 'Age Next Birthday must be between 11 and 75 error shown for out-of-range age', expected: 'contains "Age Next Birthday must be between 11 and 75"', actual: errors.join(' | ') });
     expect(errors.some((e) => /Age Next Birthday must be between 11 and 75/i.test(e)), 'AC07: age-range error').toBe(true);
   });
 
@@ -146,7 +154,7 @@ test.describe('Lump Sum Life Cover', () => {
     { ac: 'AC14', label: 'Level to 100', over: 76, msgCore: ['level to 100', 'Life Cover', 'is 75'] },
   ];
   for (const c of levelCaps) {
-    test(`${c.ac}: ${c.label} max age → error on Apply above cap`, async ({ page }) => {
+    test(`${c.ac}: ${c.label} max age → error on Apply above cap`, async ({ page }, testInfo) => {
       test.info().annotations.push({ type: 'acceptance-criteria', description: [
         `${c.ac}: Given I enter SI and select "${c.label}", When age next birthday is above the maximum and I click Apply, Then an error identifying the ${c.label} maximum age is displayed.`,
         '',
@@ -167,11 +175,12 @@ test.describe('Lump Sum Life Cover', () => {
       const errors = await getVisibleErrors(quote);
       const joined = errors.join(' | ');
       const matched = c.msgCore.every((frag) => new RegExp(frag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined));
+      recordCheck(testInfo, { label: `${c.label} maximum age error shown for Age Next Birthday ${c.over}`, expected: `contains ${c.msgCore.join(' ... ')}`, actual: joined });
       expect(matched, `${c.ac}: expected ${c.label} max-age error. Got: ${joined.slice(0, 200)}`).toBe(true);
     });
   }
 
-  test('AC15: Any Level + Age Next Birthday < 17 → minimum-age error', async ({ page }) => {
+  test('AC15: Any Level + Age Next Birthday < 17 → minimum-age error', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC15: Given I enter SI and select any Level, When age next birthday is less than 17 and I click Apply, Then error "Minimum Age Next Birthday for level \'Life Cover\' is 17" is displayed.',
       '',
@@ -190,10 +199,11 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Minimum Age Next Birthday for level/i.test(errors) && /Life Cover/i.test(errors) && /is 17/i.test(errors);
+    recordCheck(testInfo, { label: 'Minimum Age Next Birthday for level "Life Cover" is 17 error shown for age < 17', expected: 'contains "Minimum Age Next Birthday for level" ... "Life Cover" ... "is 17"', actual: errors });
     expect(matched, `AC15: expected min-age error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
-  test('AC16: Stepped + SI > $50,000 + Age Next Birthday 11-16 → under-17 cap error', async ({ page }) => {
+  test('AC16: Stepped + SI > $50,000 + Age Next Birthday 11-16 → under-17 cap error', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC16: Given I enter SI and select "Stepped", When SI is more than 50,000 and age next birthday is between 11 and 16, Then error "The Maximum \'Life Cover\' sum insurable for clients under Age Next Birthday 17 is $50,000" is displayed.',
       '',
@@ -211,10 +221,11 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Life Cover/i.test(errors) && /under Age Next Birthday 17 is \$?50,?000/i.test(errors);
+    recordCheck(testInfo, { label: 'Under Age Next Birthday 17 $50,000 Life Cover cap error shown', expected: 'contains "Life Cover" ... "under Age Next Birthday 17 is $50,000"', actual: errors });
     expect(matched, `AC16: expected under-17 $50k cap error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
-  test('AC19: Calculated yearly premium < $240 → minimum-premium error on Apply', async ({ page }) => {
+  test('AC19: Calculated yearly premium < $240 → minimum-premium error on Apply', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC19: Given I enter all details for a Life cover, When calculated yearly premium is less than 240.00 and I click Apply, Then error "The minimum premium is $240.00 per year per life insured" is displayed.',
       '',
@@ -228,10 +239,11 @@ test.describe('Lump Sum Life Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '1000');
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
+    recordCheck(testInfo, { label: 'Minimum premium $240.00 error shown for very low Sum Insured', expected: 'contains "minimum premium is $240.00"', actual: errors });
     expect(/minimum premium is \$?240\.00/i.test(errors), `AC19: expected min-premium error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
-  test('AC21: Selecting Premium Freeze auto-unticks Inflation Adjustment (mutual exclusion)', async ({ page }) => {
+  test('AC21: Selecting Premium Freeze auto-unticks Inflation Adjustment (mutual exclusion)', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC21: Given I want to apply lump sum Life cover, When I choose premium freeze (checkbox), Then the inflation adjustment benefit checkbox should be unchecked (only one may be selected).',
       '',
@@ -244,13 +256,16 @@ test.describe('Lump Sum Life Cover', () => {
     ].join('\n') });
     const quote = await freshLifeQuote(page);
     // Precondition: Inflation is auto-ticked. Tick Premium Freeze, then verify Inflation flips off.
-    expect(await getInflationAdjustmentChecked(quote), 'AC21 precondition: Inflation ticked on activation').toBe(true);
+    const inflationBeforeFreeze = await getInflationAdjustmentChecked(quote);
+    recordCheck(testInfo, { label: 'Inflation Adjustment ticked on activation (AC21 precondition)', expected: true, actual: inflationBeforeFreeze });
+    expect(inflationBeforeFreeze, 'AC21 precondition: Inflation ticked on activation').toBe(true);
     await setPremiumFreeze(quote);
     const inflationChecked = await getInflationAdjustmentChecked(quote);
+    recordCheck(testInfo, { label: 'Inflation Adjustment auto-unticked when Premium Freeze is selected', expected: false, actual: inflationChecked });
     expect(inflationChecked, 'AC21: Inflation auto-unticked when Premium Freeze selected').toBe(false);
   });
 
-  test('AC17: Combined SI > $250k, Age Next Birthday 17-21, no income -> $250k cap error', async ({ page }) => {
+  test('AC17: Combined SI > $250k, Age Next Birthday 17-21, no income -> $250k cap error', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC17: Given I enter SI and select any level or stepped, When combined SI of all policies per life is more than 250000 and age next birthday is between 17 to 21 and (income is zero and any occupation) or (unemployed and no income), Then error "The maximum total Sum Insured per life for Life Cover clients with an Age Next Birthday 17 - 21, not earning any income is $250,000" is displayed.',
       '',
@@ -268,10 +283,11 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Age Next Birthday 17\s*-\s*21/i.test(errors) && /not earning any income is \$?250,?000/i.test(errors);
+    recordCheck(testInfo, { label: '$250,000 combined Sum Insured cap error shown for Age Next Birthday 17-21 with no income', expected: 'contains "Age Next Birthday 17 - 21" ... "not earning any income is $250,000"', actual: errors });
     expect(matched, `AC17: expected $250k young no-income cap error. Got: ${errors.slice(0, 250)}`).toBe(true);
   });
 
-  test('AC23: Maximum 3 Life covers — Life button disabled after 3', async ({ page }) => {
+  test('AC23: Maximum 3 Life covers — Life button disabled after 3', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC23: Given I want to apply Life cover, When I click the Life button, Then I must be able to enter SI for Life cover and select a maximum of 3 Life covers. And: Given I am in the quote screen, When 3 Life covers are selected, Then the Life button should be disabled (maximum 3).',
       '',
@@ -294,6 +310,7 @@ test.describe('Lump Sum Life Cover', () => {
       if (!btn) return null;
       return btn.disabled || btn.getAttribute('aria-disabled') === 'true' || btn.className.toLowerCase().includes('disabled');
     });
+    recordCheck(testInfo, { label: 'Life cover button disabled after 3 Life covers added', expected: true, actual: lifeDisabled });
     expect(lifeDisabled, 'AC23: Life button disabled after 3 covers').toBe(true);
   });
 

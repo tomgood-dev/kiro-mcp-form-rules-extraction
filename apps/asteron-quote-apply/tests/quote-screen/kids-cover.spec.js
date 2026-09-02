@@ -1,6 +1,7 @@
 // Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/kids-cover-and-multi-life/page.md
 const { test, expect } = require('@playwright/test');
 const { openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, clickApply, expectErrorContaining, sumInsuredInput, waitForSettle } = require('../../helpers/quote-helpers');
+const { recordCheck } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -20,8 +21,9 @@ function numberOfKidsSelect(page) {
     .first();
 }
 
-test('KID-01: Number of Kids offers exactly 0–9', async () => {
+test('KID-01: Number of Kids offers exactly 0–9', async ({}, testInfo) => {
   const options = await numberOfKidsSelect(quote).locator('option').allInnerTexts();
+  recordCheck(testInfo, { label: 'Number of Kids dropdown offers exactly 0–9', expected: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], actual: options });
   expect(options).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 });
 
@@ -37,13 +39,16 @@ test('KID-05: each kid row requires a Date of birth', async () => {
   await expectErrorContaining(quote, 'Required field');
 });
 
-test('KID-07: Kid Sum Insured tier list runs $50,000 (Free) to $200,000 in $10,000 steps', async () => {
+test('KID-07: Kid Sum Insured tier list runs $50,000 (Free) to $200,000 in $10,000 steps', async ({}, testInfo) => {
   await numberOfKidsSelect(quote).selectOption('1');
   await waitForSettle(quote);
 
   const tierDropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$50,000 (Free)' }) }).first();
   const options = await tierDropdown.locator('option').allInnerTexts();
+  recordCheck(testInfo, { label: 'Kid Sum Insured tier list starts at $50,000 (Free)', expected: '$50,000 (Free)', actual: options[0] });
   expect(options[0]).toBe('$50,000 (Free)');
+  recordCheck(testInfo, { label: 'Kid Sum Insured tier list ends at $200,000', expected: '$200,000', actual: options.at(-1) });
   expect(options.at(-1)).toBe('$200,000');
+  recordCheck(testInfo, { label: 'Kid Sum Insured tier list has 16 options ($50,000 (Free) to $200,000 in $10,000 steps)', expected: 16, actual: options.length });
   expect(options).toHaveLength(16);
 });
