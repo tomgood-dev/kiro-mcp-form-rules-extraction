@@ -47,6 +47,34 @@
 | `PREM-21` | A Disability cover that is active but **not yet committed** (its benefit field never focused+blurred — see [Disability Covers — DC-01/DC-02](../disability-covers/page.md)) does **not** count toward this tally, since it isn't really "on" yet. An earlier test session incorrectly concluded Disability covers were excluded from bundling entirely — that was purely this uncommitted-cover artifact, not a real category exclusion. |
 | `PREM-22` | Displayed as **"None"** when only 1 cover type is committed. |
 
+> ⚠ **Confirmed discrepancy, 2026-09-01 — the Life + TPD example in `PREM-20` no longer holds.**
+> Life ($200,000 SI) + TPD ($200,000 SI) — the exact example cited in `PREM-20` as producing
+> "15% (2 covers)" — now shows **"12.5% (3 covers or more)"** instead: both the cover-type count
+> ("3" vs the 2 actually active) and the percentage (12.5% vs 15%) are wrong, and the result also
+> contradicts the Bundling Discounts tooltip's own verbatim text on the same page (`PREM-19`:
+> "2 cover types: 15%, 3 or more cover types: 20%"). Reproduced **5 times independently** across
+> fresh quotes and separate sessions (2 recon probes, 3 live spec runs) on 2026-09-01 — not a
+> one-off/flaky read. Encoded as a failing test:
+> `apps/asteron-quote-apply/tests/quote-screen/premium-details-in-the-quote-screen-v1.spec.js` →
+> "AC02: multiple covers for one life show per-cover breakdown, yearly total, and bundling
+> discount". Since `PREM-20` explicitly documented this exact combination as working (dated
+> "iteration 003"), this reads as a **regression**, not a new/never-tested case — not yet confirmed
+> with a BA/PM/dev team. See `test-runs/premium-details-in-the-quote-screen-v1/` for the run
+> report and generation log.
+>
+> **Update, 2026-09-02 — a 7th independent reproduction, with a sharper pattern.**
+> `premium-and-bundling.spec.js` (a separate, pre-existing spec, already asserting the documented
+> PREM-19/20 values) failed on the SAME live app with a DIFFERENT wrong reading: 2 covers →
+> **"12.5% (2 covers)"** (count label correct this time, only the percentage wrong) and 3 covers →
+> **"17.5% (3 covers or more)"** (also count-correct, percentage wrong). Both wrong percentages are
+> **exactly 2.5 percentage points below** the documented value (12.5% vs 15%; 17.5% vs 20%) — a
+> consistent offset, not random noise. Combined with the earlier "12.5% (3 covers or more)" reading
+> (wrong count too) from the Premium Details spec, this suggests at least two distinct problems may
+> be compounding: (1) a consistent -2.5pp offset in the percentage lookup, and (2) a separate,
+> less consistent issue with the cover-count label. Worth flagging both aspects when this is raised
+> with the dev team, rather than treating it as one simple off-by-one bug. See
+> `test-runs/premium-and-bundling/2026-09-02T12-00-29/report.md` for this run's evidence.
+
 ## Bundling minimum thresholds (per cover category)
 
 Each cover must meet its category's minimum Sum Insured / Monthly Benefit to count toward the bundling discount tally. Covers below threshold are priced normally but contribute zero toward the "2 covers" or "3+ covers" count.
