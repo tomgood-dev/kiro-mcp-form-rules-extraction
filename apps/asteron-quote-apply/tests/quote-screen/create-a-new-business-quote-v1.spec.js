@@ -165,6 +165,14 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     }
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    // AC04a value-level (audit gap): the story lists Inflation Adjustment as auto-ticked. Assert it
+    // is CHECKED by default once a Life cover is active (not merely present).
+    const inflationTicked = await quote.evaluate(() => {
+      const cb = document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]');
+      return cb ? cb.checked : null;
+    });
+    recordCheck(testInfo, { label: 'Inflation Adjustment is auto-ticked by default (Life active)', expected: true, actual: inflationTicked });
+    expect(inflationTicked, 'AC04: Inflation Adjustment auto-ticked by default').toBe(true);
     for (const subcover of ['TI Support', 'Acc. TPD', 'Acc. Trauma', 'Acc. Cancer']) {
       const present = await coverButtonExists(quote, subcover);
       recordCheck(testInfo, { label: `Life sub-cover "${subcover}" present`, expected: true, actual: present });
@@ -307,7 +315,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     }
   });
 
-  test('AC09a: Age/Gender/Occupation missing blocks Apply with the combined message', async ({ page }) => {
+  test('AC09a: Age/Gender/Occupation missing blocks Apply with the combined message', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC09: The following fields on screen must be mandatory - Age next birthday, Gender, Smoker, Occupation or Occupation Code, Employment Status.',
       '',
@@ -321,6 +329,8 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
+    const ac09aErrors = (await getVisibleErrors(quote)).join(' | ');
+    recordCheck(testInfo, { label: 'AC09a: missing Age/Gender/Occupation blocks Apply with the combined "must complete the following fields" message', expected: 'contains "must complete the following fields"', actual: ac09aErrors });
     await expectErrorContaining(quote, 'must complete the following fields');
   });
 
@@ -399,6 +409,16 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     expect(info.selected, 'AC10: Flexi Rate defaults to N/A').toBe('N/A');
     recordCheck(testInfo, { label: 'Flexi Rate option count (N/A + 2.5%-30.0% in 2.5% steps)', expected: 13, actual: info.options.length });
     expect(info.options, 'AC10: Flexi Rate spans N/A + 2.5%-30.0% in 2.5% steps (13 options)').toHaveLength(13);
+    // Value-level (not just count): assert the EXACT option ladder so a wrong-but-same-length list
+    // is caught — first non-N/A = 2.5%, last = 30.0%, and each step is 2.5% (audit gap: previously
+    // only the length was checked).
+    const expectedLadder = ['N/A', '2.5%', '5.0%', '7.5%', '10.0%', '12.5%', '15.0%', '17.5%', '20.0%', '22.5%', '25.0%', '27.5%', '30.0%'];
+    recordCheck(testInfo, { label: 'Flexi Rate first selectable rate is 2.5%', expected: '2.5%', actual: info.options[1] });
+    expect(info.options[1], 'AC10: first selectable Flexi Rate is 2.5%').toBe('2.5%');
+    recordCheck(testInfo, { label: 'Flexi Rate last rate is 30.0%', expected: '30.0%', actual: info.options.at(-1) });
+    expect(info.options.at(-1), 'AC10: last Flexi Rate is 30.0%').toBe('30.0%');
+    recordCheck(testInfo, { label: 'Flexi Rate full ladder (N/A + 2.5% steps to 30.0%)', expected: expectedLadder, actual: info.options });
+    expect(info.options, 'AC10: exact Flexi Rate ladder (2.5% steps N/A->30.0%)').toEqual(expectedLadder);
     await flexiRate.selectOption({ label: '15.0%' });
     await waitForSettle(quote, 1000);
     const selectedAfter = await flexiRate.evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
@@ -512,6 +532,28 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     expect(tierInfo.options, 'AC14: 16 tiers, $50k-$200k in $10k steps').toHaveLength(16);
     recordCheck(testInfo, { label: 'Kid SI tier max tier value', expected: '$200,000', actual: tierInfo.options.at(-1) });
     expect(tierInfo.options.at(-1), 'AC14: max tier is $200,000').toBe('$200,000');
+    // Value-level boundary (audit gap: only count + max were checked). Assert the MIN tier is the
+    // free $50,000, and that the numeric tiers step by exactly $10,000 (so a wrong ladder of the
+    // right length is caught).
+    recordCheck(testInfo, { label: 'Kid SI tier min tier value is the free $50,000', expected: 'starts "$50,000"', actual: tierInfo.options[0] });
+    expect(tierInfo.options[0], 'AC14: min tier is $50,000 (Free)').toContain('$50,000');
+    const tierNums = tierInfo.options.map((o) => Number((o.match(/\$([\d,]+)/) || [])[1]?.replace(/,/g, '')));
+    const steps = tierNums.slice(1).map((n, i) => n - tierNums[i]);
+    const allTenK = steps.every((s) => s === 10000);
+    recordCheck(testInfo, { label: 'Kid SI tiers step by exactly $10,000', expected: 'all steps = 10000', actual: [...new Set(steps)] });
+    expect(allTenK, 'AC14: kid SI tiers increment by $10,000').toBe(true);
+    // Per-kid fields (audit gap: only DOB was checked). Confirm First Name / Surname / Gender per kid.
+    const kidFields = await quote.evaluate(() => ({
+      firstName: !!document.querySelector('input[id*="Kid"][id*="FirstName"], input[id*="ChildFirstName"], input[id*="Child_FirstName"]') || [...document.querySelectorAll('input[id*="FirstName"]')].length > 1,
+      surname: [...document.querySelectorAll('input[id*="LastName"], input[id*="Surname"]')].length > 1,
+      gender: [...document.querySelectorAll('.button-group-item, .button-group-selected-item')].filter((b) => ['Male', 'Female'].includes(b.innerText.trim())).length > 2,
+    }));
+    recordCheck(testInfo, { label: 'Per-kid First Name field appears', expected: true, actual: kidFields.firstName });
+    expect(kidFields.firstName, 'AC14: per-kid First Name field present').toBe(true);
+    recordCheck(testInfo, { label: 'Per-kid Surname field appears', expected: true, actual: kidFields.surname });
+    expect(kidFields.surname, 'AC14: per-kid Surname field present').toBe(true);
+    recordCheck(testInfo, { label: 'Per-kid Gender control appears', expected: true, actual: kidFields.gender });
+    expect(kidFields.gender, 'AC14: per-kid Gender control present').toBe(true);
   });
 
   test('AC15/BR-006: Payment Frequency defaults to Monthly, full 5-option list, independent per policy', async ({ page }, testInfo) => {

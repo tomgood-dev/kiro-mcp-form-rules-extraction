@@ -101,13 +101,21 @@ confirmed present in the report's "What Each Passing Test Checked" section.
 | select-default-commission-category-v1 | DONE (run 11-07-28) | Nil-Commission-absent negative (AC02); 27.5%-vs-30% Nil boundary pair; un-sampled 20% Flexi Rate coverage |
 | lump-sum-life-cover-v1 | DONE (run 12-00-54) | at-cap ACCEPT for all 7 Level-to structures; $50k under-17 at-cap accept; $250k young-no-income at-cap accept; $240 above-floor accept; AC03 digits-only negative; AC04/18/20/22 deferred-with-note |
 | personal-lump-sum-trauma-v1 | DONE (run 13-09-53) | at-cap ACCEPT for Trauma age caps (17/70/60/65); $250k/$2M/$5k SI at-cap accept; Major Trauma 3x at-cap accept; recordCheck on AC01/02; AC13/17 deferred-with-note |
-| premium-details-in-the-quote-screen-v1 | FOLLOW-UP | amount-level assertions; bundling $100k boundary + None negative; SI/Monthly-Benefit tooltip mutual-exclusion negatives; per-life frequency independence |
-| create-a-new-business-quote-v1 | FOLLOW-UP | Inflation default-ticked; Flexi/Kids boundary values (first/last/step); per-kid fields; DOB boundary; recordCheck gaps; BR-001/002/003 flexi-discount effect |
+| premium-details-in-the-quote-screen-v1 | DONE (run 14-30-58) | AC02 bundling counting-boundary ($99,999->None below / $100,000->discount counted at, independent of the % discrepancy); AC09a negative (SI cover tooltip does NOT show Monthly Benefit); AC09b negative + $2,000 amount (Monthly-Benefit cover does NOT show Total Sum Insured) |
+| create-a-new-business-quote-v1 | DONE (run 15-17-29) | AC04a Inflation auto-ticked (value-level, not just presence); AC10 Flexi Rate first=2.5% / last=30.0% / full-ladder toEqual (not just count); AC14 Kids SI min tier $50,000 + exact $10k step + per-kid First/Surname/Gender fields; AC09a recordCheck on the combined "must complete the following fields" message |
 
 Note: the AC11 test in personal-lump-sum-trauma-v1 fails on a PRE-EXISTING data issue (Trauma $250k
 + Cancer $1 does not push combined SI over the $250k cap, so no error fires) — unrelated to this
 hardening pass; flagged for a separate fix (bump the Cancer SI so combined > $250k).
 
-The 2 follow-up specs are the lightest-gap of the six and follow the identical pattern
-(boundary probe → at-boundary-accept + negative + recordCheck → live-verify). Tracked here so they
-are not lost.
+Additional PRE-EXISTING failures flagged for follow-up (NOT introduced by this hardening pass):
+- premium-details-in-the-quote-screen-v1 AC02 (known bundling 12.5%-vs-15% discount discrepancy,
+  encoded as expected-fail) and AC04/AC05 (multi-life tab-switch reactive-render race reading
+  $0/missing "TPD A" — the same class of race fixed with the stable-signal wait in multi-lives;
+  could reuse that lifeTabCount/stable-signal fix here).
+- create-a-new-business-quote-v1 AC07 (selecting Occupation Code = AA leaves the Occupation
+  type-ahead field showing "Select..." instead of the corresponding occupation — candidate defect
+  or type-ahead prepopulation timing; predates this pass).
+- select-default-commission-category-v1: 7 known pre-existing regressions.
+
+All hardening work is now DONE across all six AC-mode specs.

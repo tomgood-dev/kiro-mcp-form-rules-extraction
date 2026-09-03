@@ -200,6 +200,41 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     expect(discount, 'AC02/PREM-19/20: 2 covers >= their minimums shows "15% (2 covers)"').toBe('15% (2 covers)');
   });
 
+  test('AC02 boundary: a 2nd cover BELOW its $100k minimum does not count; AT $100k it counts', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC02 boundary (PREM-20/PREM-23/PREM-24): a cover only counts toward the bundling tally once it',
+      'meets its category minimum ($100,000 SI for Life/TPD). This asserts the COUNTING boundary:',
+      '- Life $200k + TPD $99,999 (below the TPD min) → only 1 qualifying cover → bundling "None".',
+      '- Life $200k + TPD $100,000 (at the TPD min) → 2 qualifying covers → a discount is applied (not None).',
+      'It asserts the below→counts transition, independent of the separately-tracked discrepancy in the',
+      'exact percentage (AC02) — so it stays green regardless of whether the % reads 15% or the buggy 12.5%.',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, activate Life ($200,000) then TPD.',
+      '2. Set TPD SI = $99,999 → read Bundling Discount (expect "None").',
+      '3. Set TPD SI = $100,000 → read Bundling Discount (expect a discount, i.e. NOT "None").',
+      '',
+      'Expected: below the minimum → "None"; at the minimum → a discount is shown.',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote);
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    await activateCover(quote, 'TPD');
+    // Below the $100k TPD minimum → TPD does not count → only 1 qualifying cover → "None".
+    await fillCalcMask(sumInsuredInput(quote, 1), '99999');
+    await waitForSettle(quote, 1500);
+    const belowDiscount = await getBundlingDiscount(quote);
+    recordCheck(testInfo, { label: 'TPD $99,999 (below $100k min): bundling is "None" (2nd cover does not count)', expected: 'None', actual: belowDiscount });
+    expect(belowDiscount, 'AC02 boundary: a 2nd cover below its minimum does not count → "None"').toBe('None');
+    // At the $100k TPD minimum → TPD counts → 2 qualifying covers → a discount is applied (not None).
+    await fillCalcMask(sumInsuredInput(quote, 1), '100000');
+    await waitForSettle(quote, 1500);
+    const atDiscount = await getBundlingDiscount(quote);
+    recordCheck(testInfo, { label: 'TPD $100,000 (at $100k min): a bundling discount is applied (NOT "None")', expected: 'not "None"', actual: atDiscount });
+    expect(atDiscount, 'AC02 boundary: at the minimum the 2nd cover counts → a discount is applied').not.toBe('None');
+  });
+
   test('AC04: activating a cover on a second life updates the all-lives total and shows its own breakdown', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC04: Given I am on the Quote page, When I select any cover for a second life insured, Then the total calculated premiums for all lives should be displayed, the individual premium per life with breakdown should be visible, and the total yearly premium per life should be visible.',
@@ -446,6 +481,9 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     expect(popoverText, 'AC09a: a tooltip appears showing Total Sum Insured').toContain('Total Sum Insured');
     recordCheck(testInfo, { label: 'Tooltip shows the correct Sum Insured amount', expected: 'contains "200,000"', actual: popoverText });
     expect(popoverText, 'AC09a: tooltip shows the correct amount').toContain('200,000');
+    // Negative / mutual-exclusion: a Sum-Insured-based cover must NOT show "Monthly Benefit".
+    recordCheck(testInfo, { label: 'AC09a (negative): SI-based cover tooltip does NOT show "Monthly Benefit"', expected: 'no "Monthly Benefit"', actual: popoverText });
+    expect(popoverText, 'AC09a: SI cover tooltip must NOT show Monthly Benefit').not.toContain('Monthly Benefit');
   });
 
   test('AC09b: clicking a Monthly-Benefit-based (Disability) cover shows a "Monthly Benefit" tooltip', async ({ page }, testInfo) => {
@@ -475,6 +513,12 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     const popoverText = await getVisiblePopoverText(quote);
     recordCheck(testInfo, { label: 'Tooltip mentions Monthly Benefit, not Total Sum Insured', expected: 'contains "Monthly Benefit"', actual: popoverText });
     expect(popoverText, 'AC09b: tooltip mentions Monthly Benefit, not Total Sum Insured').toContain('Monthly Benefit');
+    // Negative / mutual-exclusion: a Monthly-Benefit cover must NOT show "Total Sum Insured".
+    recordCheck(testInfo, { label: 'AC09b (negative): Monthly-Benefit cover tooltip does NOT show "Total Sum Insured"', expected: 'no "Total Sum Insured"', actual: popoverText });
+    expect(popoverText, 'AC09b: Monthly-Benefit cover tooltip must NOT show Total Sum Insured').not.toContain('Total Sum Insured');
+    // Value-level: the tooltip shows the entered $2,000 monthly benefit.
+    recordCheck(testInfo, { label: 'AC09b: tooltip shows the entered monthly benefit amount', expected: 'contains "2,000"', actual: popoverText });
+    expect(popoverText, 'AC09b: tooltip shows the entered $2,000 monthly benefit').toContain('2,000');
   });
 
   test('AC10: multiple policies for one life show a per-policy breakdown and combined total', async ({ page }, testInfo) => {
