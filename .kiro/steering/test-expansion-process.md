@@ -371,6 +371,28 @@ Retrofitting *existing* specs written before this convention is a separate, trac
 `TEST-GENERATION-LEARNINGS.md`) — not required to touch an old spec just to add `recordCheck`,
 but do add it if you're already editing that spec for another reason.
 
+### MANDATORY exhaustive coverage — negative + boundary, proven via recordCheck (2026-09-03)
+
+Happy-path/presence-only coverage is NOT acceptable for an acceptance-criteria spec. A 2026-09-03
+audit found all six AC-mode specs were happy-path-heavy — most damningly, **not one asserted an
+at-boundary "should-pass" case** (every cap/age/threshold test checked only the failing side, so a
+cap shifted by one unit would pass undetected). For every AC, wherever reachable from the browser,
+the test(s) MUST cover — and surface via `recordCheck` so it appears in "What Each Passing Test
+Checked":
+
+- **Positive** — the accepted behaviour, exact value/message.
+- **Negative / absence** — every error path, disallowed value, or "must NOT appear" clause. Assert
+  what is rejected/absent, not only what is accepted.
+- **Boundary triple** for any stated limit — just-below / **AT the limit (asserted to behave per
+  the AC, usually accepted)** / just-over. The at-boundary accept case is the one that was always
+  missing — it is now mandatory.
+- **Value-level** — exact amounts/premiums/counts and, where stated, total = sum-of-parts.
+- **No silent omission** — every AC encoded, or `test.fixme(true, reason)` with probe evidence.
+  Genuinely-unreachable edges are blocked-with-evidence, never faked and never dropped.
+
+This is the definition of "are these tests actually valuable?" — full details and the per-AC
+logging requirement are in `TEST-GENERATION-PROCESS.md` Step 4b.
+
 ### Test file structure convention (for acceptance-criteria mode)
 
 For a user-story-based test file with multiple independent checks plus one or more
@@ -431,6 +453,12 @@ If these tests need to run on Test Console later, they can be split at that poin
 ## Completion Checklist (must ALL be done before a test is "finished")
 
 - [ ] Full-coverage test written (all variations, boundaries, personas, independence)
+- [ ] **Exhaustive per-AC coverage (2026-09-03, mandatory):** every reachable AC has positive +
+      negative/absence + boundary-triple (with the AT-boundary case asserted to behave per the AC,
+      not just the failing side) + value-level assertions, and EVERY meaningful expect() has a
+      paired `recordCheck` so it shows in "What Each Passing Test Checked". Happy-path/presence-only
+      is a fail. Unreachable edges are `test.fixme(true, reason)` with probe evidence, never dropped.
+      See `TEST-GENERATION-PROCESS.md` Step 4b.
 - [ ] Every AC either encoded as a test OR marked blocked with evidence of an actual probe attempt (Critical Rule #7 — no deferring out of caution)
 - [ ] Every threshold/scenario test passes the 6-point input-correctness check (Critical Rule #8): inputs derived from the AC's own numbers, no other rule fires first, all Given/When clauses + preconditions satisfied, correct field/index, and a strict exact-match assertion
 - [ ] Test passes locally (Edge config)

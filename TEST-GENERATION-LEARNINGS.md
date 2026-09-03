@@ -4,6 +4,37 @@ Appended after each run of `TEST-GENERATION-PROCESS.md`, per its Step 7. Each en
 "what to improve next time" note, newest first. Not a replay of the generation log — see each
 story's `test-runs/<slug>/generation-log-*.md` for the full detail behind each entry.
 
+## 2026-09-03 — Exhaustive-coverage hardening pass (all AC-mode specs)
+
+- **The #1 systemic gap was the missing at-boundary ACCEPT case.** An audit of all 6 AC-mode specs
+  found every cap/age/threshold test asserted only the FAILING side (over-cap errors), never that
+  the value AT the boundary is accepted — so a cap silently shifted by one unit would pass. Fix
+  pattern, now mandatory (PROCESS Step 4b): for each limit, assert below/AT/over with the AT case
+  asserted to behave per the AC (usually accepted). Encoded as a companion test next to each
+  existing failing-side test; data-driven where the caps form a family (Level-to structures).
+- **Assert the specific error is ABSENT, not "no errors at all", for accept-side tests.** At a
+  boundary-accept value an UNRELATED rule often still fires (e.g. a $5,000 Trauma SI clears the
+  $5k min but trips the $240 min-premium rule; ANB 17 min-age accept still shows min-premium).
+  Assert `!hasSpecificError` (the boundary under test), not `errors.length === 0` — otherwise the
+  accept test fails for the wrong reason.
+- **Reopen-in-one-quote sweeps are fragile; use a fresh quote per value.** A Flexi-Rate sweep that
+  reopened the Adviser Use panel repeatedly in one quote broke after ~3 iterations (panel state
+  carried over). A fresh quote per value is reliable — but stay within the ~4-5-fresh-quotes
+  session-load budget (split if more are needed), so probe only the handful of values you actually
+  need exact data for (e.g. the Nil-Comm boundary pair), not the whole ladder.
+- **recurring EDIT hazard:** a `strReplace` whose `oldStr` ends at a `test('...', async ... => {`
+  line silently drops that declaration, producing "await is only valid in async functions". Always
+  re-include the full `test(...)` opening line in `newStr`. Hit this twice this session.
+- **Live-run time is the real cost, and it compounds.** Single-session account → every run is
+  serialised with a 60-90s release wait, and large specs (32 tests each opening fresh quotes) ran
+  ~1.1-1.2h EACH. Budget realistically: hardening 6 specs is a multi-hour effort dominated by runs,
+  not edits. Consider batching edits across specs and doing verification runs at the very end, and
+  set expectations up front.
+- **Pre-existing test-data bugs surface when you re-run old tests.** trauma AC11 (Trauma $250k +
+  Cancer $1) never actually exceeded the $250k combined cap, so it failed on re-run — a latent
+  wrong-input bug (Critical Rule #8 #1) unrelated to the hardening. Re-running old specs as part of
+  a hardening pass is a useful side-effect: it flushes out these.
+
 ## 2026-09-02 — Multi Lives and Policies (ACB-4394)
 
 - **A per-life "premium" read is a race under load — assert stable structural signals instead.**

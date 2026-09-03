@@ -142,6 +142,12 @@ test.describe('Select Default Commission Category', () => {
       expect(defaultAgency, 'AC02: Default-for-Agency dropdown must exist').not.toBeNull();
       recordCheck(testInfo, { label: 'AC02: available commission categories', expected: ['Upfront', 'Level 30', 'Spread 20'], actual: defaultAgency.options });
       expect(defaultAgency.options, 'AC02: available commission categories').toEqual(['Upfront', 'Level 30', 'Spread 20']);
+      // AC02 negative (story "Nil Commission Option": NOT to be a selectable default). Assert
+      // absence explicitly — the happy-path equality above would also catch an extra option, but
+      // this makes the "must NOT appear" requirement visible in "What Each Passing Test Checked".
+      const hasNil = defaultAgency.options.some((o) => /nil/i.test(o));
+      recordCheck(testInfo, { label: 'AC02 (negative): Nil Commission is NOT a selectable agency default', expected: false, actual: hasNil });
+      expect(hasNil, 'AC02: Nil Commission must NOT be a selectable default option').toBe(false);
       recordCheck(testInfo, { label: 'AC03: first-time default is Upfront', expected: 0, actual: defaultAgency.selectedIndex });
       expect(defaultAgency.selectedIndex, 'AC03: first-time default is Upfront').toBe(0);
     });
@@ -180,6 +186,69 @@ test.describe('Select Default Commission Category', () => {
       expect(icRcAt30, 'AC11: no per-cover Select IC/RC row when Nil Commission applies').toBeNull();
     });
 
+    await closeAdviserUse(quote);
+  });
+
+  test('AC11 boundary: 27.5% keeps commission (IC/RC row), 30% forces Nil Commission', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC11 boundary: the 30% Flexi-Rate is the threshold that forces Nil Commission. The rate just',
+      'below it (27.5%) must NOT force Nil — it keeps a normal IC/RC selection row and shows no',
+      'Nil-Comm message. This asserts BOTH sides of the boundary (below keeps commission / at forces Nil),',
+      'not just the failing side.',
+      '',
+      'Steps to reproduce:',
+      '1. Below boundary: fresh priced quote, Flexi Rate = 27.5%, open Adviser Use.',
+      '   Expect: IC/RC row present (probed: ["Please Select","IC-0%, RC-50%","IC-25%, RC-0%"]),',
+      '   NO "Commission is Nil..." message.',
+      '2. At boundary: fresh priced quote, Flexi Rate = 30.0%, open Adviser Use.',
+      '   Expect: NO IC/RC row, "Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected".',
+      '',
+      'Expected: 27.5% → commission kept (IC/RC row, no Nil message); 30% → Nil forced (no IC/RC, Nil message).',
+    ].join('\n') });
+    // ── Below the boundary (27.5%): commission kept ──
+    let quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 27.5%', () => setFlexiRate(quote, '27.5%'));
+    await openAdviserUse(quote);
+    const nilAt275 = await quote.evaluate(() => document.body.innerText.includes('Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected'));
+    recordCheck(testInfo, { label: 'Below boundary (27.5%): Nil-Comm message is ABSENT', expected: false, actual: nilAt275 });
+    expect(nilAt275, 'AC11 boundary: 27.5% must NOT force Nil Commission').toBe(false);
+    const icRcAt275 = await getIcRcSelectInfo(quote);
+    recordCheck(testInfo, { label: 'Below boundary (27.5%): a Select IC/RC row is present (commission kept)', expected: 'present', actual: icRcAt275 ? icRcAt275.options : null });
+    expect(icRcAt275, 'AC11 boundary: 27.5% keeps a Select IC/RC row').not.toBeNull();
+    await closeAdviserUse(quote);
+
+    // ── At the boundary (30%): Nil forced ──
+    quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 30.0%', () => setFlexiRate(quote, '30.0%'));
+    await openAdviserUse(quote);
+    const nilAt30 = await quote.evaluate(() => document.body.innerText.includes('Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected'));
+    recordCheck(testInfo, { label: 'At boundary (30%): Nil-Comm message is SHOWN', expected: true, actual: nilAt30 });
+    expect(nilAt30, 'AC11 boundary: 30% forces Nil Commission with the exact message').toBe(true);
+    const icRcAt30 = await getIcRcSelectInfo(quote);
+    recordCheck(testInfo, { label: 'At boundary (30%): no Select IC/RC row (Nil applies)', expected: null, actual: icRcAt30 });
+    expect(icRcAt30, 'AC11 boundary: 30% shows no per-cover IC/RC row').toBeNull();
+    await closeAdviserUse(quote);
+  });
+
+  test('AC10 coverage: 20% Flexi Rate (un-sampled) offers its multi-option IC/RC list', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC10 coverage: the spec previously sampled only N/A, 2.5, 7.5, 12.5, 15, 30% Flexi Rates. The',
+      'story (line 39) lists 20% among the multi-option rates. This adds the 20% sample so the Flexi',
+      'Rate ladder is exercised at a previously-untested point with an exact expected IC/RC option set.',
+      '',
+      'Steps to reproduce:',
+      '1. Fresh priced quote, set Flexi Rate = 20.0%, open Adviser Use.',
+      '2. Read the Select IC/RC option list.',
+      '',
+      'Expected (probed 2026-09-03): ["Please Select","IC-0%, RC-50%","IC-100%, RC-0%","IC-25%, RC-100%","IC-25%, RC-50%","IC-75%, RC-0%"].',
+    ].join('\n') });
+    const quote = await freshPricedQuote(page);
+    await test.step('set Flexi Rate = 20.0%', () => setFlexiRate(quote, '20.0%'));
+    await openAdviserUse(quote);
+    const icRc = await getIcRcSelectInfo(quote);
+    expect(icRc, 'AC10: Select IC/RC dropdown present at 20%').not.toBeNull();
+    recordCheck(testInfo, { label: 'AC10: 20% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-0%, RC-50%', 'IC-100%, RC-0%', 'IC-25%, RC-100%', 'IC-25%, RC-50%', 'IC-75%, RC-0%'], actual: icRc.options });
+    expect(icRc.options, 'AC10: 20% Flexi Rate IC/RC pick list').toEqual(['Please Select', 'IC-0%, RC-50%', 'IC-100%, RC-0%', 'IC-25%, RC-100%', 'IC-25%, RC-50%', 'IC-75%, RC-0%']);
     await closeAdviserUse(quote);
   });
 

@@ -64,7 +64,7 @@ async function freshTraumaQuote(page, personal) {
 test.describe('Personal Lump Sum Trauma Cover', () => {
   test.describe.configure({ mode: 'parallel' });
 
-  test('AC01/AC02: All lump sum covers available; 1+ selectable', async ({ page }) => {
+  test('AC01/AC02: All lump sum covers available; 1+ selectable', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC01: Given I am an Adviser, When creating a new quote, Then I can apply for lump sum cover.',
       'AC02: Given the Lump Sum Cover section, Then I can see Life, TPD, Trauma, Cancer, Acd. Death, Needlestick, Specific Injury, and select 1 or more.',
@@ -78,7 +78,9 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     const quote = await openNewQuote(page);
     await setMinimumPersonalDetails(quote, { age: 35, gender: 'Male', occupationCode: '1' });
     for (const c of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury']) {
-      expect(await coverButtonExists(quote, c), `AC02: "${c}" cover button present`).toBe(true);
+      const present = await coverButtonExists(quote, c);
+      recordCheck(testInfo, { label: `Lump sum cover "${c}" button present`, expected: true, actual: present });
+      expect(present, `AC02: "${c}" cover button present`).toBe(true);
     }
   });
 
@@ -174,6 +176,41 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     expect(/Level to 70 Trauma Recovery cover is 65/i.test(e), `AC09. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
+  // AC06-AC09 boundary: the AT-boundary ACCEPT side. Each Trauma age limit must ACCEPT the value
+  // at the boundary (mandatory 2026-09-03; previously only the failing side was tested).
+  //   - min age 17 (accepted, vs 16 rejected by AC06)
+  //   - Stepped max 70 (accepted at 70, vs 71 rejected by AC07)
+  //   - Level to 65 max 60 (accepted at 60, vs 61 rejected by AC08)
+  //   - Level to 70 max 65 (accepted at 65, vs 66 rejected by AC09)
+  const traumaAgeAccept = [
+    { ac: 'AC06', label: 'min age', age: 17, structure: null, badMsg: /minimum Age Next Birthday for Trauma Recovery Cover is 17/i },
+    { ac: 'AC07', label: 'Stepped max', age: 70, structure: null, badMsg: /maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70/i },
+    { ac: 'AC08', label: 'Level to 65 max', age: 60, structure: 'Level to 65', badMsg: /Level to 65 Trauma Recovery cover is 60/i },
+    { ac: 'AC09', label: 'Level to 70 max', age: 65, structure: 'Level to 70', badMsg: /Level to 70 Trauma Recovery cover is 65/i },
+  ];
+  for (const c of traumaAgeAccept) {
+    test(`${c.ac} boundary: Trauma ${c.label} at ANB ${c.age} is accepted (no age error)`, async ({ page }, testInfo) => {
+      test.info().annotations.push({ type: 'acceptance-criteria', description: [
+        `${c.ac} boundary (accept side): Trauma at ANB exactly ${c.age} (${c.label}) must be ACCEPTED — the`,
+        'corresponding age error must NOT fire. Complements the failing-side test above.',
+        '',
+        'Steps to reproduce:',
+        `1. New quote, ANB ${c.age}, activate Trauma, SI $100,000${c.structure ? `, set Premium Structure = ${c.structure}` : ' (Stepped default)'}.`,
+        '2. Click Apply.',
+        '',
+        `Expected: NO "${c.label}" Trauma age error at ANB ${c.age}.`,
+      ].join('\n') });
+      const quote = await freshTraumaQuote(page, { age: c.age, gender: 'Male', occupationCode: '1' });
+      await fillCalcMask(sumInsuredInput(quote, 0), '100000');
+      if (c.structure) await setTraumaStructure(quote, c.structure);
+      await clickApply(quote);
+      const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+      const hasAgeErr = c.badMsg.test(e);
+      recordCheck(testInfo, { label: `Trauma ${c.label} at ANB ${c.age} accepted (no age error)`, expected: false, actual: hasAgeErr });
+      expect(hasAgeErr, `${c.ac} boundary: ANB ${c.age} must be accepted for Trauma ${c.label}. Errors: ${e.slice(0, 200)}`).toBe(false);
+    });
+  }
+
   test('AC10: Trauma + ANB 17-21 + SI > $250k → young combined cap error', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC10: Given Trauma Cover, When ANB 17-21 and Sum Insured > 250000, Then error "The maximum total Sum Insured per life for Trauma Recovery Cover, including Cancer Cover, for clients Age Next Birthday 17 - 21 is $250,000.".',
@@ -224,6 +261,65 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     recordCheck(testInfo, { label: 'Error shown for Trauma ANB 22-70 + SI < $5,000', expected: 'minimum Trauma Cover sum insured is $5,000', actual: e });
     expect(/minimum Trauma Cover sum insured is \$?5,?000/i.test(e), `AC21. Got: ${e.slice(0, 200)}`).toBe(true);
+  });
+
+  test('AC10/AC14/AC21 boundary: SI exactly at each Trauma cap is accepted', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'Boundary accept side for the Trauma Sum Insured caps (complements the over/under error tests):',
+      '- AC10: ANB 17-21, SI exactly $250,000 is ACCEPTED (vs $250,001 rejected).',
+      '- AC14: ANB 22-70, SI exactly $2,000,000 is ACCEPTED (vs $2,000,001 rejected).',
+      '- AC21: ANB 22-70, SI exactly $5,000 is ACCEPTED (vs $4,000 rejected).',
+      '',
+      'Expected: none of the corresponding cap/min errors fire at the exact boundary value.',
+    ].join('\n') });
+    // AC10 accept: $250,000 at ANB 19
+    let quote = await freshTraumaQuote(page, { age: 19, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '250000');
+    await clickApply(quote);
+    let e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    let hasErr = /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i.test(e);
+    recordCheck(testInfo, { label: 'AC10 boundary: SI $250,000 at ANB 17-21 accepted (no cap error)', expected: false, actual: hasErr });
+    expect(hasErr, `AC10 boundary: $250,000 must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
+    // AC14 accept: $2,000,000 at ANB 40
+    quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '2000000');
+    await clickApply(quote);
+    e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    hasErr = /Trauma Recovery Cover, including Cancer Cover, is \$?2,?000,?000/i.test(e);
+    recordCheck(testInfo, { label: 'AC14 boundary: SI $2,000,000 at ANB 22-70 accepted (no cap error)', expected: false, actual: hasErr });
+    expect(hasErr, `AC14 boundary: $2,000,000 must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
+    // AC21 accept: $5,000 at ANB 40 (min SI). Note a $5k Trauma SI may trip the $240 min-premium
+    // rule — assert specifically that the MIN-SI error is absent (the boundary under test).
+    quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '5000');
+    await clickApply(quote);
+    e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    hasErr = /minimum Trauma Cover sum insured is \$?5,?000/i.test(e);
+    recordCheck(testInfo, { label: 'AC21 boundary: SI $5,000 at ANB 22-70 accepted (no min-SI error)', expected: false, actual: hasErr });
+    expect(hasErr, `AC21 boundary: $5,000 must be accepted (no min-SI error). Errors: ${e.slice(0, 200)}`).toBe(false);
+  });
+
+  test('AC23 boundary: Major Trauma SI exactly 3x Trauma SI is accepted (at the cap)', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC23 boundary (accept side): Major Trauma SI is capped at 3x the Trauma SI. At EXACTLY 3x it must',
+      'be ACCEPTED — the "maximum Sum Insured for Major Trauma Benefit" error must NOT fire. Complements',
+      'the > 3x error test (Trauma $20,000 → Major Trauma $60,001 rejected; $60,000 accepted).',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, ANB 40, activate Trauma, SI $20,000.',
+      '2. Activate Major Trauma, enter SI $60,000 (exactly 3 x $20,000).',
+      '',
+      'Expected: NO "maximum Sum Insured for Major Trauma Benefit" error.',
+    ].join('\n') });
+    const quote = await freshTraumaQuote(page, { age: 40, gender: 'Female', occupationCode: '4' });
+    await fillCalcMask(sumInsuredInput(quote, 0), '20000');
+    await activateCover(quote, 'Major Trauma');
+    await fillCalcMask(sumInsuredInput(quote, 1), '60000'); // exactly 3x
+    await waitForSettle(quote, 1000);
+    const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
+    const hasErr = /maximum Sum Insured for Major Trauma Benefit/i.test(e);
+    recordCheck(testInfo, { label: 'AC23 boundary: Major Trauma SI = 3x Trauma SI accepted (no 300% cap error)', expected: false, actual: hasErr });
+    expect(hasErr, `AC23 boundary: Major Trauma $60,000 (=3x $20,000) must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
   });
 
   test('AC23: Major Trauma SI > 3x Trauma SI (TRC < $25k) → 300% cap error', async ({ page }, testInfo) => {
@@ -489,6 +585,34 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     const after = await getTotalYearlyPremium(quote);
     recordCheck(testInfo, { label: 'Yearly premium after removing Trauma cover', expected: 'null or 0', actual: after });
     expect(after === null || after === 0, 'AC19: premium cleared after remove').toBe(true);
+  });
+
+  // AC13 & AC17: triple-cover combined-cap variants (Trauma + Major Trauma + Cancer) carrying a
+  // distinct message ("...Trauma Recovery Cover, Major Trauma, including Cancer Cover..."). Not yet
+  // encoded — flagged in the audit as silently-omitted. Deferred (not silently dropped) pending a
+  // probe to capture the exact triple-cover message + the SI split that triggers it at each band.
+  test('AC13: Trauma + Major Trauma + Cancer combined SI over $250k (ANB 17-21) → triple-cover cap error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC13: Given Trauma + Major Trauma + Cancer, When ANB 17-21 and combined SI > $250,000, Then the',
+      'triple-cover combined-cap error ("Trauma Recovery Cover, Major Trauma, including Cancer Cover ...',
+      '$250,000") is displayed.',
+      '',
+      'Deferred: needs a probe to capture the exact triple-cover message and the SI split that triggers',
+      'it (distinct from the two-cover AC11/AC12 message already tested). Encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to capture the exact Trauma+MajorTrauma+Cancer triple-cover $250k message (see exhaustive-coverage-audit-2026-09-03.md).');
+  });
+
+  test('AC17: Trauma + Major Trauma + Cancer combined SI over $2M (ANB 22-70) → triple-cover cap error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC17: Given Trauma + Major Trauma + Cancer, When ANB 22-70 and combined SI > $2,000,000, Then the',
+      'triple-cover combined-cap error ("Trauma Recovery Cover, Major Trauma, including Cancer Cover ...',
+      '$2,000,000") is displayed.',
+      '',
+      'Deferred: needs a probe to capture the exact triple-cover message and the SI split that triggers',
+      'it (distinct from the two-cover AC15/AC16 message already tested). Encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to capture the exact Trauma+MajorTrauma+Cancer triple-cover $2M message (see exhaustive-coverage-audit-2026-09-03.md).');
   });
 
 });

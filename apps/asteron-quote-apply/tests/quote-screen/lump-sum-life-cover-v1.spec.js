@@ -81,6 +81,19 @@ test.describe('Lump Sum Life Cover', () => {
     const structureDefault = await getPremiumStructure(quote);
     recordCheck(testInfo, { label: 'Premium Structure default value when Life cover is selected', expected: 'Stepped', actual: structureDefault });
     expect(structureDefault, 'AC03: Premium Structure defaults to Stepped').toBe('Stepped');
+    // AC03 negative ("Sum Insured (digits only)"): typing non-digit characters must not land as text —
+    // the calc-mask field strips them, so after typing "12ab34" only the digits remain.
+    const si = sumInsuredInput(quote, 0);
+    await si.click();
+    await quote.keyboard.press('Control+A');
+    await quote.keyboard.press('Backspace');
+    await quote.keyboard.type('12ab34', { delay: 30 });
+    await quote.keyboard.press('Tab');
+    await waitForSettle(quote, 800);
+    const siValue = await si.inputValue();
+    const siDigitsOnly = /[a-zA-Z]/.test(siValue) === false;
+    recordCheck(testInfo, { label: 'AC03 (negative): Sum Insured rejects non-digit characters (digits only)', expected: 'no letters in field', actual: siValue });
+    expect(siDigitsOnly, 'AC03: Sum Insured is digits-only (letters not accepted)').toBe(true);
   });
 
   test('AC05: Entering Sum Insured calculates and displays a premium', async ({ page }, testInfo) => {
@@ -144,14 +157,17 @@ test.describe('Lump Sum Life Cover', () => {
   });
 
   // AC08-AC14: Level-to structures each have a max Age Next Birthday. Data-driven.
+  // `over` = age just above the cap (error expected). `atCap` = age exactly at the documented cap
+  // (must be ACCEPTED — no max-age error). Testing BOTH sides is the mandatory boundary standard
+  // (2026-09-03); previously only the failing `over` side was checked.
   const levelCaps = [
-    { ac: 'AC08', label: 'Level to 50', over: 46, msgCore: ['level to 50', 'Life Cover', 'is 45'] },
-    { ac: 'AC09', label: 'Level to 60', over: 56, msgCore: ['level to 60', 'Life Cover', 'is 55'] },
-    { ac: 'AC10', label: 'Level to 65', over: 61, msgCore: ['level to 65', 'Life Cover', 'is 60'] },
-    { ac: 'AC11', label: 'Level to 70', over: 66, msgCore: ['level to 70', 'Life Cover', 'is 65'] },
-    { ac: 'AC12', label: 'Level to 75', over: 71, msgCore: ['level to 75', 'Life Cover', 'is 70'] },
-    { ac: 'AC13', label: 'Level to 80', over: 71, msgCore: ['level to 80', 'Life Cover', 'is 70'] },
-    { ac: 'AC14', label: 'Level to 100', over: 76, msgCore: ['level to 100', 'Life Cover', 'is 75'] },
+    { ac: 'AC08', label: 'Level to 50', over: 46, atCap: 45, msgCore: ['level to 50', 'Life Cover', 'is 45'] },
+    { ac: 'AC09', label: 'Level to 60', over: 56, atCap: 55, msgCore: ['level to 60', 'Life Cover', 'is 55'] },
+    { ac: 'AC10', label: 'Level to 65', over: 61, atCap: 60, msgCore: ['level to 65', 'Life Cover', 'is 60'] },
+    { ac: 'AC11', label: 'Level to 70', over: 66, atCap: 65, msgCore: ['level to 70', 'Life Cover', 'is 65'] },
+    { ac: 'AC12', label: 'Level to 75', over: 71, atCap: 70, msgCore: ['level to 75', 'Life Cover', 'is 70'] },
+    { ac: 'AC13', label: 'Level to 80', over: 71, atCap: 70, msgCore: ['level to 80', 'Life Cover', 'is 70'] },
+    { ac: 'AC14', label: 'Level to 100', over: 76, atCap: 75, msgCore: ['level to 100', 'Life Cover', 'is 75'] },
   ];
   for (const c of levelCaps) {
     test(`${c.ac}: ${c.label} max age → error on Apply above cap`, async ({ page }, testInfo) => {
@@ -177,6 +193,34 @@ test.describe('Lump Sum Life Cover', () => {
       const matched = c.msgCore.every((frag) => new RegExp(frag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined));
       recordCheck(testInfo, { label: `${c.label} maximum age error shown for Age Next Birthday ${c.over}`, expected: `contains ${c.msgCore.join(' ... ')}`, actual: joined });
       expect(matched, `${c.ac}: expected ${c.label} max-age error. Got: ${joined.slice(0, 200)}`).toBe(true);
+    });
+
+    test(`${c.ac} boundary: ${c.label} AT the cap age (${c.atCap}) is accepted (no max-age error)`, async ({ page }, testInfo) => {
+      test.info().annotations.push({ type: 'acceptance-criteria', description: [
+        `${c.ac} boundary: the AT-cap side. Age Next Birthday exactly ${c.atCap} (the documented ${c.label} max) must be`,
+        `ACCEPTED — the "${c.label} ... is ${c.atCap}" max-age error must NOT fire. This is the at-boundary`,
+        'should-pass case (mandatory 2026-09-03), complementary to the over-cap error test above.',
+        '',
+        'Steps to reproduce:',
+        `1. Open a new quote, set Age Next Birthday = ${c.atCap}, activate Life, enter SI $500,000 (clears the $240 min).`,
+        `2. Set Premium Structure = ${c.label}.`,
+        '3. Click Apply.',
+        '',
+        `Expected: NO "${c.label}" max-age error (age ${c.atCap} is within the cap).`,
+      ].join('\n') });
+      const quote = await openNewQuote(page);
+      await setMinimumPersonalDetails(quote, { age: c.atCap, gender: 'Male', occupationCode: '1' });
+      await activateCover(quote, 'Life');
+      await fillCalcMask(sumInsuredInput(quote, 0), '500000'); // clears the $240 min so no other rule masks this
+      await setPremiumStructure(quote, c.label);
+      await clickApply(quote);
+      const joined = (await getVisibleErrors(quote)).join(' | ');
+      // The max-age error would contain the level label + "is <cap>"; assert it is ABSENT at the cap.
+      const capNum = c.msgCore[c.msgCore.length - 1]; // e.g. "is 45"
+      const hasMaxAgeErr = new RegExp(c.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined)
+        && new RegExp(capNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined);
+      recordCheck(testInfo, { label: `${c.label} AT cap age ${c.atCap} is accepted (no "${capNum}" max-age error)`, expected: false, actual: hasMaxAgeErr });
+      expect(hasMaxAgeErr, `${c.ac} boundary: age ${c.atCap} must be accepted for ${c.label}. Errors: ${joined.slice(0, 200)}`).toBe(false);
     });
   }
 
@@ -225,6 +269,31 @@ test.describe('Lump Sum Life Cover', () => {
     expect(matched, `AC16: expected under-17 $50k cap error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
+  test('AC16 boundary: Stepped + SI exactly $50,000 + Age 11-16 is accepted (at the cap)', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC16 boundary: the AT-cap side. For an under-17 client, SI of EXACTLY $50,000 is the maximum',
+      'allowed — it must be ACCEPTED (the "under Age Next Birthday 17 is $50,000" cap error must NOT',
+      'fire). Complements the $50,001 over-cap error test. Below/at/over: $49,999 & $50,000 accepted,',
+      '$50,001 rejected — this asserts the $50,000 at-cap accept.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a new quote, set Age Next Birthday = 14, activate Life (Stepped).',
+      '2. Enter SI = $50,000 (exactly at the cap).',
+      '3. Click Apply.',
+      '',
+      'Expected: NO "$50,000" under-17 cap error (SI is at, not over, the cap).',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote, { age: 14, gender: 'Male', occupationCode: '1' });
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '50000'); // exactly at the $50k under-17 cap
+    await clickApply(quote);
+    const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
+    const hasCapErr = /under Age Next Birthday 17 is \$?50,?000/i.test(errors);
+    recordCheck(testInfo, { label: 'SI $50,000 at the under-17 cap is accepted (no cap error)', expected: false, actual: hasCapErr });
+    expect(hasCapErr, `AC16 boundary: SI $50,000 must be accepted at the cap. Errors: ${errors.slice(0, 200)}`).toBe(false);
+  });
+
   test('AC19: Calculated yearly premium < $240 → minimum-premium error on Apply', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC19: Given I enter all details for a Life cover, When calculated yearly premium is less than 240.00 and I click Apply, Then error "The minimum premium is $240.00 per year per life insured" is displayed.',
@@ -241,6 +310,30 @@ test.describe('Lump Sum Life Cover', () => {
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     recordCheck(testInfo, { label: 'Minimum premium $240.00 error shown for very low Sum Insured', expected: 'contains "minimum premium is $240.00"', actual: errors });
     expect(/minimum premium is \$?240\.00/i.test(errors), `AC19: expected min-premium error. Got: ${errors.slice(0, 200)}`).toBe(true);
+  });
+
+  test('AC19 boundary: yearly premium above $240 is accepted (no minimum-premium error)', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC19 boundary: the accepted side. A Life cover whose yearly premium is >= $240 must NOT trigger',
+      'the minimum-premium error. Complements the < $240 error test ($1,000 SI). Probed elsewhere: at',
+      'age 35 a $500,000 Life SI prices well above $240/yr.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a new quote (Age 35), activate Life, enter SI $500,000 (premium > $240).',
+      '2. Click Apply.',
+      '',
+      'Expected: NO "minimum premium is $240.00" error.',
+    ].join('\n') });
+    const quote = await freshLifeQuote(page);
+    await fillCalcMask(sumInsuredInput(quote, 0), '500000');
+    const premium = await getTotalYearlyPremium(quote);
+    recordCheck(testInfo, { label: 'Above-floor premium ($500k SI) is >= $240/yr', expected: '>= 240', actual: premium });
+    expect(premium, 'AC19 boundary: $500k SI prices above the $240 floor').toBeGreaterThanOrEqual(240);
+    await clickApply(quote);
+    const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
+    const hasMinErr = /minimum premium is \$?240\.00/i.test(errors);
+    recordCheck(testInfo, { label: 'Above-floor premium: minimum-premium error is ABSENT', expected: false, actual: hasMinErr });
+    expect(hasMinErr, `AC19 boundary: above-floor premium must be accepted. Errors: ${errors.slice(0, 200)}`).toBe(false);
   });
 
   test('AC21: Selecting Premium Freeze auto-unticks Inflation Adjustment (mutual exclusion)', async ({ page }, testInfo) => {
@@ -287,6 +380,30 @@ test.describe('Lump Sum Life Cover', () => {
     expect(matched, `AC17: expected $250k young no-income cap error. Got: ${errors.slice(0, 250)}`).toBe(true);
   });
 
+  test('AC17 boundary: SI exactly $250,000, Age 17-21, no income is accepted (at the cap)', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC17 boundary: the AT-cap side. For a 17-21 client earning no income, $250,000 combined SI is',
+      'the maximum — SI of EXACTLY $250,000 must be ACCEPTED (the "$250,000" cap error must NOT fire).',
+      'Complements the $250,001 over-cap error test.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a new quote, set Age Next Birthday = 19, Occupation AA, Annual Income = 0.',
+      '2. Activate Life, enter SI = $250,000 (exactly at the cap).',
+      '3. Click Apply.',
+      '',
+      'Expected: NO "$250,000" young-no-income cap error (SI is at, not over, the cap).',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote, { age: 19, gender: 'Male', occupationCode: '1', income: 0 });
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '250000'); // exactly at the $250k cap
+    await clickApply(quote);
+    const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
+    const hasCapErr = /Age Next Birthday 17\s*-\s*21/i.test(errors) && /not earning any income is \$?250,?000/i.test(errors);
+    recordCheck(testInfo, { label: 'SI $250,000 at the young-no-income cap is accepted (no cap error)', expected: false, actual: hasCapErr });
+    expect(hasCapErr, `AC17 boundary: SI $250,000 must be accepted at the cap. Errors: ${errors.slice(0, 200)}`).toBe(false);
+  });
+
   test('AC23: Maximum 3 Life covers — Life button disabled after 3', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC23: Given I want to apply Life cover, When I click the Life button, Then I must be able to enter SI for Life cover and select a maximum of 3 Life covers. And: Given I am in the quote screen, When 3 Life covers are selected, Then the Life button should be disabled (maximum 3).',
@@ -312,6 +429,53 @@ test.describe('Lump Sum Life Cover', () => {
     });
     recordCheck(testInfo, { label: 'Life cover button disabled after 3 Life covers added', expected: true, actual: lifeDisabled });
     expect(lifeDisabled, 'AC23: Life button disabled after 3 covers').toBe(true);
+  });
+
+  // ── Previously-silently-omitted ACs, now explicitly deferred (no silent omission, per steering).
+  // Each needs a targeted probe to map the control/state before encoding, which is a follow-up.
+  test('AC04: changing premium payment frequency recalculates the premium', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC04: Given a Life cover with a Sum Insured entered, When I change the premium payment frequency,',
+      'Then the displayed premium recalculates for the chosen frequency.',
+      '',
+      'Deferred: needs a probe to confirm the payment-frequency control on the Life card and the exact',
+      'recalculated values (Fortnightly/Monthly/Quarterly/Half-Yearly/Yearly) before asserting — not yet',
+      'mapped in helpers. Tracked in the exhaustive-coverage audit; encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to map the payment-frequency control + recalculated values before encoding (see exhaustive-coverage-audit-2026-09-03.md).');
+  });
+
+  test('AC18: part-time worker with SI > $500,000 → underwriting-referral error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC18: Given a part-time worker, When Life SI exceeds $500,000, Then an underwriting-referral error',
+      'is displayed.',
+      '',
+      'Deferred: needs a probe to confirm how "part-time" employment status is set on the Quote screen',
+      'and the exact referral message before asserting — not yet mapped. Encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to set part-time employment status + capture the exact referral message (see exhaustive-coverage-audit-2026-09-03.md).');
+  });
+
+  test('AC20: We Pay Your Premiums != None + age > 65 → max-age-65 error', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC20: Given "We Pay Your Premiums" is set to a non-None waiting period, When Age Next Birthday > 65,',
+      'Then a max-age-65 error is displayed.',
+      '',
+      'Deferred: needs a probe to confirm the We-Pay-Your-Premiums interaction on a Life cover and the',
+      'exact error message before asserting — not yet mapped. Encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to set We-Pay-Your-Premiums + capture the exact max-age-65 message (see exhaustive-coverage-audit-2026-09-03.md).');
+  });
+
+  test('AC22: Flexi Rate != N/A reduces the premium by the selected percentage', async ({ page }) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC22: Given a Life cover priced at Flexi Rate N/A, When I select a non-N/A Flexi Rate, Then the',
+      'premium is reduced by (approximately) the selected percentage.',
+      '',
+      'Deferred: needs a probe to capture the exact premium at N/A vs a chosen Flexi Rate to assert the',
+      'reduction arithmetic (value-level) rather than just "changed" — encode after probing.',
+    ].join('\n') });
+    test.fixme(true, 'Needs a probe to capture N/A vs non-N/A premiums to assert the % reduction (see exhaustive-coverage-audit-2026-09-03.md).');
   });
 
 });

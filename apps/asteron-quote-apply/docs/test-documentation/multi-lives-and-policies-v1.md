@@ -1,9 +1,9 @@
 # Multi Lives and Policies — Test Documentation
 
 - **Test file:** `apps/asteron-quote-apply/tests/quote-screen/multi-lives-and-policies-v1.spec.js`
-- **Last run:** 2026-09-02T19-25-46 · Edge (headless) · https://outsystems-dev.asteronlife.co.nz · 34.6 min
+- **Last run:** 2026-09-03T08-58-19 · Edge (headless) · https://outsystems-dev.asteronlife.co.nz · 42.4 min
 - **Source:** Jira ACB-4394 "Multi Lives and Policies" (acceptance-criteria mode; `docs/user-stories/User Story- Multi Lives and Policies.md`). Story ACs 22–25 (Clone) are struck through → out of scope.
-- **Result:** 13 passing, 3 confirmed-failing (encoded discrepancies), 8 blocked-with-evidence.
+- **Result:** 15 passing, 3 confirmed-failing (encoded discrepancies), 8 blocked-with-evidence. Hardened 2026-09-03 with negative/boundary coverage (see MLP-02b, MLP-09, MLP-17b, MLP-16, MLP-18).
 
 ## Results
 
@@ -11,16 +11,18 @@
 |---|---|---|---|---|---|---|
 | 1 | MLP-01/AC01 | An "Add life" control exists on a new quote | fresh quote | control present | ✅ Pass | Story labels it "+Life"; app labels it "Add life". |
 | 2 | MLP-02/AC02 | New life exposes all Personal Details fields + all cover controls (incl. Kids Cover) | age 35/M/OCC AA | all present | ✅ Pass | |
+| 2b | MLP-02b/AC02 | **Boundary:** ANB 11–75 range enforced on an *added* life (below/at/at/over) | Life2 ANB 10 / 11 / 75 / 76, Apply | 10 rejected, 11 accepted, 75 accepted, 76 rejected | ✅ Pass | At-boundary ACCEPT asserted (11 & 75), not just failing side. Range error only fires on Apply for an added life. |
 | 3 | MLP-03/AC03 | Add life with no min details → exact block message | fresh quote, click Add life | "Please enter the minimum **requirements**...another life." | ❌ Fail | App says "**requirement**" (singular), no full stop. Wording discrepancy — see business-rules record. |
 | 4 | MLP-04/AC04 | With min details + priced cover, Add life succeeds | age35/M/OCC AA, Life $200k | Life 2 tab created | ✅ Pass | |
 | 5 | MLP-05/AC05 | Each life shows its own premium; all-lives total present | Life1 $200k, Life2 $300k | 2 priced life tabs + all-lives total | ✅ Pass | Panel shows per-life premium per section + one all-lives grand total (not a repeated heading). |
 | 6 | MLP-06/07/08/AC06-08 | "X" on a life tab → "Are you sure you want to delete this life?" + Cancel/Delete | Life1 priced, Life2 added, click Life1 X | delete-confirm modal + Cancel/Delete | ❌ Fail | App shows the "Cannot proceed / minimum requirement / OK" modal instead — no delete-confirmation dialog reachable. See business-rules record. |
-| 7 | MLP-09/AC09 | Apply with a life < $240 min premium → exact message | Life $1,000 SI, Apply | "The minimum premium is $240.00 per year per Life insured." | ✅ Pass | Matches story verbatim. |
+| 7 | MLP-09/AC09 | **Boundary:** min-premium $240/life — below rejected, above accepted | Life $50k SI (below) / $500k SI (above), Apply | below→"The minimum premium is $240.00 per year per Life insured."; above→no min-premium error | ✅ Pass | Both sides asserted. ~$1.60/$1k SI at age 35, so $50k(~$80/yr) is below the floor, $500k(~$800/yr) above. |
 | 8 | MLP-14/AC14 | Personal policy exposes full field set (incl. Premium Freeze + Kids Cover) | Personal policy | all personal covers + PremiumFreeze + KidsCover | ✅ Pass | |
 | 9 | MLP-15/AC15 | Business policy exposes reduced business field set | Business policy | Life/TPD/Trauma/SI + Business Disability/Farmers Disability/Business Expenses; no Cancer/AcdDeath/Needlestick/M&L/IP/Workability; no PremiumFreeze/KidsCover; Inflation present | ✅ Pass | Matches story AC15 list exactly. |
-| 10 | MLP-16/AC16 | "X" on a policy tab deletes that policy tab | add Business, click its X | Business 1 removed | ✅ Pass | |
+| 10 | MLP-16/AC16 | "X" on a policy tab deletes ONLY that tab | add Business, click its X | Business 1 removed; Personal 1 remains | ✅ Pass | Negative/absence: deleting Business 1 does not remove Personal 1. |
 | 11 | MLP-17/AC17 | Right panel: per-policy tabs + per-life premium + all-lives total | Life1 (Personal+Business), Life2 | both policy tabs on Life1, positive Life1 premium, all-lives total | ✅ Pass | Per-life via each active life; all-lives total present. |
-| 12 | MLP-18/AC18 | Can navigate to any life and any policy | Life1(+Business), Life2; click Life1 then Business1 | tabs activate on click | ✅ Pass | Active life class `osui-tabs--is-active`; active policy `border-bottom:2px solid blue`. |
+| 11b | MLP-17b/AC17 | **Value-level:** per-COVER breakdown reconciles (sum of covers = policy total) | Life $200k + TPD $150k on Personal 1 | Life $ + TPD $ each > 0; Life+TPD == policy Total | ✅ Pass | Arithmetic asserted (probed: $18.53 + $7.76 = $26.29), not just that lines appear. |
+| 12 | MLP-18/AC18 | Can navigate to any life and any policy (both policies) | Life1(+Business), Life2; click Life1, then Business1, then Personal 1 | each tab activates on click | ✅ Pass | Navigates to Personal 1 AND Business 1 (any policy, not just last-added). |
 | 13 | MLP-27/AC27 | Add life → control moves to the new life | price Life1, Add life | Life 2 is the active tab | ✅ Pass | |
 | 14 | MLP-28/AC28 | Add policy → control moves to the new policy | add Business | Business 1 is the active policy tab | ✅ Pass | |
 | 15 | BR-B | Max 5 policies (personal+business) per life | add policies until 5 | 6th blocked (both add buttons disabled) | ✅ Pass | Confirms the "Maximum 5 policies per life" business rule is enforced. |

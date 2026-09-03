@@ -19,11 +19,15 @@ const { test, expect } = require('@playwright/test');
 const {
   openNewQuote,
   setMinimumPersonalDetails,
+  setAge,
+  setGender,
   activateCover,
   coverButtonExists,
   fillCalcMask,
   sumInsuredInput,
   getTotalYearlyPremium,
+  getVisibleErrors,
+  clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel, buttonByLabelExists } = require('../../helpers/outsystems-generic-helpers');
@@ -196,6 +200,53 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     expect(kidsPresent, 'MLP-02: Kids Cover control present').toBe(true);
   });
 
+  test('MLP-02b/AC02: ANB on an ADDED life enforces the 11-75 range (boundary triple)', async ({ page }, testInfo) => {
+    test.setTimeout(300000);
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC02: …the new life must capture "Age next birthday (Mandatory and must be between 11 and 75)".',
+      '',
+      'Boundary triple on the ADDED life (Life 2) — the per-life ANB field must enforce 11-75, same',
+      'as Life 1 (PD-11). Probed 2026-09-03: on Life 2 the range error only surfaces on Apply (a bare',
+      'field change shows no error), so each case clicks Apply.',
+      '',
+      'Steps to reproduce:',
+      '1. Open a quote, price Life 1 ($200k Life), click "Add life" (Life 2 becomes active).',
+      '2. For each ANB in {10 (below), 11 (at min), 75 (at max), 76 (over)}: set it on Life 2, Apply,',
+      '   read for the "between 11 and 75" range error.',
+      '',
+      'Expected: 10 rejected, 11 accepted, 75 accepted, 76 rejected (below/at/at/over).',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote);
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    await waitForSettle(quote, 800);
+    await clickButtonByLabel(quote, 'Add life', 'Add life');
+    await waitForSettle(quote, 1500);
+    // Life 2 active. Give it a priced cover so Apply reaches ANB validation (not a "no cover" block).
+    await setGender(quote, 'Male');
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    await waitForSettle(quote, 800);
+    for (const { age, shouldReject } of [
+      { age: 10, shouldReject: true },   // below min
+      { age: 11, shouldReject: false },  // at min — accepted
+      { age: 75, shouldReject: false },  // at max — accepted
+      { age: 76, shouldReject: true },   // over max
+    ]) {
+      await setAge(quote, age);
+      await waitForSettle(quote, 600);
+      await clickApply(quote);
+      const errs = await getVisibleErrors(quote);
+      const hasRangeErr = errs.some((e) => e.includes('between 11 and 75'));
+      recordCheck(testInfo, {
+        label: `Added life ANB=${age} → ${shouldReject ? 'REJECTED (out of 11-75)' : 'ACCEPTED (within 11-75)'}`,
+        expected: shouldReject, actual: hasRangeErr,
+      });
+      expect(hasRangeErr, `MLP-02b: added-life ANB ${age} ${shouldReject ? 'must be rejected' : 'must be accepted'}`).toBe(shouldReject);
+    }
+  });
+
   test('MLP-03/AC03: adding a life with no minimum details is blocked with the exact message', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC03: Given the user is on the quote entry screen, When the user clicks "+Life" without',
@@ -324,32 +375,46 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     expect(modal.buttons, 'MLP-06: modal offers a Delete option').toContain('Delete');
   });
 
-  test('MLP-09/AC09: Apply with a life below the $240 minimum premium shows the exact message', async ({ page, browserName }, testInfo) => {
+  test('MLP-09/AC09: min-premium $240/life boundary — below rejected, above accepted', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC09: Given I have added multiple lives, When I click Apply Now And minimum premium is below',
       'the threshold for any of the lives, Then an error "The minimum premium is $240.00 per year per',
       'Life insured" should be displayed.',
       '',
-      'Steps to reproduce:',
-      '1. Open a new quote, set Age=35/Male/OCC AA.',
-      '2. Activate Life with a deliberately tiny Sum Insured ($1,000) so the yearly premium < $240.',
-      '3. Click Apply.',
+      'Boundary (both sides). Probed 2026-09-03 at age 35/Male/OCC AA: a Life cover prices ~$1.60 per',
+      '$1,000 SI, so $50,000 SI (~$79.80/yr) is BELOW the $240/yr floor (error fires) and $500,000 SI',
+      '(~$800/yr) is ABOVE it (no min-premium error). The exact $240.00 is a computed premium, not a',
+      'directly-settable input, so the reachable boundary form is a below case (rejected) + an above',
+      'case (accepted).',
       '',
-      'Expected: "The minimum premium is $240.00 per year per Life insured." (exact).',
-      'Input arithmetic: $1,000 Life SI at age 35 prices well under the $240/yr floor, so the',
-      'min-premium rule — not any cap or occupation gate — is the only rule that can fire.',
+      'Steps to reproduce:',
+      '1. Below: new quote, Age35/Male/OCC AA, Life SI $50,000, Apply → expect the $240 message.',
+      '2. Above: new quote, same persona, Life SI $500,000, Apply → expect NO $240 message.',
+      '',
+      'Expected: below-floor rejected with the exact message; above-floor accepted (message absent).',
     ].join('\n') });
-    const { clickApply, getVisibleErrors } = require('../../helpers/quote-helpers');
-    const quote = await openNewQuote(page);
+    // ── Below the floor: error MUST fire ──
+    let quote = await openNewQuote(page);
     await setMinimumPersonalDetails(quote);
     await activateCover(quote, 'Life');
-    await fillCalcMask(sumInsuredInput(quote, 0), '1000'); // tiny SI → premium < $240 minimum
+    await fillCalcMask(sumInsuredInput(quote, 0), '50000'); // ~$79.80/yr < $240 floor
     await waitForSettle(quote, 1000);
     await clickApply(quote);
-    const errors = await getVisibleErrors(quote);
-    const matched = errors.find((e) => e.includes('The minimum premium is $240.00 per year per Life insured'));
-    recordCheck(testInfo, { label: 'Min-premium error message (exact)', expected: 'The minimum premium is $240.00 per year per Life insured.', actual: matched || errors });
-    expect(matched, 'MLP-09: exact $240 minimum premium message shown').toBeTruthy();
+    let errors = await getVisibleErrors(quote);
+    const belowMatched = errors.find((e) => e.includes('The minimum premium is $240.00 per year per Life insured'));
+    recordCheck(testInfo, { label: 'Below floor ($50k SI, ~$80/yr): exact $240 min-premium message shown', expected: 'The minimum premium is $240.00 per year per Life insured.', actual: belowMatched || errors });
+    expect(belowMatched, 'MLP-09: below-floor premium is rejected with the exact $240 message').toBeTruthy();
+    // ── Above the floor: min-premium error MUST NOT fire ──
+    quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote);
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '500000'); // ~$800/yr > $240 floor
+    await waitForSettle(quote, 1000);
+    await clickApply(quote);
+    errors = await getVisibleErrors(quote);
+    const aboveHasMinErr = errors.some((e) => e.includes('The minimum premium is $240.00 per year per Life insured'));
+    recordCheck(testInfo, { label: 'Above floor ($500k SI, ~$800/yr): $240 min-premium message is ABSENT', expected: false, actual: aboveHasMinErr });
+    expect(aboveHasMinErr, 'MLP-09: above-floor premium is accepted (no $240 min-premium error)').toBe(false);
   });
 
   test('MLP-13/AC13/BR-A: the "Add life" button is disabled once 10 lives exist', async ({ page }) => {
@@ -488,6 +553,9 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     const after = await policyTabLabels(quote);
     recordCheck(testInfo, { label: 'Policy tabs after clicking X on Business 1', expected: 'excludes Business 1', actual: after });
     expect(after, 'MLP-16: Business 1 policy tab is removed after clicking its X').not.toContain('Business 1');
+    // Negative/absence: deleting Business 1 must remove ONLY Business 1 — Personal 1 remains.
+    recordCheck(testInfo, { label: 'Deleting Business 1 leaves Personal 1 intact (only the targeted tab is removed)', expected: 'includes Personal 1', actual: after });
+    expect(after, 'MLP-16: Personal 1 is NOT removed when Business 1 is deleted').toContain('Personal 1');
   });
 
   test('MLP-17/AC17: right panel shows per-policy breakdown, per-life total, and all-lives total', async ({ page }, testInfo) => {
@@ -542,6 +610,58 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     expect(hasAllLivesTotal, 'MLP-17: an all-lives total premium is shown').toBe(true);
   });
 
+  test('MLP-17b/AC17: per-COVER premium breakdown reconciles (sum of covers = policy total)', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC17: …I should be able to see in the right-side panel premium breakdown PER POLICY and PER',
+      'COVER, total yearly premium per life, and total premium for all lives.',
+      '',
+      'Value-level check (probed 2026-09-03): with Life + TPD on Personal 1, the panel shows a',
+      'per-cover line for each cover (e.g. "Life Cover A $18.53", "TPD A $7.76") and a policy "Total"',
+      '($26.29) where the per-cover amounts SUM to the total. This asserts the actual arithmetic, not',
+      'just that lines appear — a wrong/zero per-cover amount would be caught.',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, Age35/Male/OCC AA. Activate Life ($200k) and TPD ($150k) on Personal 1.',
+      '2. Read each per-cover $ amount and the policy Total from the right panel.',
+      '',
+      'Expected: a per-cover line for Life and for TPD, both > 0, and Life + TPD == policy Total.',
+    ].join('\n') });
+    const quote = await openNewQuote(page);
+    await setMinimumPersonalDetails(quote);
+    await activateCover(quote, 'Life');
+    await fillCalcMask(sumInsuredInput(quote, 0), '200000');
+    await waitForSettle(quote, 800);
+    await activateCover(quote, 'TPD');
+    await fillCalcMask(sumInsuredInput(quote, 1), '150000');
+    await waitForSettle(quote, 1800);
+    // Parse the per-cover $ lines and the policy Total from the right panel.
+    const panel = await quote.evaluate(() => {
+      const lines = document.body.innerText.split('\n').map((l) => l.trim()).filter(Boolean);
+      const dollar = (s) => { const m = (s || '').match(/\$([\d,]+(?:\.\d+)?)/); return m ? Number(m[1].replace(/,/g, '')) : null; };
+      const amountAfter = (labelRe) => {
+        for (let i = 0; i < lines.length; i++) {
+          if (labelRe.test(lines[i])) {
+            if (dollar(lines[i]) != null) return dollar(lines[i]);       // "Life Cover A $18.53"
+            if (dollar(lines[i + 1]) != null) return dollar(lines[i + 1]); // amount on next line
+          }
+        }
+        return null;
+      };
+      return {
+        lifeCover: amountAfter(/^Life Cover/i),
+        tpdCover: amountAfter(/^TPD A/i),
+        policyTotal: amountAfter(/^Total$/i),
+      };
+    });
+    recordCheck(testInfo, { label: 'Per-cover line: Life Cover amount ($)', expected: '> 0', actual: panel.lifeCover });
+    expect(panel.lifeCover, 'MLP-17b: a per-cover Life amount is shown and > 0').toBeGreaterThan(0);
+    recordCheck(testInfo, { label: 'Per-cover line: TPD amount ($)', expected: '> 0', actual: panel.tpdCover });
+    expect(panel.tpdCover, 'MLP-17b: a per-cover TPD amount is shown and > 0').toBeGreaterThan(0);
+    const sumOfCovers = Number(((panel.lifeCover || 0) + (panel.tpdCover || 0)).toFixed(2));
+    recordCheck(testInfo, { label: 'Per-cover breakdown reconciles: Life + TPD == policy Total', expected: panel.policyTotal, actual: sumOfCovers });
+    expect(sumOfCovers, 'MLP-17b: sum of per-cover amounts equals the policy total').toBe(panel.policyTotal);
+  });
+
   test('MLP-18/AC18: can navigate to any life and any policy under that life', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC18: Given I have added multiple lives, When I add multiple covers for each policy tab,',
@@ -582,6 +702,15 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     const activePolicy = await activePolicyTabLabel(quote);
     recordCheck(testInfo, { label: 'Active policy tab after clicking Business 1', expected: 'Business 1', actual: activePolicy });
     expect(activePolicy, 'MLP-18: clicking the Business 1 policy tab activates it').toBe('Business 1');
+    // navigate to Personal 1 (the OTHER policy) — confirms "any policy", not just the last-added one
+    await quote.evaluate(() => {
+      const span = [...document.querySelectorAll('div a span.white-space-nowrap')].find((s) => s.innerText.trim() === 'Personal 1');
+      if (span) span.closest('a').click();
+    });
+    await waitForSettle(quote, 1200);
+    const activePolicy2 = await activePolicyTabLabel(quote);
+    recordCheck(testInfo, { label: 'Active policy tab after clicking Personal 1', expected: 'Personal 1', actual: activePolicy2 });
+    expect(activePolicy2, 'MLP-18: clicking the Personal 1 policy tab activates it (any policy navigable)').toBe('Personal 1');
   });
 
   test('MLP-27/AC27: adding a life moves control to the newly added life', async ({ page }, testInfo) => {

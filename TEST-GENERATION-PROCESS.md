@@ -8,8 +8,6 @@ decision logged for later refinement.
 refined as we go — see the learnings file.
 
 **Relationship to other docs:**
-- Reuses the canonical AC format + stable internal IDs from `DELTA-UPDATE-PROCESS.md`
-  (generation is the special case where there is no "before" — every AC is "added").
 - Produces artifacts per `.kiro/steering/test-expansion-process.md` (report.md convention, AC
   annotation format, parallel/serial test structure, probe-safety rules, verify-before-reporting).
 - Uses app facts from `.kiro/steering/project-context.md`.
@@ -104,20 +102,46 @@ test summed to $80k when the AC needed >$250k, and the min-premium rule fired fi
    treat a *different* error/result as a FAILURE, not a pass. This is what catches any wrong input
    the five preventive checks above miss — it is why the AC12 bug surfaced instead of going
    silently green. Never assert merely that "some error appeared".
-7. **Boundary coverage for any stated limit.** If the AC or the business-rules doc states a
-   numeric/length/date limit for a field (e.g. "max 20 chars", "ANB 11-75", "$100,000 minimum"),
-   one arbitrary in-range value is NOT sufficient coverage. Test at minimum three points: just
-   below the limit (valid), exactly at the limit (valid boundary), and just over the limit
-   (invalid). This is the difference between "the field exists and roughly works" and "the stated
-   limit is actually enforced" — a PM/reviewer asking "are these tests actually valuable?" is
-   asking exactly this question. Some existing specs check only presence, not boundaries (e.g.
-   First Name's documented 20-char max was never tested at 20/21 chars) — don't repeat that
-   pattern in new specs, and treat it as a real gap worth closing when revisiting old ones.
+7. **Boundary coverage for any stated limit — test the ACCEPTED boundary, not just the failing one.**
+   If the AC or the business-rules doc states a numeric/length/date/enum limit (e.g. "max 20 chars",
+   "ANB 11-75", "$100,000 minimum", "age ≤ 65"), one arbitrary in-range value is NOT sufficient. Test
+   the **boundary triple**: just-below, **exactly at the limit**, and just-over — and you MUST assert
+   the at-boundary case behaves as the AC says (usually ACCEPTED). Testing only the failing side is the
+   single most common gap (2026-09-03 audit: NOT ONE spec asserted an at-boundary should-pass case, so
+   a cap shifted by one unit would pass undetected). "The stated limit is actually enforced AND the
+   allowed values are actually allowed" is the bar — not "an error appears when I go too far".
 
 Checks 1-5 PREVENT wrong inputs; check 6 GUARANTEES we catch whatever slips through; check 7
-ensures a stated limit is actually exercised, not just assumed. This list is the best-known
-preventive set; it is not claimed exhaustive — the strict-assertion backstop is the guarantee, and
-the list is extended whenever a new wrong-input class is found in the wild.
+ensures a stated limit is actually exercised on BOTH sides. This list is the best-known preventive
+set; it is not claimed exhaustive — the strict-assertion backstop is the guarantee, and the list is
+extended whenever a new wrong-input class is found in the wild.
+
+### Step 4b — MANDATORY exhaustive coverage (not happy-path) — every AC, every spec
+
+Happy-path-only is not acceptable. This was made a hard requirement 2026-09-03 after an audit found
+all six AC-mode specs were happy-path/presence-heavy. For EVERY acceptance criterion, the encoded
+test(s) MUST include, wherever the behaviour is reachable from the browser:
+
+1. **The positive/accepted case** — the AC's normal behaviour, asserting the exact value/message.
+2. **The negative/failing case(s)** — every error path, over-limit, disallowed value, or "must NOT
+   appear" clause the AC implies. Assert what is REJECTED / ABSENT, not only what is accepted.
+   (e.g. "Nil Commission is NOT a selectable default", "an SI cover does NOT show Monthly Benefit".)
+3. **The boundary triple** for any stated limit (see check #7 above) — below / AT (asserted to
+   behave per the AC) / over.
+4. **Value-level assertions** — where the AC involves an amount/premium/count, assert the exact
+   computed value and, where stated, that total = sum-of-parts. Not just "a cover line appears".
+5. **Every meaningful expect() paired with `recordCheck(testInfo, {label, expected, actual})`** —
+   including the negative and boundary ones — so ALL of this coverage is visible in the report's
+   "What Each Passing Test Checked" section. A check that isn't in recordCheck is invisible to a
+   reviewer and does not count as proven coverage. Write labels as plain business sentences
+   (e.g. "ANB 76 is rejected (over the 75 max)", "ANB 75 is accepted (at the max)").
+6. **No silently-omitted AC.** Every AC is either encoded (positive + negative + boundary as above)
+   or `test.fixme(true, 'reason')` with the probe evidence for why it's unreachable. A genuinely
+   unreachable boundary/negative (the app doesn't expose the input) is documented blocked-with-
+   evidence — never faked as a pass and never dropped.
+
+**Log** (in the generation log) a per-AC line: positive ✓/✗, negative ✓/✗/blocked, boundary
+✓/✗/n-a, recordCheck ✓ — so the exhaustiveness is auditable without re-reading the spec.
 
 ### Step 5 — Run against the live app
 Run via `playwright.edge.config.js`. **Log:** pass/fail per test, runtime, any environment issues
