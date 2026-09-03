@@ -515,7 +515,12 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
 
   // AC11-AC13, AC15-AC17: combined-cap variants (Trauma + Cancer / + Major Trauma) at the two age bands.
   const combined = [
-    { ac: 'AC11', age: 19, covers: ['Cancer'], sis: ['250000', '1'], cap: '250,000', msg: /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i },
+    // AC11 arithmetic (Critical Rule #8): Trauma $200,000 + Cancer $100,000 = $300,000 combined,
+    // which is unambiguously > the $250,000 ANB-17-21 cap (not a fragile $1-over value that risks
+    // the min-premium or another rule firing first, or mask/rounding edge behaviour). Both covers
+    // sit in a normal range and combined stays well under the $2M ceiling, so only the 17-21 cap
+    // rule can fire. Mirrors the sibling AC12 row's construction.
+    { ac: 'AC11', age: 19, covers: ['Cancer'], sis: ['200000', '100000'], cap: '250,000', msg: /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i },
     { ac: 'AC12', age: 19, covers: ['Major Trauma'], sis: ['200000', '100000'], cap: '250,000', msg: /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i },
     { ac: 'AC15', age: 40, covers: ['Cancer'], sis: ['1500000', '600000'], cap: '2,000,000', msg: /Trauma Recovery Cover, including Cancer Cover, is \$?2,?000,?000/i },
     { ac: 'AC16', age: 40, covers: ['Major Trauma'], sis: ['1500000', '600000'], cap: '2,000,000', msg: /including Cancer Cover, is \$?2,?000,?000/i },
