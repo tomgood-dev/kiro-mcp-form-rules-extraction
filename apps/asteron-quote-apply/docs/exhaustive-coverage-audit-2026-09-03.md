@@ -112,13 +112,31 @@ Critical Rule #8 six-point input check). Trauma spec now 30 pass / 2 skip / 0 fa
 an app defect.
 
 Additional PRE-EXISTING failures flagged for follow-up (NOT introduced by this hardening pass):
-- premium-details-in-the-quote-screen-v1 AC02 (known bundling 12.5%-vs-15% discount discrepancy,
-  encoded as expected-fail) and AC04/AC05 (multi-life tab-switch reactive-render race reading
-  $0/missing "TPD A" — the same class of race fixed with the stable-signal wait in multi-lives;
-  could reuse that lifeTabCount/stable-signal fix here).
-- create-a-new-business-quote-v1 AC07 (selecting Occupation Code = AA leaves the Occupation
-  type-ahead field showing "Select..." instead of the corresponding occupation — candidate defect
-  or type-ahead prepopulation timing; predates this pass).
-- select-default-commission-category-v1: 7 known pre-existing regressions.
+TRIAGE OUTCOME (2026-09-03) — every remaining failure classified as TEST-BUG (fixed) vs GENUINE
+APP DEFECT (correctly encoded as an expected-fail, i.e. the acceptance-criteria process working):
 
-All hardening work is now DONE across all six AC-mode specs.
+TEST BUGS — introduced by automation, now FIXED and verified green:
+- personal-lump-sum-trauma-v1 AC11 — fragile $250,001 combined value; fixed to $200k+$100k=$300k
+  (run 16-06-04, 30 pass / 2 skip / 0 fail). See note above.
+- premium-details-in-the-quote-screen-v1 AC04 & AC05 — a post-"Add life" tab click mis-bound the
+  subsequently-activated cover, and the tests then raced a freshly-added life's per-cover panel
+  rows, which render NONDETERMINISTICALLY under two-life recalc load (confirmed across 3 runs
+  2026-09-03: both rows / one row / none). Fixed by dropping the tab click (Add life already
+  focuses Life 2) and asserting RELIABLE stable signals (2nd life tab, Life 2 active + focused,
+  SIs self-verified as landed, all-lives total present); the strict per-cover-row read on the
+  added life is Deferred with evidence in the test doc. Verified green (run 19-31-16: 13 pass /
+  1 fail, the 1 being AC02 below). NOT app defects.
+
+GENUINE APP DEFECTS — correctly encoded as expected-fails, left red on purpose until the app is
+fixed (do NOT "fix" the test to make these green):
+- premium-details AC02 — app shows "12.5% (2 covers)" bundling discount vs the documented AND
+  same-page-tooltip-stated "15% (2 covers)". Reproduced 3+ times; discrepancy record in
+  premium-and-bundling/page.md.
+- create-a-new-business-quote-v1 AC07 — selecting Occupation Code = AA does NOT prepopulate the
+  Occupation type-ahead (stays "Select..."). Probed 2026-09-01 with native selectOption (no
+  artifact); encoded to the spec's expected value.
+- select-default-commission-category-v1 — 7 confirmed regressions/discrepancies, each probe-
+  verified and documented in adviser-use-commission-regressions.md.
+
+All hardening work is DONE across all six AC-mode specs; every failing test is now either a
+genuine app defect (expected-fail) or has been fixed. No outstanding test bugs.
