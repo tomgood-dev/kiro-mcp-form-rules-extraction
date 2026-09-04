@@ -22,8 +22,8 @@
 | Personal Lumpsum Specific Injury Cover | ✅ |
 | Personal Disability Cover - Mortgage & Living | ✅ |
 | Personal Disability Cover - Income Protection | ✅ |
-| Personal Disability Cover - Workability | ⬜ |
-| Create a New Business Quote for Business Policy | ⬜ |
+| Personal Disability Cover - Workability | ✅ |
+| Create a New Business Quote for Business Policy | ✅ |
 | Business Policy Lump Sum Life Cover and Additional Covers | ⬜ |
 | Business Policy Lumpsum Standalone TPD Cover | ⬜ |
 | Business Policy Lump Sum Standalone Trauma Cover and Additional Covers | ⬜ |
