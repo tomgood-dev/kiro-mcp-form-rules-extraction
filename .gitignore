@@ -4,6 +4,7 @@ apps/*/.env
 test-results/
 playwright-report/
 **/state.json
+apps/*/.auth/
 *.log
 .playwright-mcp/
 

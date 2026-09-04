@@ -18,8 +18,8 @@
 | Personal Standalone Lumpsum TPD Cover | ✅ |
 | Personal Lumpsum Standalone Cancer Cover | ✅ |
 | Lumpsum Acd. Death Cover | ✅ |
-| Lumpsum Needlestick Cover | ⬜ |
-| Personal Lumpsum Specific Injury Cover | ⬜ |
+| Lumpsum Needlestick Cover | ✅ |
+| Personal Lumpsum Specific Injury Cover | ✅ |
 | Personal Disability Cover - Mortgage & Living | ⬜ |
 | Personal Disability Cover - Income Protection | ⬜ |
 | Personal Disability Cover - Workability | ⬜ |
