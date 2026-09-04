@@ -17,7 +17,7 @@
 | Personal Lump Sum Standalone Trauma Cover and Additional Covers | ✅ |
 | Personal Standalone Lumpsum TPD Cover | ✅ |
 | Personal Lumpsum Standalone Cancer Cover | ✅ |
-| Lumpsum Acd. Death Cover | ⬜ |
+| Lumpsum Acd. Death Cover | ✅ |
 | Lumpsum Needlestick Cover | ⬜ |
 | Personal Lumpsum Specific Injury Cover | ⬜ |
 | Personal Disability Cover - Mortgage & Living | ⬜ |
