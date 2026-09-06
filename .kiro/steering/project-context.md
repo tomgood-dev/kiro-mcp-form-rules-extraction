@@ -11,7 +11,15 @@ extraction — do not produce OutSystems-specific output).
 
 ## Target application (asteron-quote-apply)
 
-- **Login URL:** https://outsystems-dev.asteronlife.co.nz/CentralPortalsLogin/NewLoginRLANZ
+- **Environments (switchable via `BASE_URL`):** QA (current) `https://outsystems-qa.asteronlife.co.nz`;
+  dev `https://outsystems-dev.asteronlife.co.nz`. As of 2026-09-07 operations run against **QA**.
+  `global-setup.js` derives the login URL from `BASE_URL` (`<BASE_URL>/CentralPortalsLogin/NewLoginRLANZ`)
+  and `playwright.edge.config.js` reads `BASE_URL` for `baseURL` — so switching environments is just
+  setting `BASE_URL` inline per run (dev is the fallback default only when `BASE_URL` is unset).
+  Credentials are per-environment and are NOT stored in the repo (passed inline as
+  `ASTERON_LOGIN_EMAIL`/`ASTERON_LOGIN_PASSWORD`; `.auth/` state files are gitignored). QA uses a
+  separate set of accounts from dev.
+- **Login URL pattern:** `<BASE_URL>/CentralPortalsLogin/NewLoginRLANZ`
 - **Post-login destination:** Dashboard at `/AdviserCentral_Uplift/`
 - **Form entry point:** Navigate to Quote & Apply → click "New Quote" (opens in new tab)
 - **Form URL pattern:** `/QuoteAndApply/Quote?QuoteId=...`

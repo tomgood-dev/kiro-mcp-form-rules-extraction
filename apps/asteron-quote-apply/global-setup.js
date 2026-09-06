@@ -10,7 +10,10 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('@playwright/test');
 
-const LOGIN_URL = 'https://outsystems-dev.asteronlife.co.nz/CentralPortalsLogin/NewLoginRLANZ';
+// Login URL derives from BASE_URL so the environment (dev / qa / etc.) is switchable via one env var.
+// Falls back to the dev host only when BASE_URL is unset, preserving prior behaviour.
+const BASE_URL = process.env.BASE_URL || 'https://outsystems-dev.asteronlife.co.nz';
+const LOGIN_URL = BASE_URL.replace(/\/+$/, '') + '/CentralPortalsLogin/NewLoginRLANZ';
 const MAX_ATTEMPTS = 3;
 const PER_ATTEMPT_TIMEOUT_MS = 45_000;
 const BACKOFF_MS = [0, 30_000, 60_000]; // wait before attempt 1/2/3 (session needs ~60s to release)
