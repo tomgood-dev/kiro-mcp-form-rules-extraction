@@ -27,9 +27,9 @@
 | Business Policy Lump Sum Life Cover and Additional Covers | ✅ |
 | Business Policy Lumpsum Standalone TPD Cover | ✅ |
 | Business Policy Lump Sum Standalone Trauma Cover and Additional Covers | ✅ |
-| Business Policy Lumpsum Specific Injury Cover | ⬜ |
-| Business Policy Disability Cover - Business/Farmers Disability | ⬜ |
-| Business Policy Disability Cover - Business Expenses | ⬜ |
+| Business Policy Lumpsum Specific Injury Cover | ✅ |
+| Business Policy Disability Cover - Business/Farmers Disability | ✅ |
+| Business Policy Disability Cover - Business Expenses | ✅ |
 | Role Based Access | ⬜ |
 | Apply for Kids Cover | ⬜ |
 | Enter Loadings | ⬜ |
