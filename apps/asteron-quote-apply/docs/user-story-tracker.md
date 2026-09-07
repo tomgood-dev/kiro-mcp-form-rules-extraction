@@ -24,9 +24,9 @@
 | Personal Disability Cover - Income Protection | ✅ |
 | Personal Disability Cover - Workability | ✅ |
 | Create a New Business Quote for Business Policy | ✅ |
-| Business Policy Lump Sum Life Cover and Additional Covers | ⬜ |
+| Business Policy Lump Sum Life Cover and Additional Covers | ✅ |
 | Business Policy Lumpsum Standalone TPD Cover | ✅ |
-| Business Policy Lump Sum Standalone Trauma Cover and Additional Covers | ⬜ |
+| Business Policy Lump Sum Standalone Trauma Cover and Additional Covers | ✅ |
 | Business Policy Lumpsum Specific Injury Cover | ⬜ |
 | Business Policy Disability Cover - Business/Farmers Disability | ⬜ |
 | Business Policy Disability Cover - Business Expenses | ⬜ |
