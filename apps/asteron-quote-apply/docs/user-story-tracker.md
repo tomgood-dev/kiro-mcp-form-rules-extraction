@@ -31,14 +31,14 @@
 | Business Policy Disability Cover - Business/Farmers Disability | ✅ |
 | Business Policy Disability Cover - Business Expenses | ✅ |
 | Role Based Access | ⬜ |
-| Apply for Kids Cover | ⬜ |
+| Apply for Kids Cover | ✅ |
 | Enter Loadings | ✅ |
 | Enter Commissions | ✅ |
 | Discounts & Bundling Discounts | ✅ |
 | Apply Now | ⬜ |
 | Duty of Disclosure | ⬜ |
 | Capture Client Personal Details & Paramedical Services | ⬜ |
-| Occupation | ⬜ |
+| Occupation | ✅ |
 | Insurance History | ⬜ |
 | Status Change to Referred | ⬜ |
 | Tele-Interview | ⬜ |
@@ -62,13 +62,13 @@
 | Navigation Behaviour | ⬜ |
 | 1.4.04.04 Quotes requirements - View as PDF with Projections (Illustrations) | ⬜ |
 | Saved Quote/Application Navigation | ⬜ |
-| Occupational Codes | ⬜ |
+| Occupational Codes | ✅ |
 | Pre-Underwriting Rules | ⬜ |
 | Batch/Queue Requirements | ⬜ |
 | URE Navigation | ⬜ |
 | Insurance and Financial (Adviser Interview) Navigation | ⬜ |
 | Underwriting Decision | ⬜ |
 | Interview Summary | ⬜ |
-| Early Trauma Benefit | ⬜ |
+| Early Trauma Benefit | ✅ |
 | Insurance History to Case Data mapping | ⬜ |
 | Select Default Commission Category | ✅ |

@@ -1,0 +1,62 @@
+# User Story \- Occupational Codes
+
+
+
+| **Author/s** | @Ravi Bellamkonda |
+| --- | --- |
+| **Contributor/s** | @Amanda-Rose Harlen |
+| **Reviewer/s** | @Lewis Daniels |
+| **Approvers** | @Amanda-Rose Harlen |
+| **Status** |  |
+| **Jira** | [\[ACB-6504\] Build - Quote & Apply : Occupation and Codes - AsteronConnect - Jira](https://rlaanz.atlassian.net/browse/ACB-6504) |
+
+| Story card | Occupational Codes in the Quote Screen |
+| --- | --- |
+| JIRA |   |
+| User Story | As anAsteron Adviser/Adviser staff, I want to be able to select occupation |
+| Pre-Conditions |  |
+| PC01 |  |
+| Acceptance Criteria |  |
+|  AC01 | **Given** I am on the *Quote and Apply* application **When** I click the **Occupation** dropdown **Then** I should see a list of all available occupations which are listed in the spreadsheet   **And** I should be able to select any occupation from the list |
+| AC02 | **Given** I am on the *Quote and Apply* application **When** I click the **Occupation** dropdown **Then** I should be able to **search for an occupation by typing** **And** I should see the **matching results displayed** |
+| AC03 | **Given** AC01 or AC02 has been performed **When** I clear the selected occupation or the search text **Then** I should see the **full list of all available occupations** **And** the **Code **dropdown should be enabled for selection with valid values |
+| AC04 | **Given** AC01 or AC02 is active **When** I select any occupation **Then** the **corresponding code**(from the IP Code column in the spread sheet) should be displayed   **And** the **Code dropdown should be disabled (grayed out)** |
+| AC05 | **Given** I am on the *Quote and Apply* application **When** I request a quote for lumpsum cover Life/Trauma/Cancer/Acd. Death **without providing an occupation or code** **Or** I request a quote for lumpsum cover Life/Trauma/Cancer/Acd. Death **with only the code provided** **Then** I should be able to **successfully get the quote** |
+| AC06 | **Given** I have selected an occupation **When** I select an occupation(LIFE\_LOADINGS or TRAUMA\_LOADING column with non zero values) that has a **loading applied****And** have chosen a Life or Trauma cover **Then** I should see the **premium increase according to the loading value** |
+| AC07  | **Given** I have selected an occupation **When** I submit the application **Then** Value from **Code column** in the spread sheet should be sent to L400 |
+| AC08  | **Given** I have selected an occupation**When** I select an occupation where **TPD eligibility** is marked as **U****And** I select **TPD cover (Personal/Business**) **or TPD on trauma (standalone/accelerated)****Then** I should see the error message: *“This occupation is not eligible.”* |
+| AC09 | **Given** I have selected an occupation**When** I select an occupation where **TPD eligibility** is marked as **M****And** I select **TPD cover(Personal/Business**)**  or TPD on trauma (standalone/accelerated) **with “Own” or “Any” definition**Then** I should see the error message: *“This occupation is only eligible for Modified TPD”* |
+| AC010 | **Given** I have selected an occupation**When** I select an occupation where **TPD eligibility** is marked as **A****And** I select **TPD cover(Personal/Business**)**  or TPD on trauma (standalone/accelerated)** with “Own” definition**Then** I should see the error message: *“This occupation is noteligible for Own TPD”* |
+| AC11 | **Given** I have selected an occupation**When** I select an occupation where **TPD eligibility** is marked as **IC****And** I select **TPD cover (Personal/Business)****Then** I should see the error message: *“*Please contact underwriting as this Occupation requires Individual Consideration*”* |
+| AC12 | **Given** I have selected an occupation**When** I select an occupation where **Life code **is marked as **IC****And** I select **Life cover(Personal/Business) or Acd Death(Personal)****Then** I should see the error message: *“*Please contact underwriting as this Occupation requires Individual Consideration*”* |
+| AC13 | **Given** I have selected an occupation**When** I select an occupation where **Trauma code **is marked as **IC****And** I select **Trauma cover/Major Trauma(Personal/Business) or Cancer(Personal)****Then** I should see the error message: *“*Please contact underwriting as this Occupation requires Individual Consideration*”* |
+| AC14 | **Given** I have selected an occupation**When** I select an occupation where **IP code **is marked as **IC****And** I select any of personal policy covers IP, Mortgage or workability covers**Then** I should see the error message: *“*Please contact underwriting as this Occupation requires Individual Consideration*”* |
+| AC14A | **Given** I have selected an occupation**When** I select an occupation where **IP code **is marked as **IC****And** I select business disability cover or Farmers disability cover or business expenses**Then** I should see the error message: *“*Please contact underwriting as this Occupation requires Individual Consideration*”* |
+| AC15 | **Given** I have selected an occupation**When** I select an occupation where NEEDLESTICK\_ELIGIBILITYis marked as NA or N/A**And** I select **Needlestick cover ****Then** I should see the error message: *“Needlestick is not available for the selected occupation”* |
+| AC16 | **Given** I have selected an occupation**When** I select an occupation where **SIB\_CODE **is marked as **U****And** I select **Specific Injury cover****Then** I should see the error message: *“This occupation is not eligible.”* |
+| AC17 | **Given** I have selected an occupation listed below (EMP\_STATUS = “O”) - Home Duties / House Wife  / House husband - Homemaker/ Domestic Duties - Student / Part time student - Unemployed **When** I employment status other than Other  **Then** I should see the error message: *“This occupation is only available for Employment Status of Other”* |
+| AC18 | **Given** I have selected an occupation**When** I select an occupation where **IP\_CODE **is marked as **S****And** I select **Income Protection cover or Mortgage & Living, or both****Then** I should see the below **warning **messages  - The benefit period for the selected occupation is restricted to 2 years - The waiting period for the selected occupation is restricted to 90 days |
+| AC19 | **Given** AC18**When** I click apply without correcting **benefit period and waiting period****Then** I must see the below **error **message “Please correct the errors before proceeding to apply” |
+| AC20 | **Given** AC18**When** I click apply after correcting **benefit period and waiting period****Then** I must be able to proceed to apply |
+| AC21 | **Given** I have selected an occupation**When** I select an occupation where **IP code **is marked as U**And** I select business or personal policy any disability cover**Then** I should see the error message: *“*This occupation is not eligible*”* |
+| AC22 | **Given** I have selected an occupation**When** I select an occupation where **IP code **is marked as U**And** I select business policy farmers disability cover**And **employment status is either 'Self Employed' or 'Employed by own company'**Then** I should see the error message: “Farmers Disability Cover is not available for selected occupation” |
+| AC23 | **Given** I have selected an occupation**When** I select an occupation where **IP\_CODE **is marked as **S****And**  I select business policy business disability cover**Then** I should see the below errormessages  - Business Disability Cover is not available for the selected occupation” |
+| AC24 | **Given** I have selected Farmers Disability Cover**When** I select employment status is “Employed” or “Other” **Then** I should see the below errormessage  - Eligibility for Farmers Disability Cover requires an Employment Status of either 'Self Employed' or 'Employed by own company' |
+| AC25 | **Given** I have selected an occupation**When** I select an occupation where **IP\_CODE **is marked as **S****And**  I select Farmers disability cover**Then** I should see the below errormessage - Farmers Disability Cover is not available for the selected occupation |
+| AC26 | **Given** I have selected an occupation**When** I select Farmers disability coverAnd I enter monthly benefit more than $10,000**Then** I should see the below errormessage - The maximum allowable Farmers Disability monthly benefit for the selected occupation is $10,000 |
+| AC27 | **Given **I have selected an occupation code (without selecting anything in the Occupation dropdown) on a TPD or Disability cover (personal or business)**When **I view the calculated premium**And** I select an occupation with a different code that triggers a premium change due to the occupation code**Then** - A warning popup should appear with the following message: *“The occupation description that you have selected will result in premium change(s). Do you wish to continue?”* - The popup should include **Yes** and **No** buttons. |
+| AC28 | **Given **AC27 is active**When** I select Yes**Then** popup should close and recalculated premium should be displayed |
+| AC29 | **Given **AC27 is active**When** I select No**Then** popup should close and premium should be same as before and occupation dropdown should be defaulted to Search and occupation code should be same as selected before. |
+| AC30 | **Given** I selected one of cover Life, Trauma Recovery, Cancer, Accidental Death, Income Protection, Mortgage & Living or Workability **When** I select specific injury cover **without providing an occupation or code** and enter SI for the same **Then** error message “Please enter the value for Occupation or for quick quote, Occupation Code” should be displayed |
+| AC31 | **Given** I selected TPD cover or TPD on Trauma**When** I enter SI for the same**Then** error message “You must complete the following fields - Gender, Age Next Birthday & Occupation/Occupation Code” should be displayed |
+| AC32 | **Given** I select personal or business disability cover **without providing gender or ANB or occupation code or annual income or employment status****When** I enter monthly benefit amount for the same**Then** error message “You must complete the following fields - Gender, Age Next Birthday, Occupation/Occupation Code, Employment Status & Annual Income $” should be displayed |
+| AC33 | **Given** I select occupation Personal Trainer/Fitness Instructor/Yoga Instructor - Established**When** I select MLC or IP cover **And **Benefit period is not 2 or 5 years**Then** error message “This occupation is subject to a maximum benefit period of 5 years” should be displayed |
+| AC34 | **Given** I select occupation Personal Trainer/Fitness Instructor/Yoga Instructor - Established**When** I select Workability cover **Then** error message “Workability is not available for the selected occupation” should be displayed |
+| AC35 | **Given** I select occupation where **IP\_CODE **is marked as **S****When** I select Workability cover **Then** error message “Workability is not available for the selected occupation” should be displayed |
+| AC36 | **Given** I select occupation where **IP\_CODE **is marked as **S****When** I select We Pay Your Premiums on personal or business policy**Then** error message “We Pay Your Premiums is not available for the selected occupation” should be displayed |
+| AC37 | **Given** I select occupation where **IP\_CODE **is marked as **S**, **When** I have selected **Business Expenses** cover and enter SI **Then** the system must: - Display the following **error message**: **“Business Expenses Cover is not available for the selected occupation.”** |
+| AC38 | **Given** I have selected an occupation other than homemaker/domestic duties or home duties/house wife/house husband where **IP\_CODE **is marked as **U****When** I select we pay your premium with any cover**Then** I should see the error message: *“*This occupation is not eligible*”* |
+| Business Rules | List of valid codes in the dropdown box of Code areAAAMA1A2BCSUICNote: If there are multiple errors on the page then multiple error messages should be displayed. Occupation Personal Trainer/Fitness Instructor/Yoga Instructor - Established, Min 3 Years Full Time, Gym Only. Subject to 5 year maximum benefit period is subject to a maximum Benefit Period of 5 years. |
+|  Exceptions/Limitations |   |
+| Requirement Details / Technical Notes / Supporting Docs |   |
+| Test Info |   |

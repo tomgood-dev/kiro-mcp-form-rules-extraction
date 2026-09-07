@@ -89,3 +89,21 @@ Personal Details is a per-life section (each Life tab has its own, independent c
 | `PD-36` | *"The minimum Age Next Birthday for Stepped 'Standalone TPD Cover' is 17"* | Age < 17 with a TPD cover configured |
 | `PD-37` | *"You must complete the following fields - Gender, Age Next Birthday & Occupation/Occupation Code"* | Cover(s) configured but required personal fields still empty (this list narrows dynamically as fields are filled — see [Validation & Navigation](../validation-and-navigation/page.md)) |
 | `PD-38` | *"Please contact underwriting as this Occupation requires Individual Consideration"* | Occupation Code = IC with incomplete fields |
+
+
+## Discrepancy Evidence Records
+
+#### TPD + IC occupation code: "required" vs "requires" Individual-Consideration message *(Story ACB-6504, 2026-09-07)*
+
+- **AC / Rule ID:** AC11 (Occupational Codes, ACB-6504)
+- **Verbatim requirement:** "**Given** I have selected an occupation **When** I select an occupation where **TPD eligibility** is marked as **IC** **And** I select **TPD cover (Personal/Business)** **Then** I should see the error message: *"Please contact underwriting as this Occupation requires Individual Consideration"*" (Occupational Codes story, AC11 row).
+- **Reproduction steps:**
+  1. New quote; Age Next Birthday = 40; Gender = Male; Occupation Code = IC.
+  2. Activate TPD cover; Sum Insured $200,000.
+  3. Click Apply and read the validation errors.
+- **Expected result:** "Please contact underwriting as this Occupation **requires** Individual Consideration" (present tense, per the story).
+- **Actual result:** "Please contact underwriting as this Occupation **required** Individual Consideration" (past-tense typo "required"). The Life + IC message (AC12), reproduced with Occupation Code = IC + Life cover, correctly reads "…**requires** Individual Consideration" — so the two Individual-Consideration messages are inconsistent (TPD wrong, Life correct).
+- **Evidence artifact(s):** `apps/asteron-quote-apply/test-runs/occupational-codes-v1/2026-09-07T18-12-10/report.md` (AC11 failure detail with the captured error string; AC12 passing check shows the correct "requires").
+- **Environment:** `https://outsystems-qa.asteronlife.co.nz`, account B (tom.good+2@resolutionlife.com.au), 2026-09-07.
+- **Reproducibility:** Confirmed on the parallel batch run 2026-09-07 (TPD "required" vs Life "requires" in the same run).
+- **Test encoding:** `occupational-codes-v1.spec.js` AC11 test asserts the story's "requires" wording (expected-to-fail until the TPD message typo is corrected).
