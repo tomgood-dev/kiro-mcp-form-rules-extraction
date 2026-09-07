@@ -11,7 +11,7 @@
 | Landing page: Inflight Quotes | ⬜ |
 | Create a New Business Quote | ✅ |
 | Premium Details in the Quote Screen | ✅ |
-| Save Quote/Save As New | ⬜ |
+| Save Quote/Save As New | ✅ |
 | Multi Lives and Policies | ✅ |
 | Lump Sum Life Cover | ✅ |
 | Personal Lump Sum Standalone Trauma Cover and Additional Covers | ✅ |
@@ -48,7 +48,7 @@
 | Submit | ⬜ |
 | Tele-interviewer: URE Application Processing | ⬜ |
 | Tele-interviewer Landing Page: In Progress Quotes Table | ⬜ |
-| Clone Quote | ⬜ |
+| Clone Quote | ✅ |
 | Correspondence | ⬜ |
 | Asteron Connect Non-Functional Requirements | ⬜ |
 | ARS API mapping | ⬜ |
@@ -59,9 +59,9 @@
 | 1.4.2 Asteron Connect Quote and Apply Field List | ⬜ |
 | 1.4.03 Asteron Connect-Existing User Journey | ⬜ |
 | 1.4.04.03 Quotes requirements - Apply & Proceed | ⬜ |
-| Navigation Behaviour | ⬜ |
+| Navigation Behaviour | ✅ |
 | 1.4.04.04 Quotes requirements - View as PDF with Projections (Illustrations) | ⬜ |
-| Saved Quote/Application Navigation | ⬜ |
+| Saved Quote/Application Navigation | ✅ |
 | Occupational Codes | ✅ |
 | Pre-Underwriting Rules | ⬜ |
 | Batch/Queue Requirements | ⬜ |

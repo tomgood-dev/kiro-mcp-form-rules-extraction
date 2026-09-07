@@ -83,3 +83,23 @@ Per-life minimum, inferred from the above and from `PD-*`: Gender selected, Age 
 | `VAL-29` | Apply button click | All required fields/covers checked simultaneously, per `VAL-01` |
 | `VAL-30` | Cover activation | Server checks age/occupation eligibility immediately |
 | `VAL-31` | Gender/Occupation change | Server recalculates cover eligibility immediately |
+
+
+## Discrepancy Evidence Records
+
+#### Save min-details gate: "Required field!" markers instead of "Enter minimum details to save quote" *(Story ACB-2241, 2026-09-08)*
+
+- **AC / Rule ID:** AC12 (Save Quote/Save As New, ACB-2241)
+- **Verbatim requirement:** "Given AC09, When I have selected 'Save', Then if minimum details (ANB, Gender and Smoker) are not entered display an error message *"Enter minimum details to save quote"*."
+- **Reproduction steps:**
+  1. Open a new quote. Do NOT enter Age Next Birthday, Gender, or Smoker status.
+  2. Enter a First Name only (so the quote has some data).
+  3. Click "Close".
+  4. On the "Would you like to save the quote before exiting?" confirm popup, click "Save".
+  5. Read the resulting messages.
+- **Expected result:** the error message "Enter minimum details to save quote".
+- **Actual result:** no such message appears. The app instead renders inline "Required field!" validator markers on the empty Age Next Birthday / Gender fields, and does not display the specified "Enter minimum details to save quote" text anywhere on the page.
+- **Evidence artifact(s):** `apps/asteron-quote-apply/test-runs/save-quote-save-as-new-v1/` (AC12 failure detail with the recorded actual "NOT shown — app shows inline 'Required field!' instead"). Probe 2026-09-08 (account C) captured `hasMinDetails:false` with body `anyErrLike:["Required field!","Required field!"]`.
+- **Environment:** `https://outsystems-qa.asteronlife.co.nz`, accounts A and C, 2026-09-08.
+- **Reproducibility:** Confirmed on the batch run (account A) and an independent probe (account C).
+- **Test encoding:** `save-quote-save-as-new-v1.spec.js` AC12 test asserts the story's "Enter minimum details to save quote" message (expected-to-fail until the app surfaces that message).
