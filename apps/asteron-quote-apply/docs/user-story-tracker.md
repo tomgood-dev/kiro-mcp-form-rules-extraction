@@ -6,9 +6,9 @@
 | User Story | Status |
 |---|---|
 | Access Levels | ⬜ |
-| Landing page: Online Quoting Tool | ⬜ |
-| Landing Page: In Progress Quotes Table | ⬜ |
-| Landing page: Inflight Quotes | ⬜ |
+| Landing page: Online Quoting Tool | ✅ |
+| Landing Page: In Progress Quotes Table | ✅ |
+| Landing page: Inflight Quotes | ✅ |
 | Create a New Business Quote | ✅ |
 | Premium Details in the Quote Screen | ✅ |
 | Save Quote/Save As New | ✅ |
