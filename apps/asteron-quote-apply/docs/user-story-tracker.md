@@ -32,9 +32,9 @@
 | Business Policy Disability Cover - Business Expenses | ✅ |
 | Role Based Access | ⬜ |
 | Apply for Kids Cover | ⬜ |
-| Enter Loadings | ⬜ |
-| Enter Commissions | ⬜ |
-| Discounts & Bundling Discounts | ⬜ |
+| Enter Loadings | ✅ |
+| Enter Commissions | ✅ |
+| Discounts & Bundling Discounts | ✅ |
 | Apply Now | ⬜ |
 | Duty of Disclosure | ⬜ |
 | Capture Client Personal Details & Paramedical Services | ⬜ |
