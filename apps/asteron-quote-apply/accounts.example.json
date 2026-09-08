@@ -1,0 +1,8 @@
+{
+  "_comment": "Copy this to accounts.json (gitignored) and fill in real QA accounts. The parallel-run launcher (tools/parallel-run.js) reads accounts.json. Each account gets its own auth state file state-qa-<id>.json and runs one stream at a time. Add as many accounts as you have to scale parallelism.",
+  "baseUrl": "https://outsystems-qa.asteronlife.co.nz",
+  "accounts": [
+    { "id": "a", "email": "adviser+a@example.com", "password": "REPLACE_ME" },
+    { "id": "b", "email": "adviser+b@example.com", "password": "REPLACE_ME" }
+  ]
+}

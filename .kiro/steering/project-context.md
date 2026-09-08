@@ -1,5 +1,31 @@
 # Project Context
 
+## Parallel test runs (N accounts)
+
+Use the reusable launcher instead of hand-editing per-run `$specs`/`Start-Job` arrays:
+
+```
+node tools/parallel-run.js <spec> [<spec> ...]   # fan named specs across accounts
+node tools/parallel-run.js --all                 # run every quote-screen spec
+node tools/parallel-run.js --scaling-test        # launch the same short spec on all accounts (load test)
+node tools/parallel-run.js --scaling-test --streams 10   # load-test a specific stream count
+node tools/parallel-run.js --list                # show discovered accounts + specs
+```
+
+- Accounts live in gitignored `apps/asteron-quote-apply/accounts.json` (format in
+  `accounts.example.json`, committed). Add accounts there — no script edits needed. Each account
+  `id` maps to auth state `state-qa-<id>.json`.
+- The launcher bakes in the concurrency-safety settings: **`KILL_STRAY_EDGE=false` on every stream**
+  (the critical flag — without it a stream's `taskkill /F /IM msedge.exe` murders sibling streams'
+  browsers), one stream per account at a time (platform = one session/account), and an auto-scaled
+  launch stagger (8s ≤4 streams, 12s ≤8, 15s ≥9) so simultaneous chromium.launch+login stays smooth.
+- Concurrency model: A accounts + S specs → up to A specs run at once, the rest queue onto accounts
+  as they free up. Options: `--streams N`, `--stagger-ms M`, `--timeout-s S`, `--grep "expr"`.
+- Verified 2026-09-08: 4 concurrent streams cost ~1.5GB RAM total (~0.35-0.4GB/stream on top of
+  baseline), 0 casualties. Extrapolated ~3.5-4GB for 10 streams — resource-bound by host RAM, not
+  the framework. Re-run `--scaling-test --streams 10` on the target host once 10 accounts exist to
+  confirm all log in cleanly under concurrent load (the login window is the riskiest moment).
+
 ## What this project is
 
 A reusable AI-driven framework (see root `README.md`) for reverse-engineering business rules,
