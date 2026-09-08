@@ -1,0 +1,161 @@
+[global-setup] staggered start: waiting 8s before launch...
+[global-setup] waiting 60s for any held session to release before attempt 1...
+[global-setup] login OK on attempt 1
+
+Running 8 tests using 1 worker
+
+[1/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:35:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC01/AC02/AC03/AC04: Occupation dropdown + code dropdown present; code list is the documented risk classes
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:35:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC01/AC02/AC03/AC04: Occupation dropdown + code dropdown present; code list is the documented risk classes
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Personal Details set OK
+
+[2/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:56:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC05: Life quote with ONLY an occupation code (no occupation name) succeeds
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:56:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC05: Life quote with ONLY an occupation code (no occupation name) succeeds
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 2
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Life
+
+  [step] Entering calc-mask value: 200000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: no visible errors
+
+[3/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:73:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC08: TPD cover with occupation code U → "This occupation is not eligible"
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:73:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC08: TPD cover with occupation code U → "This occupation is not eligible"
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: TPD
+
+  [step] Entering calc-mask value: 200000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","This Occupation is not eligible"]
+
+[4/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:90:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:90:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: TPD
+
+  [step] Entering calc-mask value: 200000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","Please contact underwriting as this Occupation required Individual Consideration"]
+
+  1) [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:90:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message 
+
+    Error: AC11. Got: The minimum premium is $240.00 per year per Life insured. | Please contact underwriting as this Occupation required Individual Consideration
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      106 |     const e = await errText(quote);
+      107 |     recordCheck(testInfo, { label: 'TPD + code IC raises the Individual-Consideration message', expected: 'requires Individual Consideration', actual: e });
+    > 108 |     expect(/requires Individual Consideration/i.test(e), `AC11. Got: ${e.slice(0, 200)}`).toBe(true);
+          |                                                                                           ^
+      109 |   });
+      110 |
+      111 |   test('AC31: TPD cover missing Gender/ANB/Occupation → combined "must complete" error', async ({ page }, testInfo) => {
+        at C:\Users\TOMGOO\kiro-mcp-form-rules-extraction\apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:108:91
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-runs-pending\2026-09-08T11-10-37\asteron-quote-apply-tests--a8165-ration-underwriting-message-edge\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-runs-pending\2026-09-08T11-10-37\asteron-quote-apply-tests--a8165-ration-underwriting-message-edge\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .test-runs-pending\2026-09-08T11-10-37\asteron-quote-apply-tests--a8165-ration-underwriting-message-edge\trace.zip
+    Usage:
+
+        npx playwright show-trace .test-runs-pending\2026-09-08T11-10-37\asteron-quote-apply-tests--a8165-ration-underwriting-message-edge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[5/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:111:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC31: TPD cover missing Gender/ANB/Occupation → combined "must complete" error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:111:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC31: TPD cover missing Gender/ANB/Occupation → combined "must complete" error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Activating cover: TPD
+
+  [step] Entering calc-mask value: 200000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","The minimum Age Next Birthday for Stepped 'Standalone TPD Cover' is 17\nYou must complete the following fields - Gender, Age Next Birthday
+
+[6/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:127:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC12: Life cover with occupation code IC → Individual-Consideration underwriting message
+[edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:127:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC12: Life cover with occupation code IC → Individual-Consideration underwriting message
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Life
+
+  [step] Entering calc-mask value: 200000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 1 visible error(s): ["Please contact underwriting as this Occupation requires Individual Consideration"]
+
+[7/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:145:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC06/AC07/AC33/AC34/AC35/AC36/AC37/AC38 + AC09/AC010/AC13-AC26: named-occupation & backend-mapping eligibility rules
+[8/8] [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:149:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC27/AC28/AC29: occupation-code-change premium-change warning popup (Yes/No)
+  1 failed
+    [edge] › apps\asteron-quote-apply\tests\quote-screen\occupational-codes-v1.spec.js:90:3 › Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message 
+  2 skipped
+  5 passed (13.1m)

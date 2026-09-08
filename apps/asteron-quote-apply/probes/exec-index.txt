@@ -1,0 +1,344 @@
+
+=== Bundled Discounts ===
+ - Bundling discount not applied when Mortgage and Living  monthly benefit is greater than $1000
+ - Defect retest ? ACB-10056 Business Expenses and Business Disability premium panel values
+ - Defect retest ? ACB-9946 and ACB-9947
+ - Defect retest ? ACB-9981 - Multi policies quote with personal and business covers fails in L400
+ - DEFECT-TC17_AC03.7_Business Insurance_No bundle Discounts for 3 different Eligible Covers_Less SI
+ - Farmers Disability is not a eligible cover for a bundled discount
+ - Premium panel shows $0 as soon as advisor adds farmers disability cover
+ - Same cover within the same policy will show discounts
+ - SIT Multi policies quote with personal and business covers fails in L400
+ - TC01_AC02_Personal Insurance_Bundle Discounts for Two different Eligible Covers
+ - TC02_AC02.1_Personal Insurance_No bundle Discounts if Same two Covers_Life
+ - TC03_AC02.2_Personal Insurance_No bundle Discounts if Same two Covers_Disability Covers
+ - TC04_AC02.3_Business Insurance_Bundle Discounts for Two different Eligible Covers
+ - TC05_AC02.4_Personal Insurance_No bundle Discounts for Two different Eligible Covers_Less than Minimum SI
+ - TC06_AC02.5_Business Insurance_No bundle Discounts for Two different Eligible Covers_Less than Minimum SI
+ - TC07_AC02.6_Both Personal and Business Insurance_Bundle Discount for Two different Eligible Covers
+ - TC08_AC02.7_Both Personal and Business Insurance_No bundle Discounts for Same two Covers
+ - TC09_AC02.8_Both PER & BUS Insurance_No bundle Discounts for Two different Eligible Covers_Less than Minimum SI
+ - TC10_AC03_Personal Insurance_Bundle Discounts for Three different Eligible Covers
+ - TC11_AC03.1_Business Insurance_Bundle Discounts for Four different Eligible Covers
+ - TC12_AC03.2_Personal Insurance_No bundle Discounts if Same Three Covers
+ - TC14_AC03.4_Business Insurance_Bundle Discounts for Three different Eligible Covers
+ - TC15_AC03.5_Personal Insurance_No bundle Discounts for Three different Eligible Covers_Less than Minimum SI
+ - TC16_AC03.6_Personal Insurance_15 percentage Discount for 4 different Eligible Covers_Less SI for two Covers
+ - TC17_AC03.7_Business Insurance_No bundle Discounts for 3 different Eligible Covers_Less SI
+ - TC18_AC03.8_Both Personal and Business Insurance_bundle Discounts for Three different Eligible Covers
+ - TC19_AC03.9_Both Personal and Business Insurance_No bundle Discounts for Same Covers
+ - TC20_AC03.10_Both Personal and Business Insurance_No bundle Discounts for 3 different Eligible Covers_Less SI
+ - TC21_AC03.11_Both Per & Bus Insurance_15 percent Discount for 4 different Eligible Covers_Less SI for 2 Covers
+ - TC22_AC04_Personal Insurance_No bundle Discounts after RemoveCover
+ - TC23_AC04.1_Business Insurance_Bundle Discounts reduced after Remove one Cover
+ - TC24_AC04.2_Business policy_No bundle Discounts after RemoveCover
+ - TC25_AC04.3_Both Personal and Business policy_No bundle Discounts after RemoveCover
+ - TC26_AC06_Personal Insurance_Bundle Discounts_tooltipValidation
+ - TC27_AC06.1_Both Personal and Business Insurance_Bundle Discounts_tooltipValidation
+ - Validating bundled discount for Multi lives ? multi policies
+
+=== Business Specific Injury ===
+ - AC12-Pass.mp4
+ - Complete flow
+ - Doubt-AC04
+ - Pass - AC01
+ - Pass - AC02
+ - Pass - AC03
+ - Pass - AC06
+ - Pass - AC07
+ - Pass - AC08
+ - Pass - AC09
+ - Pass - AC10
+ - Pass - AC13 - Option is greyed out
+ - Pass -AC05
+ - Pass -AC06
+ - Pass -AC11
+
+=== Clone Quote ===
+ - ACB-7536
+ - Cosmos_cloned Quote
+ - Cosmos_submitted Quote
+ - J4201790
+ - Orignal Application Screen Recording 2026-02-20 225138.mp4
+ - Pass - TC08_Pre-populates required sections from submitted application
+ - QuoteLoadings
+ - TC01_Adviser can see Clone option on submitted application
+ - TC02_Client birthday on date of cloning
+ - TC03_Data Mapping Validation
+ - TC03_Unauthorized roles cannot see Clone option
+ - TC04_Non-submitted statuses do not show Clone option
+ - TC05_Clone Quote from landing page creates a new quote
+ - TC06_Edit the quote and submit
+ - TC07_close the cloned quote
+ - TC08_Pre-populates required sections from submitted application
+ - TC09_Proceed via Apply Now from cloned quote
+ - TC10_Multi-policy (personal & business) structure preserved
+ - TC11_Identifiers refreshed on clone
+ - TC12_Birthday lock ? single life
+ - TC13_Birthday lock ? multi life any client has birthday
+ - TC14_Boundary birthday upcoming (tomorrow) does not lock
+ - TC15_URE and other questions blank
+ - TC16_Sensitive data not carried over to application
+ - TC17_Multi-life application ? only quote-level data used
+ - Test Data_TC12_J4201756
+
+=== Early Trauma ===
+ - Early Trauma appIDs_results_Personal_policy
+ - Early_Trauma_applicationID_results_Business Policy
+
+=== Enter Commissions ===
+ - Defect 10045 -  Retested- Screenshots
+ - Defect Retes ACB-10813-Passed
+ - Defect Retest - ACB-10247
+ - Defect Retest ACB-9972-Passed
+ - Fail -  TC01_Verify Flexi Rate is NA
+ - Fail - TC02_Verify Flexi Rate = 2.5%
+ - Fail - TC03_Verify Flexi Rate =5.0%
+ - Fail - TC04_Verify Flexi Rate = 7.5%
+ - Fail - TC05_Verify Flexi Rate = 10%
+ - Fail - TC06_AC06_Verify that All the commision details are saved successfully
+ - Fail - TC06_Verify Flexi Rate = 12.5%
+ - Fail - TC07_Verify Flexi Rate = 15%
+ - Fail - TC08_Verify Flexi Rate = 17.5%
+ - Fail - TC09_AC09_Verify when FlexiRate=15 check IC and RC values
+ - Fail - TC11_AC11_Verify, when FlexiRate=30%
+ - Fail - TC13_OK and Cancel buttons are not displayed
+ - Pass - TC01_AC01_Verify  ability to select  commission type
+ - Pass - TC02_AC02_Verify Commission Type window
+ - Pass - TC03_AC03_Verify Default for Agency dropdown
+ - Pass - TC04_AC04_Verify Select All commission structure dropdown
+ - Pass - TC05_AC05_Verify Premium Structure and Sum Insured Benefit on commission window
+ - Pass - TC07_AC07_Verify that, when click on Cancel button, Quote screen should display
+ - Pass - TC08_AC08_Verify, when FlexiRate option has been selected On Quote screen
+ - Pass - TC09_Verify Flexi Rate = 20%
+ - Pass - TC10_AC10_Verify, when FlexiRate is 15% has been selected On Quote screen
+ - Pass - TC10_Verify Flexi Rate = 22.5%
+ - Pass - TC11_Verify Flexi Rate = 25%
+ - Pass - TC12_AC12_Verify, Message tool tip
+ - Pass - TC12_Verify Flexi Rate = 27.5%
+ - Pass - TC13_Verify, By adding one presonal policy
+ - Pass - TC14_Verify, By adding one Business policy
+ - Pass - TC15_Verify By adding multiple Busines and personal  policies
+ - Verification of Validation message on commission window when NO cover is selected
+
+=== Kids Cover(ACB-7205) ===
+ - Kids Cover - AC05 and AC09
+ - Retest - Kids Cover - AC05 and AC09
+
+=== Loadings ===
+ - AC01
+ - AC02
+ - AC03
+ - AC04
+ - AC06
+ - AC09
+ - After removing the cover, can see loadings saved message
+ - Commissions not refreshed
+ - Defect Retest Result -ACB-10446
+ - Doubt- AC08
+ - Error occurred when clicked on Life2
+ - Fail - AC05
+ - Fail-AC05
+ - Fail-AC10
+ - Pass - AC07
+ - Pass - TC_20 Per MILE not applicable to Disability monthly benefit
+ - Pass - TC_3 Percentage dropdown values and default. Defect retest pass
+ - Pass - TC_3 Percentage dropdown values and default
+ - Pass - TC_4 Per MILE availability by cover type
+ - premium not refreshed, when added commissions
+ - S enarios tested - Loadings
+ - TC_1 Access Loadings during new quote creation
+ - TC_10 Apply Percentage AND Per MILE together for same cover
+ - TC_11 Cancel returns to Quote screen without saving
+ - TC_12 X icon returns to Quote screen without saving
+ - TC_13 OK saves loadings and displays confirmation message
+ - TC_14 No message displayed when no loadings applied
+ - TC_15 Underwriting Guide opens in new browser window
+ - TC_16 Tooltip content for Percentage and Per MILE
+ - TC_17 Loadings applied per life only
+ - TC_18 Loadings propagate to all applicable policies for same life
+ - TC_19 Per MILE validation for invalid inputs
+ - TC_2 Loadings screen shows cover types available on quote
+ - TC_20 Per MILE not applicable to Disability monthly benefit
+ - TC_3 Percentage dropdown values and default
+ - TC_4 Per MILE availability by cover type
+ - TC_5 Percentage loading applied independently per cover type
+ - TC_6 Per MILE accepts values and rounds to 2 decimals
+ - TC_7 Per MILE arrow keys adjust value in 0.5 increments
+ - TC_8 Per MILE boundary value 20.00 accepted
+ - TC_9 Error shown when Per MILE greater than  20.00
+ - Test Results for Per mile test
+
+=== Multiple Lives and Policies ===
+ - ACB-9428 defect retest
+ - ACB-9613 - Client Summary page does not show the correct status & Proceed to Application button
+ - Advisor tries to delete a life in a multi lives policy quote
+ - Defect for AC06 - Advisor tries to delete a life in a multiple lives quote
+ - Defect for AC10 Instead of Proceed to Application, the Client Summary page shows Continue Application
+ - Defect for AC3 Error message is not displayed
+ - Defect retest - ACB-9607 - business policy does not copy previous cover value by default anymore
+ - Retest - [Fixed] - Multi Lives and Policies - Issues with cursor focus
+ - TC_10 Check the Personal Policy fields displayed for a life insurer in a quote application
+ - TC_11 Check the Business Policy fields for a life insurer in a quote application
+ - TC_2 advisor clicks on add new life before entering data in the mandatory fields ? covers AC3
+ - TC_3 ? advisor can navigate between life tabs when the minimum required fields are filled
+ - TC_4 - Premium panel should show each lives premium details separately
+ - TC_6 Advisore clicks on Apply when the premium amount is less than $240
+ - TC_7 Advisore clicks on Apply when the premium amount is greater than $240
+ - TC_9 ? Advisor can only add 10 lives to any given quote
+ - TC1 ? Add a life - Covers AC1 and AC2
+
+=== Occupational code ===
+ - Defect Retest - 10785 Issue 2 -Pass
+ - Defect retest - ACB 10785 -Issue 2
+ - defect retest - ACB-10785 -Issue 1
+ - Fail_TC_10 TPD eligibility 'M' allows only Modified TPD
+ - Fail_TC_11 TPD eligibility 'A' disallows Own TPD
+ - Fail_TC_9 TPD eligibility 'U' blocks TPD cover
+ - Issue 1-  TC_6 Occupation loadings increase premium for Life Trauma covers
+ - Issue 2-TC_25 Can apply after correcting IP_CODE 'S' restrictions
+ - Occupational codes defects
+ - Pass - TC_12 TPD eligibility 'IC' requires individual consideration
+ - Pass - TC_13 Life code 'IC' requires individual consideration
+ - Pass - TC_15 IP code 'IC' requires individual consideration for personal policy covers
+ - Pass - TC_21 IP code 'S' restrictions (Benefit period 2 years; Waiting period 90 days) with warnings
+ - Pass - TC_22 IP code 'S' restrictions ? boundary allowed values (Benefit = 2 years; Waiting = 90 days)
+ - Pass - TC_23 IP code 'S' restrictions (Benefit period 2 years; Waiting period 90 days) with warnings
+ - Pass - TC_24 Cannot apply with IP_CODE 'S' restrictions uncorrected
+ - Pass - TC_26 IP code 'U' blocks business policy disability cover
+ - Pass - TC_27 IP code 'U' blocks business policy farmers disability cover
+ - Pass - TC_29 Farmers Disability Cover requires Employment Status 'Self Employed' or 'Employed by own company'
+ - Pass - TC_30 Farmers Disability Cover ? boundary allowed Employment Status values
+ - Pass - TC_33 Farmers Disability cover ? monthly benefit at $10,000
+ - Pass - TC_34 Farmers Disability cover ? monthly benefit less than $10,000
+ - Pass - TC_35 Premium change warning when switching to occupation with different code
+ - Pass - TC_36 Premium change popup ? Yes path recalculates premium
+ - Pass - TC_37 Premium change popup ? No path keeps premium and resets Occupation dropdown
+ - Pass - TC_38 Premium change popup ? boundary where code does not change (no popup)
+ - Pass - TC_39 Specific Injury cover requires Occupation or Occupation Code
+ - Pass - TC_40 TPD cover requires Gender, Age Next Birthday & OccupationOccupation Code
+ - Pass - TC_41 Workability cover requires Gender, Age Next Birthday, OccupationOccupation Code, Employment Status & Annual Income
+ - Pass - TC_7 Occupation loading boundary ? loading value = 0% (no premium change)
+ - Pass - TC42_AC05_Verify When with NO occupation or code is entered for lumpsum cover Life
+ - Pass - TC43_AC05_Verify When with NO occupation or code is entered for lumpsum cover Trauma
+ - Pass - TC44_AC05_Verify When with NO occupation or code is entered for lumpsum cover Cancer
+ - Pass - TC45_AC05_Verify When with NO occupation or code is entered for lumpsum cover Acd. Death
+ - pass - TC46_AC05_Verify When with NO occupation or code is entered for lumpsum cover TPD
+ - Pass - TC47_AC05_Verify when only the Occupation code is entered for Life cover
+ - Pass - TC48_AC05_Verify when only the Occupation code is entered for Trauma cover
+ - Pass - TC49_AC05_Verify when only the Occupation code is entered for Cancer cover
+ - Pass - TC50_AC05_Verify when only the Occupation code is entered for Acd. Death cover
+ - Pass - TC51_AC05_Verify when only the Occupation code is entered for TPD
+ - Pass - TC52_AC14_Verify when occupation where IP code is marked as IC for personal policy cover- Income protection
+ - Pass - TC53_AC14_Verify when occupation where IP code is marked as IC for personal policy cover- Mortgage & Living
+ - Pass - TC54_AC14_Verify when occupation where IP code is marked as IC for personal policy cover- Workability
+ - Pass - TC55_AC14A_Verify when occupation where IP code is marked as IC for Business policy cover- Business Disability
+ - Pass - TC56_AC14A_Verify when occupation where IP code is marked as IC for Business policy cover- business expenses
+ - Pass - TC57_AC14A_Verify when occupation where IP code is marked as IC for Business policy cover- Farmers disability
+ - Pass - TC58_AC35_Verify select occupation where IP_CODE is marked as S for workability cover
+ - TC_08_ApinpdResolutionlife.PostPolicies.trace
+ - TC_1 Occupation dropdown lists all occupations; selection available
+ - TC_1
+ - TC_12 TPD eligibility 'IC' requires individual consideration
+ - TC_13 Life code 'IC' requires individual consideration
+ - TC_14 Trauma code 'IC' requires individual consideration
+ - TC_17 Needlestick eligibility NA_NA blocks Needlestick cover
+ - TC_18 Specific Injury eligibility 'U' blocks SIB cover
+ - TC_19 EMP_STATUS = 'O' occupations require Employment Status 'Other'
+ - TC_2 Occupation dropdown supports type-ahead search
+ - TC_20 EMP_STATUS = 'O' boundary ? Employment Status 'Other' allowed
+ - TC_3 Clearing occupation or search shows full list; Code dropdown enabled with valid values
+ - TC_39 Specific Injury cover requires Occupation or Occupation Code
+ - TC_4 Selecting occupation displays corresponding IP Code and disables Code dropdown
+ - TC_40 TPD cover requires Gender, Age Next Birthday & Occupation_Occupation Code
+ - TC_41 Workability cover requires Gender, Age Next Birthday, Occupation_Occupation Code, Employment Status & Annual Income
+ - TC_5 Request quote for lump-sum cover without occupation code or with only code
+ - TC_6 Occupation loadings increase premium for LifeTrauma covers
+ - TC_8 Application submission sends Code value (from spreadsheet) to L400
+ - Yashwi_TC_10 TPD eligibility 'M' allows only Modified TPD
+ - Yashwi_TC_11 TPD eligibility 'A' disallows Own TPD
+ - Yashwi_TC_12 TPD eligibility 'IC' requires individual consideration
+ - Yashwi_TC_13 Life code 'IC' requires individual consideration
+ - Yashwi_TC_14 Trauma code 'IC' requires individual consideration
+ - Yashwi_TC_16 IP code 'IC' requires individual consideration for business dis
+ - Yashwi_TC_17 Needlestick eligibility NA_NA blocks Needlestick cover
+ - Yashwi_TC_18 Specific Injury eligibility 'U' blocks SIB cover
+ - Yashwi_TC_19 EMP_STATUS = 'O' occupations require Employment Status 'Other'
+ - Yashwi_TC_20 EMP_STATUS = 'O' boundary ? Employment Status 'Other' allowed
+ - Yashwi_TC_26 IP code 'U' blocks business policy disability cover
+ - Yashwi_TC_27 IP code 'U' blocks business policy farmers disability cover
+ - Yashwi_TC_28 IP code 'S' blocks business disability cover
+ - Yashwi_TC_29 Farmers Disability Cover requires certain Employment Status
+ - Yashwi_TC_30 Farmers Disability Cover ? boundary allowed Employment Status
+ - Yashwi_TC_31 IP code 'S' blocks Farmers Disability Cover
+ - Yashwi_TC_32 Farmers Disability cover ? monthly benefit greater than $10,000
+ - yashwi_TC_33 Farmers Disability cover ? monthly benefit at $10,000
+ - Yashwi_TC_34 Farmers Disability cover ? monthly benefit less than $10,000
+ - Yashwi_TC_9 TPD eligibility 'U' blocks TPD cover
+
+=== Personal_Needlestick Cover ===
+ - Accd death+Needlestick
+ - J4200476
+ - J4200482
+ - J4200490
+ - Needlestick Cover Business Rules and Validations
+ - Needlestick Eligibility
+ - Needlestick UI Results
+ - Occupation List
+ - TC72
+ - TC73
+ - TC74
+ - TC75
+ - TC76
+ - TC77
+ - TC78
+
+=== Standalone TPD validations(ACB-7090) ===
+ - Pass - TC12_TPD_21_SIgreaterthan250000
+ - Pass - TC13_TPD_22_DefinitionNotModified
+ - Pass - TC14_PersonalTPD_22_SIgreaterThan5000000
+ - Pass - TC15_Personal&Business_TPD_25_SIgreaterThan5000000
+ - Pass - TC16_TPD& ACC.TPD_SIgreaterThan5000000
+ - Pass - TC17_TPD& ACC.TPD_SIgreaterThan5000000
+ - Pass - TC18_TPD& TPDonTrauma_SIgreaterThan5000000
+ - Pass - TC19_TPD_TPDonTrauma_ACC TPD_SIgreaterThan5000000
+ - Pass - TC20_personal and business TPD_and TPD on Trauma_both Accelerated and Standalone_ACC TPD_SIgreaterThan5000000
+ - Pass - TC21_TPD_TPDonTrauma_ACC TPD_DifferentTPDdefinition
+ - retested Pass - TC21_TPD_TPDonTrauma_ACC TPD_DifferentTPDdefinition
+ - TC01_TPD_Level65_age18
+ - TC02_TPD_Stepped_Lessthanage17
+ - TC03_TPD_Level65_Lessthanage17
+ - TC04_TPD_Level70_Lessthanage17
+ - TC05_TPD_Greaterthanage65
+ - TC06_TPD_Greaterthanage60_Level65
+ - TC07_TPD_Greaterthanage65_Level70
+ - TC08_TPD_18_SI250000
+ - TC09_TPD_21_SI250000
+ - TC10_TPD_20_SI245000
+ - TC11_TPD_17_SIgreaterthan250000
+
+=== Standalone Trauma Cover and Additional Covers(ACB-7089) ===
+ - TC01_AC06_Trauma_Lessthanage17
+ - TC02_AC07_Trauma_Stepped_Greaterthanage70
+ - TC03_AC08_Trauma_Greaterthanage60_Level65
+ - TC04_AC09_Trauma_Greaterthanage65_Level70
+ - TC05_AC10_Trauma_17_SI250000
+ - TC06_AC10_Trauma_21_SI250000
+ - TC07_AC25_ADD Trauma with TPD on Trauma _L
+ - TC08_AC26_TPD on Trauma _Agemorethan60
+ - TC09_AC27_ TPD on Trauma_Age18_Stepped
+ - TC10_AC27_ TPD on Trauma_Age21_Stepped
+ - TC11_AC27_ TPD on Trauma_Age22_Stepped
+
+=== Workability Results ===
+ - AC01 - Ability to Apply for Disability Cover
+ - AC02-Ability to see and select disability covers in a new business quote application
+ - AC03 - Workability cover functionality and configuration in the New Business Quoting tool
+ - AC04 - Workability to add, remove, or update cover type and view premium changes in the Progress Panel
+ - AC05 Add multiple Workability covers and ensure the Workability button is grayed outDisabled
+ - AC06- Display error message when Monthly Benefit exceeds the calculated allowable limit_retested
+ - AC07- Display error message when Age Next Birthday exceeds 61 for Workability
+ - AC08-Display error message when Workability is selected with Income Protection or Mortgage & Living cover
+ - AC09-Display Error Message for Selecting Workability and Business Disability Cover Together
+ - AC12 Display error message when Monthly Benefit exceeds the maximum allowable amount for Workability_retested
+ - AC12-Display error message when Inflation Adjustment is unselected with Increasing Claim selected for Workability_retested

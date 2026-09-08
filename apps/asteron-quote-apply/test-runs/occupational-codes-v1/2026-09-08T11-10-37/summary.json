@@ -1,0 +1,55 @@
+{
+  "specSlug": "occupational-codes-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/occupational-codes-v1.spec.js",
+  "runTimestamp": "2026-09-08T11-10-37",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 783013.955,
+  "filtered": false,
+  "total": 8,
+  "passed": 5,
+  "failed": 1,
+  "skipped": 2,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC01/AC02/AC03/AC04: Occupation dropdown + code dropdown present; code list is the documented risk classes",
+      "status": "passed",
+      "durationMs": 77807
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC05: Life quote with ONLY an occupation code (no occupation name) succeeds",
+      "status": "passed",
+      "durationMs": 122765
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC08: TPD cover with occupation code U → \"This occupation is not eligible\"",
+      "status": "passed",
+      "durationMs": 136311
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message",
+      "status": "failed",
+      "durationMs": 137435
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC31: TPD cover missing Gender/ANB/Occupation → combined \"must complete\" error",
+      "status": "passed",
+      "durationMs": 71862
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC12: Life cover with occupation code IC → Individual-Consideration underwriting message",
+      "status": "passed",
+      "durationMs": 144245
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC06/AC07/AC33/AC34/AC35/AC36/AC37/AC38 + AC09/AC010/AC13-AC26: named-occupation & backend-mapping eligibility rules",
+      "status": "skipped",
+      "durationMs": 727
+    },
+    {
+      "title": "Occupational Codes in the Quote Screen (ACB-6504) › AC27/AC28/AC29: occupation-code-change premium-change warning popup (Yes/No)",
+      "status": "skipped",
+      "durationMs": 814
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[global-setup] staggered start: waiting 16s before launch...
+[global-setup] waiting 60s for any held session to release before attempt 1...
+[global-setup] login OK on attempt 1
+
+Running 10 tests using 1 worker
+
+[1/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:45:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC01: In Progress Quotes UI — search box, status filter, New Quote, entries selector (10/20/50/100), table columns
+[2/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:67:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC01/AC02 (statuses): the status filter offers all documented quote/application statuses
+[3/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:82:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC04: a "Refresh content" control is present to reload the table
+[4/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:94:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC09: the entries-per-page selector offers 10/20/50/100 and is settable
+[5/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:114:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC03: select agency then click create quote
+[6/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:118:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC02/AC10/AC11/AC12/AC13: row ordering + open a row by status (Quote→quote page, Pre-App→client summary, App-in-progress[/TIV]→Duty of Disclosure)
+[7/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:122:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC05/AC06/AC07/AC08: delete "Quote"-status rows via checkbox + confirm popup ("Are you sure you want to delete X lives?")
+[8/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:126:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC14/AC15/AC16: multi-life records expand/collapse (highest-progressed status; per-life records; per-life delete/reference)
+[9/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:130:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC17: three-dots menu options by status (Quote: Edit/Delete; Submitted: Download Application/Client Application/Confirmation/Declaration/Quote + Clone Quote; other: Edit)
+[10/10] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-in-progress-quotes-table-v1.spec.js:134:3 › Landing Page: In Progress Quotes Table (ACB-3570) › AC18/AC19: return-to-landing popup (Proceed / Cancel) when opening further quotes from an active quote
+  6 skipped
+  4 passed (2.5m)

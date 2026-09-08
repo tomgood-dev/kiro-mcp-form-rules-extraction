@@ -1,0 +1,27 @@
+[global-setup] staggered start: waiting 24s before launch...
+[global-setup] waiting 60s for any held session to release before attempt 1...
+[global-setup] login OK on attempt 1
+
+Running 2 tests using 1 worker
+
+[1/2] [edge] › apps\asteron-quote-apply\tests\quote-screen\early-trauma-benefit-v1.spec.js:21:3 › Early Trauma Benefit (ACB-10105) › AC00 (reachable part): Early Trauma Benefit is a selectable option on a Trauma cover
+[edge] › apps\asteron-quote-apply\tests\quote-screen\early-trauma-benefit-v1.spec.js:21:3 › Early Trauma Benefit (ACB-10105) › AC00 (reachable part): Early Trauma Benefit is a selectable option on a Trauma cover
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Trauma
+
+  [step] Entering calc-mask value: 30000
+
+[2/2] [edge] › apps\asteron-quote-apply\tests\quote-screen\early-trauma-benefit-v1.spec.js:49:3 › Early Trauma Benefit (ACB-10105) › AC01/AC02/AC03/AC04/AC05: calculated Early Trauma SI (20% / min $10k / max $100k) + PDF/L400
+  1 skipped
+  1 passed (4.2m)

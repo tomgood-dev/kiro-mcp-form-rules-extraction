@@ -1,0 +1,348 @@
+[global-setup] waiting 60s for any held session to release before attempt 1...
+[global-setup] login OK on attempt 1
+
+Running 13 tests using 1 worker
+
+[1/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:78:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC01/AC02: Business policy exposes disability covers; Business Expenses selectable; combo = Business/Farmers Disability + Business Expenses
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:78:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC01/AC02: Business policy exposes disability covers; Business Expenses selectable; combo = Business/Farmers Disability + Business Expenses
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+[2/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:103:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC03: Business Expenses exposes Monthly Benefit + Premium Structure {Stepped, greyed/disabled} + Benefit Period {1 Year, greyed/disabled} + Waiting Period {14(def)/30/60/90 Days, editable}
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:103:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC03: Business Expenses exposes Monthly Benefit + Premium Structure {Stepped, greyed/disabled} + Benefit Period {1 Year, greyed/disabled} + Waiting Period {14(def)/30/60/90 Days, editable}
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+[3/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:142:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04: Business Expenses + unsuitable occupation (S) → "not available for the selected occupation"
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:142:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04: Business Expenses + unsuitable occupation (S) → "not available for the selected occupation"
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","Business Expenses Cover is not available for the selected occupation."]
+
+[4/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:164:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04 (negative/contrast): suitable occupation (AA) → NO occupation-not-available error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:164:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04 (negative/contrast): suitable occupation (AA) → NO occupation-not-available error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: no visible errors
+
+[5/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:184:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05: Business Expenses monthly benefit > $16,666 → max monthly benefit error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:184:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05: Business Expenses monthly benefit > $16,666 → max monthly benefit error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 16667
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 1 visible error(s): ["The maximum allowable Business Expenses monthly benefit for the selected occupation is $16,666"]
+
+[6/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:202:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05 boundary: Business Expenses monthly benefit exactly $16,666 is accepted (no cap error)
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:202:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05 boundary: Business Expenses monthly benefit exactly $16,666 is accepted (no cap error)
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 16666
+
+  [step] Clicking Apply...
+
+  [step] Apply result: no visible errors
+
+[7/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:221:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC06: after selecting Business Expenses the +Business Expenses button is disabled (max 1)
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:221:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC06: after selecting Business Expenses the +Business Expenses button is disabled (max 1)
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+[8/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:241:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC07: Business Expenses cover can be added and removed
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:241:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC07: Business Expenses cover can be added and removed
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+[9/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:264:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08: Business Expenses + ANB > 61 → maximum age error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:264:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08: Business Expenses + ANB > 61 → maximum age error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 62
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","The maximum Age Next Birthday for Business Expenses cover is 61"]
+
+[10/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:282:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08 boundary: Business Expenses at ANB 61 is accepted (no max-age error)
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:282:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08 boundary: Business Expenses at ANB 61 is accepted (no max-age error)
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 61
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: no visible errors
+
+[11/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:301:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09: Business Expenses + ANB < 17 → minimum age error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:301:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09: Business Expenses + ANB < 17 → minimum age error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 16
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 2 visible error(s): ["The minimum premium is $240.00 per year per Life insured.","The minimum Age Next Birthday for Business Expenses cover is 17"]
+
+[12/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:319:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09 boundary: Business Expenses at ANB 17 is accepted (no min-age error)
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:319:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09 boundary: Business Expenses at ANB 17 is accepted (no min-age error)
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 17
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: no visible errors
+
+[13/13] [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:338:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC10: Personal Workability + Business Expenses → conjunction error
+[edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js:338:3 › Business Policy Disability Cover — Business Expenses (ACB-2695) › AC10: Personal Workability + Business Expenses → conjunction error
+  [step] Opening a new quote...
+
+  [step] Quote form rendered OK
+
+  [step] Setting Age Next Birthday = 40
+
+  [step] Setting Gender = Male
+
+  [step] Setting Occupation Code = 1
+
+  [step] Setting Employment Status = Employed
+
+  [step] Setting Annual Income = 150000
+
+  [step] Entering calc-mask value: 150000
+
+  [step] Personal Details set OK
+
+  [step] Activating cover: Workability
+
+  [step] Activating cover: Business Expenses
+
+  [step] Entering calc-mask value: 5000
+
+  [step] Clicking Apply...
+
+  [step] Apply result: 1 visible error(s): ["Business Expenses Cover is not available to be taken in conjunction with Workability Cover"]
+
+  Slow test file: [edge] › apps\asteron-quote-apply\tests\quote-screen\business-expenses-cover-v1.spec.js (44.0m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  13 passed (45.3m)

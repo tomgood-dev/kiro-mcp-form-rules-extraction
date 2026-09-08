@@ -1,0 +1,65 @@
+{
+  "specSlug": "landing-in-progress-quotes-table-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/landing-in-progress-quotes-table-v1.spec.js",
+  "runTimestamp": "2026-09-08T11-10-37",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 147101.374,
+  "filtered": false,
+  "total": 10,
+  "passed": 4,
+  "failed": 0,
+  "skipped": 6,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC01: In Progress Quotes UI — search box, status filter, New Quote, entries selector (10/20/50/100), table columns",
+      "status": "passed",
+      "durationMs": 11387
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC01/AC02 (statuses): the status filter offers all documented quote/application statuses",
+      "status": "passed",
+      "durationMs": 8842
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC04: a \"Refresh content\" control is present to reload the table",
+      "status": "passed",
+      "durationMs": 7956
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC09: the entries-per-page selector offers 10/20/50/100 and is settable",
+      "status": "passed",
+      "durationMs": 7510
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC03: select agency then click create quote",
+      "status": "skipped",
+      "durationMs": 853
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC02/AC10/AC11/AC12/AC13: row ordering + open a row by status (Quote→quote page, Pre-App→client summary, App-in-progress[/TIV]→Duty of Disclosure)",
+      "status": "skipped",
+      "durationMs": 962
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC05/AC06/AC07/AC08: delete \"Quote\"-status rows via checkbox + confirm popup (\"Are you sure you want to delete X lives?\")",
+      "status": "skipped",
+      "durationMs": 1285
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC14/AC15/AC16: multi-life records expand/collapse (highest-progressed status; per-life records; per-life delete/reference)",
+      "status": "skipped",
+      "durationMs": 1162
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC17: three-dots menu options by status (Quote: Edit/Delete; Submitted: Download Application/Client Application/Confirmation/Declaration/Quote + Clone Quote; other: Edit)",
+      "status": "skipped",
+      "durationMs": 1128
+    },
+    {
+      "title": "Landing Page: In Progress Quotes Table (ACB-3570) › AC18/AC19: return-to-landing popup (Proceed / Cancel) when opening further quotes from an active quote",
+      "status": "skipped",
+      "durationMs": 1099
+    }
+  ]
+}

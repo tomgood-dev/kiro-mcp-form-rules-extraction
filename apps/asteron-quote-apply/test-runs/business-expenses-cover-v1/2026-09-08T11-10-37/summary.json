@@ -1,0 +1,80 @@
+{
+  "specSlug": "business-expenses-cover-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/business-expenses-cover-v1.spec.js",
+  "runTimestamp": "2026-09-08T11-10-37",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 2715702.304,
+  "filtered": false,
+  "total": 13,
+  "passed": 13,
+  "failed": 0,
+  "skipped": 0,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC01/AC02: Business policy exposes disability covers; Business Expenses selectable; combo = Business/Farmers Disability + Business Expenses",
+      "status": "passed",
+      "durationMs": 188886
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC03: Business Expenses exposes Monthly Benefit + Premium Structure {Stepped, greyed/disabled} + Benefit Period {1 Year, greyed/disabled} + Waiting Period {14(def)/30/60/90 Days, editable}",
+      "status": "passed",
+      "durationMs": 185659
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04: Business Expenses + unsuitable occupation (S) → \"not available for the selected occupation\"",
+      "status": "passed",
+      "durationMs": 219940
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC04 (negative/contrast): suitable occupation (AA) → NO occupation-not-available error",
+      "status": "passed",
+      "durationMs": 204929
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05: Business Expenses monthly benefit > $16,666 → max monthly benefit error",
+      "status": "passed",
+      "durationMs": 202166
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC05 boundary: Business Expenses monthly benefit exactly $16,666 is accepted (no cap error)",
+      "status": "passed",
+      "durationMs": 203059
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC06: after selecting Business Expenses the +Business Expenses button is disabled (max 1)",
+      "status": "passed",
+      "durationMs": 185151
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC07: Business Expenses cover can be added and removed",
+      "status": "passed",
+      "durationMs": 217126
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08: Business Expenses + ANB > 61 → maximum age error",
+      "status": "passed",
+      "durationMs": 185297
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC08 boundary: Business Expenses at ANB 61 is accepted (no max-age error)",
+      "status": "passed",
+      "durationMs": 200761
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09: Business Expenses + ANB < 17 → minimum age error",
+      "status": "passed",
+      "durationMs": 189669
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC09 boundary: Business Expenses at ANB 17 is accepted (no min-age error)",
+      "status": "passed",
+      "durationMs": 203546
+    },
+    {
+      "title": "Business Policy Disability Cover — Business Expenses (ACB-2695) › AC10: Personal Workability + Business Expenses → conjunction error",
+      "status": "passed",
+      "durationMs": 252240
+    }
+  ]
+}

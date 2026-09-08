@@ -18,3 +18,20 @@ apps/*/test-runs/**/native/
 # tools/verify-finding.js verdicts and tools/draft-bug-report.js scratch input, if run
 # outside a test-runs/ folder - not meant to be committed as loose repo-root files.
 /*.verdict.json
+
+# Client reference materials (reference/): the RAW exports from SharePoint/OneDrive are large
+# (hundreds of MB of xlsx/docx/pdf/zip + screenshots) and are LOCAL-ONLY reference — never commit
+# them. We DO commit the small text artifacts: README.md, SOURCE.md, and any derived analysis .md
+# we author. So: ignore the bulky raw files/dump-folders, then re-include the docs we write.
+reference/**/OneDrive_*/
+reference/**/*.xlsx
+reference/**/*.xlsm
+reference/**/*.docx
+reference/**/*.doc
+reference/**/*.pdf
+reference/**/*.zip
+reference/**/*.csv
+!reference/**/README.md
+!reference/**/SOURCE.md
+!reference/**/*analysis*.md
+!reference/**/*audit*.md
