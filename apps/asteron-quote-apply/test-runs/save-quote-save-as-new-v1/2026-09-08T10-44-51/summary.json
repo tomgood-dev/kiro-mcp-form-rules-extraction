@@ -1,0 +1,55 @@
+{
+  "specSlug": "save-quote-save-as-new-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/save-quote-save-as-new-v1.spec.js",
+  "runTimestamp": "2026-09-08T10-44-51",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 997890.615,
+  "filtered": false,
+  "total": 8,
+  "passed": 6,
+  "failed": 1,
+  "skipped": 1,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC01: quote screen exposes both Save and Save as New actions",
+      "status": "passed",
+      "durationMs": 121060
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC02: Save opens a reference popup (30-char Add Reference (Optional)) with Save + Cancel",
+      "status": "passed",
+      "durationMs": 138204
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC04: Cancel on the reference popup closes it and returns to the quote screen",
+      "status": "passed",
+      "durationMs": 152977
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC05: Save as New opens a reference popup (30-char) with Save + Cancel",
+      "status": "passed",
+      "durationMs": 137003
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC09: Close on a quote with entered data prompts a save-confirm popup (Cancel / Save / Don't Save)",
+      "status": "passed",
+      "durationMs": 136999
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC10: Cancel on the close-confirm popup returns to the quote screen",
+      "status": "passed",
+      "durationMs": 156300
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC12: Close → Save with missing minimum details shows \"Enter minimum details to save quote\"",
+      "status": "failed",
+      "durationMs": 73567
+    },
+    {
+      "title": "Save Quote / Save As New (ACB-2241) › AC03/AC06/AC08/AC11/AC13: persisted quote number/status + appears in home page + redirect-to-landing",
+      "status": "skipped",
+      "durationMs": 1991
+    }
+  ]
+}

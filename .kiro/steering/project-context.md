@@ -1,5 +1,28 @@
 # Project Context
 
+## Suite dashboard (high-level view for dev/BA)
+
+A suite-level dashboard aggregates the LATEST run of every spec into two auto-updating files at
+`apps/asteron-quote-apply/test-runs/`:
+- `DASHBOARD.md` — scannable Markdown (suite totals, per-spec pass/fail/skip, last-run time,
+  duration, env, and a "specs with failing tests" triage list). Good for a BA / Confluence.
+- `dashboard.html` — self-contained, sortable + filterable (All / Failing / Passing / All-skipped),
+  no server needed — open the file. Good for a dev.
+
+It **rebuilds automatically at the end of every test run** (the run-folder reporter calls
+`tools/build-dashboard.js` in `onEnd`). Rebuild manually anytime with `node tools/build-dashboard.js`.
+
+- Source of truth: each run now also writes a machine-readable `summary.json` beside `report.md`
+  (spec, timestamp, env, counts, per-test title/status/duration, and a `filtered` flag). The
+  dashboard reads these; for older runs predating `summary.json` it falls back to parsing
+  `report.md`'s header.
+- `-g`/`--grep` single-test re-runs are flagged `filtered:true` and are SKIPPED when choosing a
+  spec's "latest full run", so a partial re-run never misrepresents the whole spec. (Legacy
+  filtered runs without summary.json self-correct on the next full run.)
+- Skipped tests = deferred/blocked ACs (documented per spec) — the dashboard frames these as "not a
+  failure". Intentional expected-fails (known QA discrepancies) still count as failed (they are real
+  app discrepancies) and appear in the triage list.
+
 ## Parallel test runs (N accounts)
 
 Use the reusable launcher instead of hand-editing per-run `$specs`/`Start-Job` arrays:

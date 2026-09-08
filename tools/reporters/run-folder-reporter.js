@@ -208,10 +208,41 @@ class RunFolderReporter {
 
       // ── Write report ──
       fs.writeFileSync(path.join(runDir, 'report.md'), lines.join('\n'));
+
+      // ── Write machine-readable summary.json (source of truth for the suite dashboard) ──
+      // Detect a filtered (-g/--grep) run so the dashboard can avoid treating a single-test
+      // re-run as if it were the whole spec's latest state.
+      const argv = process.argv.join(' ');
+      const filtered = / -g\b|--grep\b/.test(argv);
+      const summary = {
+        specSlug: slug,
+        specFile: relSpecFile,
+        runTimestamp: this.runTimestamp,
+        environment: process.env.BASE_URL || process.env.ASTERON_BASE_URL || 'outsystems-dev.asteronlife.co.nz',
+        durationMs: result.duration || 0,
+        filtered,
+        total, passed, failed, skipped, other,
+        tests: tests.map((t) => ({ title: t.title, status: t.status, durationMs: t.duration || 0 })),
+      };
+      fs.writeFileSync(path.join(runDir, 'summary.json'), JSON.stringify(summary, null, 2));
     }
 
     // Clean up the transient holding area.
     try { fs.rmSync(pendingDir(this.runTimestamp), { recursive: true, force: true }); } catch (_) {}
+
+    // ── Auto-update the suite-level dashboard (best-effort; never fail the run over it) ──
+    try {
+      const appRoots = new Set();
+      for (const specFile of this.bySpecFile.keys()) {
+        const parts = path.resolve(specFile).split(path.sep);
+        const idx = parts.lastIndexOf('apps');
+        if (idx !== -1 && parts[idx + 1]) appRoots.add(parts.slice(0, idx + 2).join(path.sep));
+      }
+      const { buildDashboard } = require('../build-dashboard');
+      for (const appRoot of appRoots) buildDashboard(appRoot);
+    } catch (err) {
+      console.error('[dashboard] skipped (non-fatal):', err.message);
+    }
   }
 }
 
