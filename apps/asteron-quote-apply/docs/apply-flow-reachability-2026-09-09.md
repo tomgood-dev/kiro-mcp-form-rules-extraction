@@ -38,7 +38,27 @@ then attempting to Save and Apply, capturing URL, DOM, and **network POSTs** at 
    `ActionSaveQuote [200]`: URL still `QuoteId=&ShowApplyNow=false`, and clicking Apply STILL fires no
    action (`APPLY_NET []`). So save-in-place is not sufficient to reach apply-mode.
 
-## Conclusion — where the wall really is
+## ⚠️ CORRECTION (2026-09-09, confirmed by manual test)
+
+**The conclusions in items 3 & 5 below were WRONG. Root cause: a missing MANDATORY field.**
+Apply does not progress because **Pre-tax Annual Income** (a required field, marked with a red
+asterisk `*`) was left blank. My probes only filled the fields needed to PRICE a quote and never
+completed the mandatory-for-APPLY set — so Apply produced a "please enter income" validation and
+(in my DOM-injected runs) I misread the non-progression as the button being "inert". Manual test
+confirmed: **fill Pre-tax Annual Income → Apply progresses into the application flow.** No
+landing-list reopen or `ShowApplyNow` trickery is required.
+
+**The Apply flow IS reachable** by completing ALL mandatory personal-details fields (red asterisk),
+then Apply. This was a basic oversight — mandatory-field checking must be step one, not an
+afterthought (see the new mandatory-field rule in `.kiro/steering/project-context.md`).
+
+Items 1-2 & 4 below remain valid (fresh-quote URL is ShowApplyNow=false; forcing true on empty
+QuoteId crashes; the correct Save = the popup's `button.btn-primary` firing ActionSaveQuote — still
+a useful finding). Items 3, 5 and the "Conclusion" below are SUPERSEDED by this correction.
+
+---
+
+
 The Apply flow is gated behind opening the quote **with its QuoteId in an apply-enabled context**
 (`ShowApplyNow=true`), which a fresh/just-saved-in-place quote never has. The remaining path to test is:
 **save (now works) → REOPEN the saved quote from the landing list** (which should load it by QuoteId in

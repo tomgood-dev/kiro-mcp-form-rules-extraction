@@ -121,3 +121,25 @@ as historical evidence, not the current source of truth.
   - `Dropdown2` within disability covers = Premium Structure (DOM label says "Monthly Benefit")
 - Minimum premium: $240/year per life insured — increase Sum Insured if this error appears
 - Accordion sections: check `aria-expanded` before clicking; true = already open, do not click again
+
+## Mandatory fields — CHECK THESE FIRST (learned the hard way 2026-09-09)
+
+**A red asterisk `*` next to a field label = MANDATORY.** Before concluding a button "does nothing"
+or a flow is "blocked/unreachable", ALWAYS check for unfilled mandatory (asterisked) fields first —
+this is step one of form testing, not an afterthought. OutSystems often **fails silently** (no
+visible error, or an error you have to scroll to) when a mandatory field is empty, so a
+non-progressing button is far more likely a blank required field than a broken/ungated control.
+
+- **"Priced" ≠ "complete for Apply".** The fields needed to generate a PREMIUM are a SUBSET of the
+  fields mandatory to APPLY. A quote can price + save with the minimum set but still block Apply on
+  other required fields.
+- **Confirmed Apply-gate mandatory fields (quote screen, personal covers):** First Name, Last Name,
+  **Date of Birth**, Gender, Smoking status, Occupation (name via typeahead) + Occupation Code,
+  Employment Status, and **Pre-tax Annual Income** (this last one was the field a 2026-09-09
+  investigation missed for hours — Apply silently refused until income was entered). Fill ALL
+  asterisked fields, then Apply progresses into the application flow (Duty of Disclosure onward) —
+  no `ShowApplyNow` URL trick or landing-list reopen needed.
+- When probing/deferring ANY screen: enumerate its `*`-marked fields and fill them all before
+  deciding something is unreachable. "It gave no error" usually means "a mandatory field is blank".
+- Save (the reference popup) = click the popup's `button.btn-primary` "Save" (fires `ActionSaveQuote`);
+  the other "Save" in the DOM is the quote-screen action behind the modal.

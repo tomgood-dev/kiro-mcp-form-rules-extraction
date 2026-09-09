@@ -155,6 +155,16 @@ when and how the drift was caught.
 When the test's source is a user story with numbered ACs rather than a black-box exploration:
 
 1. **Probe before asserting.** Never guess selectors or encode an AC's expected value without first confirming, via a throwaway probe script (`apps/asteron-quote-apply/probes/probe-<topic>.js`), what the real DOM/behavior actually is. Keep the probe script — do not delete it once it has produced evidence used in a finding.
+
+   **0. Mandatory-field check comes FIRST (before any "unreachable/blocked" conclusion).** A red
+   asterisk `*` on a field label = mandatory. OutSystems frequently fails SILENTLY on an empty
+   required field (no error, or one you must scroll to) — so a button that "does nothing" is almost
+   always a blank mandatory field, NOT a broken or ungated control. Before deciding a flow is
+   blocked/unreachable or deferring an AC on reachability grounds: enumerate every `*`-marked field on
+   the screen and fill them ALL. Remember "priced" ≠ "complete for Apply" — Apply needs a superset of
+   the pricing-minimum fields (e.g. Date of Birth, Pre-tax Annual Income). This exact oversight
+   (missing income) cost a full morning on 2026-09-09; see `project-context.md` "Mandatory fields".
+
 2. **Every AC gets one of three outcomes**, and each must be traceable in the test doc:
    - **Confirmed matching** → becomes a normal passing assertion in the `.spec.js`, tagged with its AC id.
    - **Confirmed NOT matching** → still becomes an assertion in the `.spec.js`, written to the *spec's* expected value (not the observed one), and it is EXPECTED TO FAIL until the discrepancy is fixed. This is the entire point of testing from a user story before/around a release — the suite goes green automatically the moment the real defect is fixed. Order these after the confirmed-matching assertions in the same file so a single fail-fast test still re-verifies everything already known-good on every run (see "Test Console constraints" below).
