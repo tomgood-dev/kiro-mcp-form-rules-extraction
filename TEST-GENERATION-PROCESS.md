@@ -11,6 +11,9 @@ refined as we go — see the learnings file.
 - Produces artifacts per `.kiro/steering/test-expansion-process.md` (report.md convention, AC
   annotation format, parallel/serial test structure, probe-safety rules, verify-before-reporting).
 - Uses app facts from `.kiro/steering/project-context.md`.
+- If the target app already has an existing client/manual test suite to mine, follow
+  `.kiro/steering/reference-reconciliation.md` (classify findings DURABLE / RE-PROBE-GATED /
+  BA-CONFIRM / BLOCKED; external material is a dated lead, never ground truth).
 
 ---
 

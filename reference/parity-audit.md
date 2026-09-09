@@ -1,5 +1,21 @@
 # Parity Audit — Our Automated Specs vs Client Manual Test Suite
 
+> ⚠️ **These reference materials may be outdated. Read this first.**
+> The client files span 2017 (OneDrive_2 walkthroughs) to early-2026 (OneDrive_3/4). The app is a
+> moving target and the client's own tracker admits user stories were updated after their TCs were
+> written. So **nothing here is proof of current QA behaviour.** Treat every finding as a *lead*, not
+> a fact:
+> - "The client executed X" ⇒ X was reachable *then* — **re-probe on current QA** before un-deferring.
+> - "The client marked X Fail" ⇒ a defect *at that time* — many have "Defect retest … Passed" siblings,
+>   so likely already fixed. Encode as a normal check; don't present as a live bug.
+> - A mismatch between us and them ⇒ could be app-changed / their-doc-stale / our-story-stale / real —
+>   a **confirm-with-BA** item, never a unilateral fix.
+> The **durable, version-independent** value here is (a) test-*design* ideas we hadn't covered
+> (negative/boundary sub-cases), (b) coverage dimensions (e.g. by occupation *name*), and (c)
+> traceability to their ACB/TC IDs. Those are actioned regardless of staleness; everything
+> behaviour-dependent is gated behind a re-probe.
+
+
 - **Date:** 2026-09-09
 - **Our suite:** `apps/asteron-quote-apply/tests/quote-screen/*.spec.js` (see `test-runs/DASHBOARD.md`)
 - **Client reference:** `reference/client-manual-test-suite/` — OneDrive_2 (2017-era business-rules
@@ -128,31 +144,47 @@ min-age boundary (kid <1 → "The minimum age next birthday for Kids Cover is 1"
 
 ## Prioritized action list
 
-**P1 — un-defer things the client proved reachable (highest value, converts skips → real tests):**
-1. Occupational Codes: premium-change popup (AC27-29), IP 'S'/'U' eligibility, employment-status, Farmers
-   $10k boundary, named-occupation→code (use TELFR_OCCUPATION.xlsx mappings), IC per-cover. Big expansion.
-2. Loadings AC07: Per-MILE $20 boundary-accept + >$20 error (client TC_8/TC_9).
-3. Business Specific Injury AC13: MLC greyed-out (client Pass).
+> Reclassified per the staleness caveat above: **Durable** items improve our suite regardless of app
+> version and are actioned now; **Re-probe-gated** items depend on current QA behaviour and must be
+> re-probed before any un-defer/encode; **BA-confirm** items are genuine ambiguities.
 
-**P2 — verify our specs catch the client's confirmed defects (regression safety):**
-4. Occupational TPD U/M/A (TC_9/10/11 Fail) — add + assert as expected-fail vs the correct rule.
-5. Enter Commissions Flexi-Rate failures (TC01-11, AC06/09/11) — add per-value sweep.
-6. Bundled Discounts L400 / farmers-not-eligible / $0-panel defects.
-7. Multi-Lives AC06/AC10/AC3 defects — confirm our 3 fails are these.
+**DURABLE — do now (version-independent test-design / coverage / traceability):**
+- ~~**Kids Cover min-age boundary**~~ — **RE-PROBE FINDING (2026-09-09):** attempted to add this, but a
+  live QA probe (future-dated DOB 2027, and an infant DOB) produced **no min-age error** — the current
+  app does NOT reproduce the 2017 doc's "The minimum age next birthday for Kids Cover is 1" on Apply.
+  So this is NOT a straightforward add; the doc is likely stale or the validation triggers via a
+  different path (e.g. the date picker itself, or a specific ANB value). Moved to RE-PROBE-GATED below.
+  A textbook case of why we don't copy dated expected strings — encoding it blindly would have asserted
+  an error the app doesn't raise.
+- **Negative/boundary sub-case patterns** for Bundled Discounts: same-cover-gives-no-discount,
+  below-min-SI-no-discount, remove-cover-recalculates, tooltip. These are test-design ideas that hold
+  whatever the current discount % is. (Encode against the *current* app's observed values.)
+- **Traceability:** reference the client ACB Jira ID + TC# in our spec headers/docs so a BA can line
+  our automated coverage up against their manual suite; adopt their AC sub-numbering (AC02.1, AC03.7)
+  where we add finer sub-cases.
+- **Process:** bake "reconcile against any existing client/manual test suite" into the generation
+  standard for FUTURE apps (see `.kiro/steering/reference-reconciliation.md`).
 
-**P3 — granularity gaps (match client sub-cases):**
-8. Bundled Discounts: same-cover-no-discount, below-min-SI, remove-cover, tooltip, PER+BUS combos.
-9. Workability: expand to full AC01-12 sweep.
-10. Kids Cover: add min-age (<1) boundary.
+**RE-PROBE-GATED — confirm reachable on current QA, then un-defer/encode (do NOT blind-encode):**
+- **Kids Cover min-age** — initial QA probe (2026-09-09) showed no min-age error on a future/under-1 DOB;
+  needs investigation of what DOB/ANB (if any) triggers the min-age validation on current QA before a
+  test can be written. May be a genuine app change from the 2017 doc, or a different trigger path.
+- Occupational Codes: premium-change popup (our AC27-29), IP 'S'/'U' eligibility, employment-status,
+  Farmers $10k boundary, named-occupation→code, IC per-cover. (Client ran these earlier — re-probe QA.)
+- Loadings AC07 Per-MILE $20 boundary / >$20 error.
+- Business Specific Injury AC13 MLC greyed-out.
+- Occupational TPD U/M/A, Commissions flexi-rate, Bundling L400/farmers, Multi-Lives AC06/10/3 — these
+  were client *defects*; re-probe to see if still failing (likely fixed) and encode as normal checks.
 
-**P4 — reconcile discrepancies (confirm with BA, don't blind-fix):**
-11. Enter Commissions AC08 (our expected-fail vs their Pass).
-12. Bundling discount % (our 12.5/17.5 vs story 15/20) — is the client seeing the same?
-13. Occupational TPD-IC "required" vs "requires" wording (our expected-fail; client marks Pass).
+**BA-CONFIRM — ambiguous, don't act unilaterally:**
+- Enter Commissions AC08 (our expected-fail vs their Pass).
+- Bundling discount % (our 12.5/17.5 vs story 15/20).
+- Occupational TPD-IC "required" vs "requires" wording.
 
-**Blocked (data/environment, not reachability):**
+**BLOCKED (data/environment, not reachability):**
 - Clone Quote — needs a submitted-application fixture.
 - Early Trauma SI, Occupational L400 submission — backend/PDF, out of browser scope.
+
 
 ## Notes on standards alignment
 The client's test-case shape (`TCID | Summary | Description | Action | Expected Result | Priority | Label |

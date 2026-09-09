@@ -1,19 +1,20 @@
 # Asteron Quote & Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-08 01:56 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-09 00:04 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
 | Specs | Tests | ✅ Passed | ❌ Failed | ⏭️ Skipped | Specs with failures |
 |---|---|---|---|---|---|
-| 40 | 346 | 284 | 24 | 38 | 13 |
+| 41 | 347 | 284 | 24 | 38 | 13 |
 
-**Pass rate:** 82% of 346 tests (skipped = deferred/blocked ACs, documented per spec).
+**Pass rate:** 82% of 347 tests (skipped = deferred/blocked ACs, documented per spec).
 
 ## Specs (latest run each)
 
 | Spec | ✅ | ❌ | ⏭️ | Result | Last run | Duration | Env |
 |---|---|---|---|---|---|---|---|
+| _probe-kids-minage | 0 | 0 | 0 | ⏭️ all skipped | 2026-09-09 09:58 | 6.3 min | outsystems-qa.asteronlife.co.nz |
 | business-expenses-cover-v1 | 13 | 0 | 0 | ✅ PASS | 2026-09-08 11:10 | 45.3 min | outsystems-qa.asteronlife.co.nz |
 | business-farmers-disability-cover-v1 | 29 | 0 | 1 | ✅ PASS | 2026-09-07 14:32 | 101.9 min | outsystems-qa.asteronlife.co.nz |
 | business-life-cover-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-07 12:22 | 8.6 min | outsystems-qa.asteronlife.co.nz |
