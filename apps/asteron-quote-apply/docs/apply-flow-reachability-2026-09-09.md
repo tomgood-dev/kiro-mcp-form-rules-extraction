@@ -161,3 +161,37 @@ field/section the app is telling you about on screen. I ran ~a dozen 6-minute pr
   at each step. That reaches Client summary → then drive the documented apply-flow steps.
 - clickApplyNow already uses a real click; keep it, but make it RETURN + LOG the visible errors so
   they're never missed again (it does capture errors — the probes just didn't surface them prominently).
+
+
+
+## ✅ SOLVED + AUTOMATED (2026-09-10) — Apply flow reachable through Duty of Disclosure
+
+The full chain now works end-to-end via reusable helpers in `quote-helpers.js`, verified on account D:
+
+**`reachApplicationFlow(page, {income, cover, sumInsured, commission})`** → Client Summary:
+1. `openNewQuote` (real New-Quote popup entry — mandatory; deep-link yields inert Apply).
+2. `completePersonalDetailsForApply` — ALL Apply-mandatory quote fields incl. DOB + Pre-tax Income.
+3. `activateCover` + sum insured.
+4. **`fillAdviserUse(page, 'Upfront')`** — opens Adviser Use with a REAL locator click, sets the
+   modal's **"Select All" dropdown = Upfront** (cascades to the per-cover "Life Cover" commission
+   dropdown; both default "Please Select" and are MANDATORY), clicks **OK**. This was the missing step
+   that made Apply "do nothing".
+5. **`clickApplyNow`** — a normal `getByRole('button',{name:'Apply'}).click()` (NOT a trusted-gesture
+   issue — that theory was wrong; the block was the unfilled Adviser Use commission). → Client Summary.
+
+**`proceedThroughClientSummary(page)`** → Duty of Disclosure:
+6. Client Summary (Step 2) has its OWN mandatory First/Last Name inputs (separate screen; default
+   empty; block Proceed). Fill via **real Playwright `fill()`** (raw `.value` injection does NOT
+   register in the reactive model here), then click **"Proceed to application"** → Duty of Disclosure.
+
+**Duty of Disclosure (Step 3) mapped:** heading "Duty Of Disclosure", the documented narrative
+sections, a Yes/No **adviser-confirmation** group (must be Yes — CD-14), View PDF links, and
+**Previous / Next** nav. Matches iteration-001's `apply-flow/page.md`.
+
+### The generalisable rule for the whole apply flow
+Every apply-flow screen has its OWN mandatory fields. The reliable pattern per screen: **fill all
+`*`/"Required field" inputs via real Playwright `fill()`/`selectOption`, use real locator `.click()`
+for action buttons (never evaluate/element.click for OutSystems actions), then read remaining
+validation before advancing.** Onward steps (Step 4 Insurance History → Occupation → Financial → Tele
+Interview; Step 5 Personal Statement; Step 6 Underwriting/Owner/Payment/Submit) follow the documented
+URL/step map in `apply-flow/page.md` — drive each the same way.

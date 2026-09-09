@@ -282,21 +282,111 @@ async function clickApplyNow(page) {
   console.log('  [step] Clicking Apply (to enter application flow)...');
   const urlBefore = page.url();
   const bodyBefore = await page.evaluate(() => (document.body.innerText || '').length);
-  // OutSystems reactive buttons frequently do NOT fire their action from a Playwright getByRole().click()
-  // (the platform XHR is bound to the element's own click handler) — the proven pattern (see
-  // clickButtonByLabel / activateCover) is a real element.click() via evaluate, after scrolling it into
-  // view (the footer Apply sits at the bottom-right, ~y1032 on 1080).
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('button')].find((b) => b.offsetParent !== null && (b.innerText || '').trim() === 'Apply');
-    if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
-  });
-  await waitForSettle(page, 5000);
+  // Use a real Playwright locator click. NOTE (corrected 2026-09-10): Apply is NOT a "trusted gesture"
+  // problem — a normal getByRole click works. The earlier "Apply does nothing" was because the mandatory
+  // Adviser Use commission dropdowns were unfilled (fillAdviserUse must run first). getByRole/element
+  // clicks were ALSO unreliable when done via evaluate; real locator clicks work.
+  await page.getByRole('button', { name: 'Apply', exact: true }).click({ timeout: 10000 });
+  // Wait for navigation to the Client summary / application flow.
+  await page.waitForFunction(
+    () => /client summary|duty of disclosure|proceed to application|personal statement/i.test(document.body.innerText || ''),
+    { timeout: 20000 }
+  ).catch(() => {});
+  await waitForSettle(page, 3000);
   const errors = await getVisibleErrors(page);
   const bodyAfter = await page.evaluate(() => (document.body.innerText || '').length);
-  const progressed = page.url() !== urlBefore || Math.abs(bodyAfter - bodyBefore) > 200 ||
-    await page.evaluate(() => /duty of disclosure|personal statement|insurance history|client summary/i.test(document.body.innerText || ''));
-  console.log(`  [step] Apply ${progressed ? 'progressed' : 'did NOT progress'}${errors.length ? ' — errors: ' + JSON.stringify(errors).slice(0, 160) : ''}`);
+  const onNext = await page.evaluate(() => /client summary|duty of disclosure|proceed to application|personal statement/i.test(document.body.innerText || ''));
+  const progressed = onNext || page.url() !== urlBefore || Math.abs(bodyAfter - bodyBefore) > 200;
+  console.log(`  [step] Apply ${progressed ? 'progressed (Client summary / application flow)' : 'did NOT progress'}${errors.length ? ' — errors: ' + JSON.stringify(errors).slice(0, 160) : ''}`);
   return { progressed, errors };
+}
+
+/**
+ * Fills the mandatory Adviser Use (commission) popup — a REQUIRED step before Apply will progress.
+ * Confirmed 2026-09-10: on a priced quote the popup's "Select All" and per-cover commission-structure
+ * dropdowns default to "Please Select"; Apply silently refuses until they're set. Setting "Select All"
+ * to a valid structure (default 'Upfront') cascades to the per-cover dropdowns. Then OK closes the modal.
+ *
+ * CRITICAL: the Adviser Use link, the dropdowns' cascade, and the OK button need REAL Playwright clicks
+ * / change events — evaluate-based element.click() does NOT open the modal or fire OK.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [structure] commission structure to select ('Upfront' | 'Level 30' | 'Spread 20')
+ */
+async function fillAdviserUse(page, structure = 'Upfront') {
+  console.log(`  [step] Filling Adviser Use (commission = ${structure})...`);
+  await page.getByText('Adviser Use', { exact: true }).first().click({ timeout: 10000 });
+  await waitForSettle(page, 2500);
+  // Set the "Select All" dropdown (cascades) + any per-cover commission dropdown still on "Please Select".
+  const set = await page.evaluate((struct) => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    function nl(el) { let n = el; for (let d = 0; d < 5 && n; d++) { let s = n.previousElementSibling; while (s) { const t = (s.innerText || '').trim(); if (t) return t.split('\n')[0].slice(0, 45); s = s.previousElementSibling; } n = n.parentElement; } return ''; }
+    const done = [];
+    [...document.querySelectorAll('select')].filter(vis).forEach((s) => {
+      const label = nl(s);
+      const cur = (s.options[s.selectedIndex] || {}).text || '';
+      if ((/select all/i.test(label) || /life cover|cover$/i.test(label)) && /please select/i.test(cur)) {
+        const opt = [...s.options].find((o) => o.text.trim() === struct);
+        if (opt) { s.value = opt.value; s.dispatchEvent(new Event('change', { bubbles: true })); done.push(label); }
+      }
+    });
+    return done;
+  }, structure);
+  await waitForSettle(page, 2000);
+  // OK closes the modal (real click).
+  await page.getByRole('button', { name: 'OK', exact: true }).click({ timeout: 10000 }).catch(() => {});
+  await waitForSettle(page, 2000);
+  console.log(`  [step] Adviser Use set: ${JSON.stringify(set)}`);
+  return set;
+}
+
+/**
+ * Full quote -> application-flow entry. Opens a new quote, fills all Apply-mandatory personal details,
+ * activates a cover with a sum insured, fills the mandatory Adviser Use commission popup, then clicks
+ * Apply — reaching the Client Summary page (Step 2 of the apply flow). Returns the quote page (now on
+ * Client Summary) so callers can drive onward (Proceed to application -> Duty of Disclosure -> ...).
+ * @param {import('@playwright/test').Page} page
+ * @param {object} [opts] { cover='Life', sumInsured='500000', personal, commission='Upfront' }
+ */
+async function reachApplicationFlow(page, opts = {}) {
+  const { cover = 'Life', sumInsured = '500000', personal = {}, commission = 'Upfront' } = opts;
+  const quote = await openNewQuote(page);
+  await completePersonalDetailsForApply(quote, personal);
+  await activateCover(quote, cover);
+  await fillCalcMask(sumInsuredInput(quote, 0), String(sumInsured));
+  await waitForSettle(quote, 1500);
+  await fillAdviserUse(quote, commission);
+  const { progressed, errors } = await clickApplyNow(quote);
+  if (!progressed) throw new Error(`reachApplicationFlow: Apply did not progress to Client Summary. Errors: ${JSON.stringify(errors)}`);
+  return quote;
+}
+
+/**
+ * From the Client Summary page (Step 2, reached by reachApplicationFlow), fills its OWN mandatory
+ * First/Last Name fields (a SEPARATE screen from the quote — its names default empty and block Proceed)
+ * and clicks "Proceed to application", advancing to Duty of Disclosure (Step 3).
+ * MUST use real Playwright fill() for the names (raw .value injection does not register in the
+ * OutSystems reactive model on this screen — confirmed 2026-09-10). Returns the page (now on DoD).
+ * @param {import('@playwright/test').Page} page  (the quote/application page, on Client Summary)
+ * @param {object} [opts] { firstName='Test', lastName='Applicant' }
+ */
+async function proceedThroughClientSummary(page, opts = {}) {
+  const { firstName = 'Test', lastName = 'Applicant' } = opts;
+  console.log('  [step] Client Summary: filling mandatory names + Proceed to application...');
+  const ids = await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const f = [...document.querySelectorAll('input')].filter((i) => vis(i) && /Input_FirstName/i.test(i.id || ''))[0];
+    const l = [...document.querySelectorAll('input')].filter((i) => vis(i) && /Input_LastName/i.test(i.id || ''))[0];
+    return { first: f ? f.id : null, last: l ? l.id : null };
+  });
+  if (ids.first) await page.locator(`[id="${ids.first}"]`).fill(firstName);
+  if (ids.last) await page.locator(`[id="${ids.last}"]`).fill(lastName);
+  await waitForSettle(page, 1500);
+  await page.getByRole('button', { name: /proceed to application/i }).first().click({ timeout: 10000 });
+  await page.waitForFunction(() => /duty of disclosure/i.test(document.body.innerText || ''), { timeout: 20000 }).catch(() => {});
+  await waitForSettle(page, 3000);
+  const onDoD = await page.evaluate(() => /duty of disclosure/i.test(document.body.innerText || ''));
+  console.log(`  [step] Client Summary Proceed ${onDoD ? 'reached Duty of Disclosure' : 'did NOT reach Duty of Disclosure'}`);
+  return { reachedDoD: onDoD };
 }
 
 /** Opens the Occupation type-ahead, types a search string, and clicks the first matching option. */
@@ -544,6 +634,9 @@ module.exports = {
   completePersonalDetailsForApply,
   saveQuote,
   clickApplyNow,
+  fillAdviserUse,
+  reachApplicationFlow,
+  proceedThroughClientSummary,
   setOccupation,
   fillCalcMask,
   commitWithoutTyping,
