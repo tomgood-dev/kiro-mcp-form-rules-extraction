@@ -127,3 +127,37 @@ Everything upstream is solved. Options to try for the Apply click (bounded, focu
 The helper fixes (openNewQuote popup capture, completePersonalDetailsForApply, saveQuote, and the
 mandatory-field + footer-bar knowledge) are committed and correct regardless — they unblock everything
 except the final Apply-action trigger.
+
+
+
+## ✅ RESOLVED-IN-PRINCIPLE (2026-09-09 EOD, user-confirmed) — Apply DOES work; it was blocked by more mandatory fields
+
+The Apply CLICK was never the problem. My click mechanisms (element.click, getByRole, mouse,
+CDP) all fired correctly. The reason Apply "did nothing" in my probes: **clicking Apply surfaced
+on-screen VALIDATION ERRORS that I failed to read** — specifically it required selecting dropdowns
+in the **Adviser Use** popup (commission details) before it will progress. I highlighted the right
+button (user visually confirmed: red button / yellow text / lime border / magenta outline) and the
+click registered — the page showed errors, not nothing.
+
+**The correct Apply prerequisite chain (user-confirmed):**
+1. Complete ALL mandatory quote fields (names, DOB, gender, smoking, occupation+code, employment
+   status, **Pre-tax Annual Income**) — DONE, works.
+2. **Open the "Adviser Use" panel (right-hand side) and fill out its popup** — select the required
+   commission dropdowns. This is a MANDATORY step before Apply progresses and I was NOT doing it.
+   (Adviser Use popup patterns already exist in the suite — see enter-commissions-v1 /
+   select-default-commission-category specs + the adviser-use-commission business-rules page.)
+3. THEN click Apply → it progresses to **Client summary** (Step 2, status PRE APPLICATION) →
+   "Proceed to application" → Duty of Disclosure → ... (full flow already mapped in
+   apply-flow/page.md from iteration-001).
+
+**CRITICAL PROCESS FAILURE TO NOT REPEAT:** After clicking Apply, ALWAYS read the visible validation
+errors (getVisibleErrors) and act on them — "no progress" almost always means an unfilled mandatory
+field/section the app is telling you about on screen. I ran ~a dozen 6-minute probes concluding
+"Apply is inert" when the app was displaying the Adviser-Use validation errors the whole time.
+
+### Tomorrow's plan (do this, don't re-investigate)
+- Extend the Apply path: after completePersonalDetailsForApply + cover, **fill the Adviser Use popup**
+  (reuse the existing commission-popup helpers/patterns), THEN clickApplyNow. Read+assert any errors
+  at each step. That reaches Client summary → then drive the documented apply-flow steps.
+- clickApplyNow already uses a real click; keep it, but make it RETURN + LOG the visible errors so
+  they're never missed again (it does capture errors — the probes just didn't surface them prominently).
