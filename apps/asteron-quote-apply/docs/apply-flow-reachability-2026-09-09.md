@@ -87,3 +87,43 @@ would be heavily-deferred if written now.
 3. Ask an app SME whether Apply requires the reopen, or whether there's an in-place enable we're missing
    (the network shows the Apply button bound to no action pre-reopen — an SME could confirm the intended
    trigger faster than further black-box probing).
+
+
+
+## FINAL STATE (2026-09-09, after full investigation)
+
+After extensive diagnosis, the accurate picture is:
+
+- ✅ **Entry via the real New Quote popup is the correct + required path.** `openNewQuote` was rewritten
+  to arm a popup waiter and click the real New Quote link (the OutSystems `chooseNav` handler runs
+  `UpdateAdviserInSession` then `window.open` to a new tab). It now THROWS rather than silently
+  deep-linking (the old fallback produced an inert Apply). The popup viewport is forced to 1920x1080.
+- ✅ **All mandatory Apply fields land** via `completePersonalDetailsForApply` (names, DOB, occupation
+  name+code, employment status, **Pre-tax Annual Income**) — verified by reading back every field.
+- ✅ **`saveQuote`** clicks the popup's `button.btn-primary` Save (fires `ActionSaveQuote`).
+- ✅ **The footer action bar (Close / View PDF / Save as New / Save / Apply) renders on ALL 10 accounts**
+  once entered via the popup. (Earlier "viewport" and "wrong account" theories were both DISPROVEN — a
+  10-account probe showed Apply present everywhere; the true cause of earlier failures was the old
+  deep-link entry, not viewport or account.)
+- ❌ **REMAINING BLOCKER: the Apply button click does not fire from automation.** With a complete, priced,
+  saved quote and the Apply button visibly present + enabled (solid blue, bottom-right, not disabled),
+  clicking it — via `getByRole().click()`, via eval `element.click()`, scrolled into view — produces
+  NO server action (network shows only field-recalc calls, never an Apply/navigation action), no URL
+  change, no body change, and no validation error. Screenshots before/after are identical.
+  **Yet the same steps work MANUALLY** (a real user gets the income-required validation, then progresses).
+  This is the classic OutSystems "reactive action button needs a TRUSTED user gesture" problem —
+  `element.click()` / Playwright click is not triggering the bound action handler here.
+
+### Next attempt should focus ONLY on: making the Apply action fire
+Everything upstream is solved. Options to try for the Apply click (bounded, focused):
+- A trusted click via CDP (`Input.dispatchMouseEvent`) at the button's coordinates, or Playwright
+  `page.mouse.click(x, y)` on the reported box (~x1797,y1032 at 1920x1080) — a real pointer gesture
+  rather than `element.click()`.
+- Keyboard activation: focus the Apply button and press Enter/Space.
+- Investigate whether Apply is wired to a parent/child element or requires a preceding focus/blur.
+- Confirm timing: the popup's reactive bindings may attach late — wait for a readiness signal
+  (e.g. a specific network idle or an attribute) before clicking.
+
+The helper fixes (openNewQuote popup capture, completePersonalDetailsForApply, saveQuote, and the
+mandatory-field + footer-bar knowledge) are committed and correct regardless — they unblock everything
+except the final Apply-action trigger.

@@ -46,6 +46,9 @@ module.exports = defineConfig({
     storageState: './apps/asteron-quote-apply/.auth/' + (process.env.AUTH_STATE_FILENAME || 'state.json'),
   },
   projects: [
-    { name: 'edge', use: { ...devices['Desktop Edge'] } },
+    // viewport 1920x1080: the quote-screen FOOTER ACTION BAR (Close / View PDF / Save as New / Save /
+    // Apply) is viewport-dependent — it does NOT render at the devices['Desktop Edge'] default of
+    // 1280x720 (confirmed 2026-09-09). A large viewport is required for Save/Apply to be present.
+    { name: 'edge', use: { ...devices['Desktop Edge'], viewport: { width: 1920, height: 1080 } } },
   ],
 });

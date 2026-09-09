@@ -30,35 +30,55 @@ const {
  * Opens a brand-new Quote screen and returns the Page it's on.
  * Assumes `page` is already authenticated (via storageState).
  *
- * "New Quote" uses a JS handler that calls window.open(). In headless mode
- * this may or may not create a popup. We patch window.open to capture the
- * target URL, then navigate to it directly.
+ * "New Quote" is an <a target="_blank"> whose JS handler calls window.open() — the app builds the
+ * quote in a NEW TAB with the proper session context. Critically, that context is what renders the
+ * footer action bar (Close / View PDF / Save as New / Save / Apply). Re-navigating the same tab to
+ * the captured URL does NOT reproduce it (the footer bar + working Apply are missing) — confirmed
+ * 2026-09-09. So we must capture and drive the REAL popup tab, not deep-link. Returns the popup page
+ * (or the same page if, in some environments, it opens in-place).
  */
 async function openNewQuote(page) {
   console.log('  [step] Opening a new quote...');
   await page.goto('/QuoteAndApply/');
   await page.waitForLoadState('domcontentloaded');
-  // Wait for the actual "New Quote" link to be usable instead of a blind sleep —
-  // this is the real condition the old 3s sleep was guessing at.
-  await page.locator('a', { hasText: 'New Quote' }).first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  const link = page.locator('a', { hasText: 'New Quote' }).first();
+  await link.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  await waitForSettle(page, 1500);
 
-  const quoteUrl = await captureWindowOpenFromLink(page, 'New Quote');
-
-  if (quoteUrl) {
-    // Navigate to the captured URL
-    await page.goto(quoteUrl, { waitUntil: 'domcontentloaded' });
-  } else {
-    // Fallback: navigate directly to a new blank quote
-    await page.goto('/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=', { waitUntil: 'domcontentloaded' });
+  // The New Quote handler (OutSystems chooseNav) runs UpdateAdviserInSession then window.open(...) to
+  // a NEW TAB — that adviser-session context is what makes Apply functional and the footer action bar
+  // render. Deep-linking to the quote URL SKIPS this and yields an inert Apply (confirmed 2026-09-09).
+  // So we MUST capture the real popup tab. Canonical pattern: arm the popup waiter, THEN click.
+  const context = page.context();
+  let popup = null;
+  for (let attempt = 1; attempt <= 2 && !popup; attempt++) {
+    try {
+      const [p] = await Promise.all([
+        context.waitForEvent('page', { timeout: 25000 }),
+        link.click(),
+      ]);
+      popup = p;
+    } catch (_) {
+      // retry: some runs need the list to settle first
+      await waitForSettle(page, 2000);
+    }
   }
+  if (!popup) {
+    throw new Error('openNewQuote: New Quote did not open a popup tab after 2 attempts. The quote MUST be '
+      + 'entered via the New Quote button (it runs UpdateAdviserInSession + window.open) — deep-linking '
+      + 'the quote URL yields an inert Apply and no footer action bar. Aborting rather than proceeding on a broken quote.');
+  }
+  await popup.waitForLoadState('domcontentloaded').catch(() => {});
+  // Force a large viewport on the popup (window.open sizes it 1200x700, hiding the responsive footer bar).
+  await popup.setViewportSize({ width: 1920, height: 1080 }).catch(() => {});
+  const quote = popup;
+  console.log('  [step] New Quote opened in a new tab (proper adviser-session entry; footer bar present)');
 
-  // Wait for the quote form to actually render — this real locator wait already
-  // covers what the old second 3s blind sleep was guessing at.
-  await page.locator('input[id*="Input_AgeNextBirthday"], input[id*="Input_FirstName"]').first()
+  await quote.locator('input[id*="Input_AgeNextBirthday"], input[id*="Input_FirstName"]').first()
     .waitFor({ state: 'visible', timeout: 30000 });
-  await waitForSettle(page);
+  await waitForSettle(quote);
   console.log('  [step] Quote form rendered OK');
-  return page;
+  return quote;
 }
 
 /**
@@ -153,6 +173,130 @@ async function setMinimumPersonalDetails(page, opts = {}) {
     await waitForSettle(page, 1000);
   }
   console.log('  [step] Personal Details set OK');
+}
+
+/**
+ * Sets the primary insured's Date of Birth (a mandatory field for Apply — see project-context.md
+ * "Mandatory fields"). The primary insured DOB input id contains 'b15-Input_BirthDate' (distinct
+ * from a kid's repeating-list DOB). fill() lands the value in the OutSystems reactive pipeline where
+ * a raw .value assignment does not.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} dob ISO date 'YYYY-MM-DD'
+ */
+async function setDateOfBirth(page, dob) {
+  console.log(`  [step] Setting Date of Birth = ${dob}`);
+  const id = await page.evaluate(() => {
+    const els = [].slice.call(document.querySelectorAll('input[type="date"][id*="Input_BirthDate"]'));
+    // primary insured DOB = the b15- one (not a kid repeating-list input)
+    const primary = els.filter((i) => /b15-Input_BirthDate/.test(i.id))[0] || els[0];
+    return primary ? primary.id : null;
+  });
+  if (!id) throw new Error('setDateOfBirth: DOB input not found');
+  await page.locator(`[id="${id}"]`).fill(dob);
+  await waitForSettle(page, 1200);
+}
+
+/**
+ * Fills the COMPLETE set of personal-details fields mandatory to APPLY (a superset of the
+ * pricing-minimum set — see project-context.md "Mandatory fields — CHECK THESE FIRST"). Confirmed
+ * Apply-gate fields: First/Last Name, Date of Birth, Gender, Smoking, Occupation (name via typeahead)
+ * + Occupation Code, Employment Status, Pre-tax Annual Income. Use this before clicking Apply /
+ * driving the application flow; missing any of these makes Apply SILENTLY do nothing.
+ * @param {import('@playwright/test').Page} page
+ * @param {object} [opts]
+ */
+async function completePersonalDetailsForApply(page, opts = {}) {
+  const {
+    firstName = 'Test', lastName = 'Applicant',
+    dob = '1985-06-15', age, gender = 'Male', smoking = 'No',
+    occupationSearch = 'Accountant', occupationCode = '1',
+    employmentStatus = 'Employed', income = 120000,
+  } = opts;
+  console.log('  [step] Completing personal details for Apply...');
+  // Names
+  await page.evaluate((n) => {
+    function si(sel, v) { const e = document.querySelector(sel); if (e) { e.focus(); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } }
+    si('input[id*="Input_FirstName"]', n.f); si('input[id*="Input_LastName"]', n.l);
+  }, { f: firstName, l: lastName });
+  await waitForSettle(page, 500);
+  // DOB (preferred over ANB for Apply); if age given too, set it as a fallback signal.
+  await setDateOfBirth(page, dob).catch((e) => console.log(`  [step] DOB set skipped: ${e.message}`));
+  if (age !== undefined) await setAge(page, age).catch(() => {});
+  await setGender(page, gender);
+  // Smoking status button-group (Yes/No)
+  await page.evaluate((s) => { const b = [].slice.call(document.querySelectorAll('.button-group-item, button')).filter((x) => x.offsetParent !== null && x.innerText.trim() === s); if (b.length) b[0].click(); }, smoking).catch(() => {});
+  await waitForSettle(page, 800);
+  // Occupation name via typeahead + code
+  await setOccupation(page, occupationSearch).catch((e) => console.log(`  [step] occupation set skipped: ${e.message}`));
+  await waitForSettle(page, 800);
+  const occDropdown = page.locator('select[id*="OccupationCode_Dropdown"]').first();
+  await occDropdown.selectOption(occupationCode).catch(() => {});
+  await waitForSettle(page, 800);
+  // Employment status
+  await page.locator('select[id*="EmploymentStatus_Dropdown"]').first().selectOption({ label: employmentStatus }).catch(async () => {
+    await page.evaluate(() => { const s = document.querySelector('select[id*="EmploymentStatus_Dropdown"]'); if (s) { const o = [].slice.call(s.options).filter((x) => !/select/i.test(x.text) && x.text.trim())[0]; if (o) { s.value = o.value; s.dispatchEvent(new Event('change', { bubbles: true })); } } });
+  });
+  await waitForSettle(page, 800);
+  // Pre-tax Annual Income (MANDATORY for Apply — the field missed on 2026-09-09)
+  console.log(`  [step] Setting Pre-tax Annual Income = ${income}`);
+  await fillCalcMask(page.locator('input[id*="AnnualIncome"], input[id*="MaskedInput"]').first(), String(income)).catch((e) => console.log(`  [step] income set skipped: ${e.message}`));
+  await waitForSettle(page, 1000);
+  console.log('  [step] Personal details for Apply complete');
+}
+
+/**
+ * Saves the current quote via the reference popup. IMPORTANT: the popup contains TWO "Save" buttons —
+ * the quote-screen action behind the modal and the popup's own `button.btn-primary`. Only the
+ * btn-primary one fires the real `ActionSaveQuote` server action (confirmed 2026-09-09; clicking the
+ * wrong one only triggers field recalcs and does NOT persist). Success is confirmed by the
+ * ActionSaveQuote network response, NOT by a URL QuoteId change (which does not happen in-place).
+ * @param {import('@playwright/test').Page} page
+ * @param {string} [reference] optional reference (max 30 chars)
+ * @returns {Promise<boolean>} true if ActionSaveQuote responded 2xx
+ */
+async function saveQuote(page, reference = 'AUTO' + Date.now().toString().slice(-6)) {
+  console.log(`  [step] Saving quote (ref=${reference})...`);
+  const saved = page.waitForResponse((r) => /ActionSaveQuote/i.test(r.url()) && r.request().method() === 'POST', { timeout: 20000 }).then((r) => r.status() < 400).catch(() => false);
+  // Open the save popup (quote-screen footer "Save" — scroll it into view first; the footer bar can
+  // sit below the fold).
+  await page.evaluate(() => { const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => x.offsetParent !== null && x.innerText.trim().split('\n')[0] === 'Save')[0]; if (b) { b.scrollIntoView({ block: 'center' }); b.click(); } });
+  await waitForSettle(page, 1800);
+  // Reference field.
+  await page.evaluate((ref) => { const ri = document.getElementById('Input_Reference') || document.querySelector('input[id*="Input_Reference"]'); if (ri) { ri.focus(); ri.value = ref; ri.dispatchEvent(new Event('input', { bubbles: true })); ri.dispatchEvent(new Event('change', { bubbles: true })); } }, reference.slice(0, 30));
+  await waitForSettle(page, 500);
+  // Click the popup's btn-primary Save.
+  await page.evaluate(() => { const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => x.offsetParent !== null && /btn-primary/.test(String(x.className)) && /^save$/i.test(x.innerText.trim().split('\n')[0]))[0]; if (b) b.click(); });
+  const ok = await saved;
+  await waitForSettle(page, 3000);
+  console.log(`  [step] Save ${ok ? 'OK (ActionSaveQuote 2xx)' : 'NOT confirmed (no ActionSaveQuote 2xx)'}`);
+  return ok;
+}
+
+/**
+ * Clicks Apply and confirms the application flow was entered. Requires ALL mandatory personal-details
+ * fields filled first (use completePersonalDetailsForApply) — otherwise Apply silently does nothing.
+ * Returns the page/frame now showing the application flow (same tab or a popup) + whether it progressed.
+ * @param {import('@playwright/test').Page} page
+ */
+async function clickApplyNow(page) {
+  console.log('  [step] Clicking Apply (to enter application flow)...');
+  const urlBefore = page.url();
+  const bodyBefore = await page.evaluate(() => (document.body.innerText || '').length);
+  // OutSystems reactive buttons frequently do NOT fire their action from a Playwright getByRole().click()
+  // (the platform XHR is bound to the element's own click handler) — the proven pattern (see
+  // clickButtonByLabel / activateCover) is a real element.click() via evaluate, after scrolling it into
+  // view (the footer Apply sits at the bottom-right, ~y1032 on 1080).
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')].find((b) => b.offsetParent !== null && (b.innerText || '').trim() === 'Apply');
+    if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
+  });
+  await waitForSettle(page, 5000);
+  const errors = await getVisibleErrors(page);
+  const bodyAfter = await page.evaluate(() => (document.body.innerText || '').length);
+  const progressed = page.url() !== urlBefore || Math.abs(bodyAfter - bodyBefore) > 200 ||
+    await page.evaluate(() => /duty of disclosure|personal statement|insurance history|client summary/i.test(document.body.innerText || ''));
+  console.log(`  [step] Apply ${progressed ? 'progressed' : 'did NOT progress'}${errors.length ? ' — errors: ' + JSON.stringify(errors).slice(0, 160) : ''}`);
+  return { progressed, errors };
 }
 
 /** Opens the Occupation type-ahead, types a search string, and clicks the first matching option. */
@@ -396,6 +540,10 @@ module.exports = {
   setAge,
   setGender,
   setMinimumPersonalDetails,
+  setDateOfBirth,
+  completePersonalDetailsForApply,
+  saveQuote,
+  clickApplyNow,
   setOccupation,
   fillCalcMask,
   commitWithoutTyping,
