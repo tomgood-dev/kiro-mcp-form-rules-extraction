@@ -1,0 +1,9 @@
+[global-setup] staggered start: waiting 75s before launch...
+[global-setup] waiting 60s for any held session to release before attempt 1...
+[global-setup] login OK on attempt 1
+
+Running 2 tests using 1 worker
+
+[1/2] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-online-quoting-tool-v1.spec.js:16:3 › Landing page: Online Quoting Tool (ACB-2239) › AC02/AC03: from the portal I can navigate to the New Business Quoting Tool UI
+[2/2] [edge] › apps\asteron-quote-apply\tests\quote-screen\landing-online-quoting-tool-v1.spec.js:41:3 › Landing page: Online Quoting Tool (ACB-2239) › AC01: the quoting tool is accessed via the Adviser Portal login (login URL is served)
+  2 passed (3.2m)

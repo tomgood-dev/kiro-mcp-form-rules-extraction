@@ -1,0 +1,132 @@
+# Asteron Quote & Apply — test suite (self-hosted, whitelisted runner).
+#
+# DROP-IN / NOT YET ACTIVE until the prerequisites below are met. See docs/cloud-execution.md.
+#
+# PREREQUISITES (the gate — do these first):
+#   1. An always-on machine whose egress IP is WHITELISTED for outsystems-qa.asteronlife.co.nz,
+#      registered as a GitHub self-hosted runner with the label `asteron-qa`.
+#      (GitHub-HOSTED runners have dynamic IPs and cannot reach the QA app — do not use them here.)
+#   2. Repo secret ACCOUNTS_JSON = the full contents of apps/asteron-quote-apply/accounts.json
+#      (the gitignored accounts file). Never commit credentials; CI writes them at run time.
+#   3. (Optional, for the hosted dashboard) enable GitHub Pages for this repo, source = GitHub Actions.
+#
+# What it produces: identical report.md + summary.json per spec, and DASHBOARD.md + dashboard.html,
+# uploaded as an artifact every run and (optionally) published to Pages as a live URL.
+
+name: Asteron Test Suite
+
+on:
+  workflow_dispatch:            # manual "Run workflow" button
+    inputs:
+      specs:
+        description: 'Specs to run: "--all", a spec filename, or space-separated names'
+        required: false
+        default: '--all'
+      grep:
+        description: 'Optional -g filter expression (passed through to Playwright)'
+        required: false
+        default: ''
+      streams:
+        description: 'Max concurrent streams (<= number of accounts)'
+        required: false
+        default: '10'
+  schedule:
+    - cron: '0 16 * * *'        # 16:00 UTC nightly (adjust to your timezone/needs)
+
+# Only one suite run at a time — the platform is one-session-per-account; overlapping runs would
+# collide on accounts. Newer run waits rather than cancels (don't lose a nightly to a manual click).
+concurrency:
+  group: asteron-suite
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: [self-hosted, asteron-qa]   # the whitelisted runner label
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        # Local dev uses Edge (Chromium was blocked by local security tooling). On a clean runner,
+        # Chromium is usually fine; if the app must be tested in Edge, swap to `msedge`.
+        run: npx playwright install --with-deps chromium
+
+      - name: Write accounts.json from secret (gitignored; never committed)
+        shell: bash
+        env:
+          ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
+        run: |
+          if [ -z "$ACCOUNTS_JSON" ]; then
+            echo "::error::ACCOUNTS_JSON secret is not set — cannot run without accounts."; exit 1
+          fi
+          printf '%s' "$ACCOUNTS_JSON" > apps/asteron-quote-apply/accounts.json
+          echo "Wrote accounts.json ($(node -e "console.log(require('./apps/asteron-quote-apply/accounts.json').accounts.length)") accounts)."
+
+      - name: Run the suite (parallel across accounts)
+        env:
+          BASE_URL: https://outsystems-qa.asteronlife.co.nz
+          NODE_TLS_REJECT_UNAUTHORIZED: '0'
+        run: |
+          ARGS="${{ github.event.inputs.specs || '--all' }}"
+          if [ -n "${{ github.event.inputs.streams }}" ]; then ARGS="$ARGS --streams ${{ github.event.inputs.streams }}"; fi
+          if [ -n "${{ github.event.inputs.grep }}" ]; then ARGS="$ARGS --grep \"${{ github.event.inputs.grep }}\""; fi
+          echo "parallel-run.js $ARGS"
+          # eval so a quoted --grep expression is passed as one arg
+          eval node tools/parallel-run.js $ARGS
+        # Don't fail the whole workflow just because some tests failed / are expected-fails —
+        # the dashboard + artifact are the deliverable. Genuine infra failures still surface in logs.
+        continue-on-error: true
+
+      - name: Clean accounts.json (belt-and-braces; runner is ephemeral/isolated anyway)
+        if: always()
+        run: rm -f apps/asteron-quote-apply/accounts.json
+
+      - name: Upload test-runs artifact (reports + dashboard)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-runs-${{ github.run_id }}
+          path: apps/asteron-quote-apply/test-runs/
+          retention-days: 30
+
+      # ---- Optional: publish the dashboard as a live GitHub Pages URL ----
+      # Requires Pages enabled (Settings > Pages > Source: GitHub Actions). Publishes just the
+      # dashboard + reports so BAs get a bookmarkable URL. Remove this block if using artifacts only.
+      - name: Prepare Pages content
+        if: always()
+        run: |
+          mkdir -p _site
+          cp -r apps/asteron-quote-apply/test-runs/* _site/ || true
+          # make the dashboard the landing page
+          cp apps/asteron-quote-apply/test-runs/dashboard.html _site/index.html || true
+
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy-pages:
+    needs: test
+    if: always()
+    runs-on: [self-hosted, asteron-qa]
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
