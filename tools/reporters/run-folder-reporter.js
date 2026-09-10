@@ -308,6 +308,14 @@ class RunFolderReporter {
       if (/^false$/i.test(e)) return `${label} — no/absent`;
       return e;
     };
+    // Pull the "Expected:" line out of an AC annotation — used as the Expected fallback when a test
+    // recorded no value-checks (e.g. it failed early, before any recordCheck ran), so the Expected
+    // column is never blank.
+    const extractExpected = (ac) => {
+      if (!ac) return '';
+      const m = String(ac).match(/\bExpected:\s*([\s\S]*?)$/i);
+      return m ? m[1].trim() : '';
+    };
 
     // Pre-compute each test's sub-tests so we know how many rows/sheets it spans.
     const model = tests.map((t, ti) => {
@@ -334,7 +342,7 @@ class RunFolderReporter {
             // literal expected (so the reader always sees what was observed on a discrepancy).
             comment: t.status === 'failed' ? `Actual: ${String(c.actual)}` : '',
           }))
-        : [{ id: String(testNum), action: steps ? `${t.title}\n\nSteps:\n${steps}` : t.title, expected: '', actual: '', pass: t.status === 'passed', comment: '' }];
+        : [{ id: String(testNum), action: steps ? `${t.title}\n\nSteps:\n${steps}` : t.title, expected: extractExpected(t.acceptanceCriteria), actual: '', pass: t.status === 'passed', comment: '' }];
       return { t, testNum, subs, shots };
     });
 

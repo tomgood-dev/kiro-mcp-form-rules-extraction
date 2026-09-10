@@ -20,78 +20,97 @@ test.describe('Landing page: Online Quoting Tool (ACB-2239)', () => {
       'AC02: When I am logged into the adviser portal, Then I should be able to navigate to the New Business Quoting Tool.',
       'AC03: When I have logged onto the portal, Then I can view and click the New Business quoting tool And I am directed to the New Business Quoting tool UI.',
       '',
-      'Preconditions: adviser is authenticated to the RL ANZ Adviser Portal (QA).',
-      'Test data: no quote required — this verifies the landing/entry UI only.',
+      'Preconditions: adviser is authenticated to the RL ANZ Adviser Portal (QA) — see TC for AC01 (login to the Adviser Portal) which precedes this journey.',
+      'Test data: no quote required — this verifies the landing/entry navigation only.',
       '',
       'Steps to reproduce:',
-      '1. While logged in, navigate to the Quote & Apply landing route /QuoteAndApply/.',
-      '2. Confirm the New Business Quoting Tool landing UI renders: the "Quotes and Applications" heading.',
-      '3. Confirm a "New Quote" call-to-action is present and clickable (the entry to create a new quote).',
-      '4. Confirm the browser is on the Quote & Apply tool URL (/QuoteAndApply).',
+      '1. Start on the Adviser Portal dashboard (logged in).',
+      '2. Open the "Quotes" menu in the left navigation.',
+      '3. Click the "Quote & Apply" menu item.',
+      '4. Confirm the adviser is directed to the New Business Quoting Tool UI: the "Quotes and Applications" heading, a "New Quote" action, and the /QuoteAndApply URL.',
       '',
-      'Expected: the quoting tool landing UI is shown with the "Quotes and Applications" heading, a "New Quote" action, and the /QuoteAndApply URL.',
+      'Expected: clicking Quotes -> Quote & Apply from the portal opens the quoting tool landing UI ("Quotes and Applications" heading + New Quote action on /QuoteAndApply).',
     ].join('\n') });
 
-    await page.goto('/QuoteAndApply/', { waitUntil: 'domcontentloaded' });
+    // Sub-test 1 — start on the Adviser Portal dashboard (the journey begins here, post-login)
+    await page.goto('/AdviserCentral_Uplift/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle').catch(() => {});
+    await recordStep(testInfo, page, {
+      label: 'Adviser Portal dashboard (logged in)',
+      action: [
+        'Precondition for this journey: the adviser has logged into the Adviser Portal (see AC01 TC).',
+        'Start on the Adviser Portal dashboard: /AdviserCentral_Uplift/',
+      ].join('\n'),
+      expected: 'The Adviser Portal dashboard is displayed for the logged-in adviser.',
+      actual: 'On the Adviser Portal dashboard (' + page.url() + ')',
+      shot: 'Adviser Portal dashboard (logged in)',
+    });
 
-    const ui = await page.evaluate(() => {
+    // Sub-test 2 — open the "Quotes" menu, then click "Quote & Apply" (the real navigation)
+    const openedQuotesMenu = await page.evaluate(() => {
+      function v(e){return e&&e.offsetParent!==null;}
+      var el = [].slice.call(document.querySelectorAll('a, button, [role=button], [class*=menu]')).filter(v)
+        .find(function(e){ return (e.innerText || '').trim().replace(/\s+/g,' ') === 'Quotes'; });
+      if (!el) return false;
+      el.scrollIntoView({ block: 'center' });
+      el.click();
+      return true;
+    });
+    await page.waitForTimeout(1500);
+    await recordStep(testInfo, page, {
+      label: 'Open the Quotes menu in the portal navigation',
+      action: [
+        'In the Adviser Portal left navigation, click the "Quotes" menu to expand it.',
+        'Confirm the "Quote & Apply" menu item becomes available.',
+      ].join('\n'),
+      expected: 'The "Quotes" menu expands and reveals the "Quote & Apply" navigation item.',
+      actual: openedQuotesMenu ? '"Quotes" menu opened; "Quote & Apply" item shown' : '"Quotes" menu not found',
+      shot: 'Quotes menu expanded — Quote & Apply item available',
+    });
+
+    // Click "Quote & Apply" — this is the actual navigation into the tool (captures a popup if one opens)
+    const [popup] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 8000 }).catch(() => null),
+      page.evaluate(() => {
+        function v(e){return e&&e.offsetParent!==null;}
+        var el = [].slice.call(document.querySelectorAll('a, button, [role=button], li')).filter(v)
+          .find(function(e){ return /^quote & apply$/i.test((e.innerText || '').trim().replace(/\s+/g,' ')); });
+        if (el) { el.scrollIntoView({ block: 'center' }); el.click(); }
+      }),
+    ]);
+    const toolPage = popup || page;
+    await toolPage.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+    await toolPage.waitForTimeout(1500);
+
+    const ui = await toolPage.evaluate(() => {
       var body = (document.body.innerText || '');
       return {
         heading: /Quotes and Applications/i.test(body),
         newQuote: [].slice.call(document.querySelectorAll('button, a')).some(function (b) { return /^new quote$/i.test((b.innerText || '').trim().split('\n')[0]); }),
-        onQuoteAndApply: location.href.indexOf('/QuoteAndApply') >= 0,
+        onQuoteAndApply: /\/quoteandapply/i.test(location.href),
         url: location.href,
       };
     });
 
-    // Sub-test 1 — landing UI + heading
-    await recordStep(testInfo, page, {
-      label: 'Landing UI renders with the Quotes and Applications heading',
+    // Sub-test 3 — directed to the Quote & Apply tool UI (heading + New Quote + URL)
+    await recordStep(testInfo, toolPage, {
+      label: 'Directed to the New Business Quoting Tool UI',
       action: [
-        'Logged in as an adviser, navigate the browser to the Quote & Apply landing route:',
-        '  /QuoteAndApply/',
-        'Wait for the page to finish loading (network idle), then read the page heading.',
-      ].join('\n'),
-      expected: [
-        'The New Business Quoting Tool landing page renders.',
-        'The page displays the heading "Quotes and Applications".',
-      ].join('\n'),
-      actual: ui.heading ? 'Heading "Quotes and Applications" is displayed' : 'Heading NOT found',
-      shot: 'Quote & Apply landing page — Quotes and Applications heading',
-    });
-
-    // Sub-test 2 — New Quote action present
-    const newQuoteBtn = page.locator('button, a').filter({ hasText: /^new quote$/i }).first();
-    await newQuoteBtn.scrollIntoViewIfNeeded().catch(() => {});
-    await recordStep(testInfo, page, {
-      label: 'New Quote call-to-action is available',
-      action: [
-        'On the Quote & Apply landing page, locate the primary call-to-action used to begin a new quote.',
-        'Confirm a control labelled "New Quote" is present and visible to the adviser.',
-      ].join('\n'),
-      expected: [
-        'A "New Quote" button/link is present on the landing page.',
-        'This is the entry point an adviser clicks to create a new quote.',
-      ].join('\n'),
-      actual: ui.newQuote ? '"New Quote" action is present' : '"New Quote" action NOT found',
-      shot: 'New Quote action present on the landing page',
-    });
-
-    // Sub-test 3 — on the Quote & Apply URL
-    await recordStep(testInfo, page, {
-      label: 'Browser is on the Quote & Apply tool URL',
-      action: [
-        'Inspect the browser location after navigating to the quoting tool.',
-        'Confirm the current URL is the Quote & Apply tool (contains /QuoteAndApply).',
+        'Click the "Quote & Apply" menu item.',
+        'Confirm the adviser is taken to the New Business Quoting Tool: the "Quotes and Applications" heading is shown,',
+        'a "New Quote" action is present, and the URL is the Quote & Apply tool.',
         'Observed URL: ' + ui.url,
       ].join('\n'),
       expected: [
-        'The adviser is directed to the New Business Quoting tool UI.',
-        'The URL contains "/QuoteAndApply".',
+        'The adviser lands on the New Business Quoting Tool UI.',
+        'Page shows the "Quotes and Applications" heading and a "New Quote" action; URL contains /QuoteAndApply.',
       ].join('\n'),
-      actual: ui.onQuoteAndApply ? 'On /QuoteAndApply (' + ui.url + ')' : 'NOT on /QuoteAndApply (' + ui.url + ')',
-      shot: 'Browser URL is the Quote & Apply tool',
+      actual: [
+        'Heading shown: ' + ui.heading,
+        'New Quote action: ' + ui.newQuote,
+        'URL: ' + ui.url,
+      ].join('  |  '),
+      shot: 'New Business Quoting Tool UI reached via Quotes -> Quote & Apply',
     });
 
     expect(ui.heading, 'AC03: quoting tool UI shown').toBe(true);
