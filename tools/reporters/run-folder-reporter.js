@@ -291,26 +291,50 @@ class RunFolderReporter {
     const passFailText = (status) => (status === 'passed' ? 'Pass' : status === 'failed' ? 'Fail' : status === 'skipped' ? 'Blocked' : status);
     const subLetter = (i) => (i === 0 ? '' : String.fromCharCode(96 + i)); // 0->'', 1->'a', 2->'b'
 
+    // Pull the "Steps to reproduce" block out of an AC annotation so specs that only used
+    // recordCheck (not recordStep) still get a detailed Action column derived from the story steps.
+    const extractSteps = (ac) => {
+      if (!ac) return '';
+      const m = String(ac).match(/Steps to reproduce:\s*([\s\S]*?)(?:\n\s*\n|Expected:|$)/i);
+      return m ? m[1].trim() : '';
+    };
+    // Render an Expected cell as a readable sentence when the test only supplied a bare value.
+    const renderExpected = (label, expected) => {
+      const e = String(expected);
+      if (e.length > 24 || /\n/.test(e)) return e; // already detailed prose — use as-is
+      // e.g. label "Bundling discount (2 covers)" + expected "15%" -> "Bundling discount (2 covers) = 15%"
+      if (label && !/^(true|false)$/i.test(e)) return `${label} = ${e}`;
+      if (/^true$/i.test(e)) return `${label} — yes/present`;
+      if (/^false$/i.test(e)) return `${label} — no/absent`;
+      return e;
+    };
+
     // Pre-compute each test's sub-tests so we know how many rows/sheets it spans.
     const model = tests.map((t, ti) => {
       const testNum = ti + 1;
       const checks = t.valueChecks || [];
       const shots = (t.shots || []).filter((s) => s.path && fs.existsSync(s.path));
+      const steps = extractSteps(t.acceptanceCriteria);
       const subs = checks.length
         ? checks.map((c, ci) => ({
             id: `${testNum}${subLetter(ci)}`,
-            action: c.action != null ? String(c.action) : c.label, // detailed Action (recordStep) or the label
-            expected: String(c.expected),
+            // Action: explicit detailed action (recordStep) wins; otherwise the check label, and for
+            // the FIRST check append the story's Steps to reproduce so the reader sees the exact setup.
+            action: c.action != null
+              ? String(c.action)
+              : (ci === 0 && steps ? `${c.label}\n\nSteps:\n${steps}` : c.label),
+            expected: c.action != null ? String(c.expected) : renderExpected(c.label, c.expected),
             actual: String(c.actual),
             // Pass/Fail is the test's REAL Playwright status — recordCheck is always called next to
             // an expect(), so a passing test means every recorded check held. Do NOT string-compare
             // expected vs actual here: many expected values are conditions ("status < 400"), not
             // literals, so "status < 400" !== "200" would wrongly read as a failure.
             pass: t.status === 'passed',
-            // Only surface the raw actual as a bug-note when the test actually failed.
+            // Surface the raw actual as a bug-note when the test failed OR when actual differs from a
+            // literal expected (so the reader always sees what was observed on a discrepancy).
             comment: t.status === 'failed' ? `Actual: ${String(c.actual)}` : '',
           }))
-        : [{ id: String(testNum), action: t.title, expected: '', actual: '', pass: t.status === 'passed', comment: '' }];
+        : [{ id: String(testNum), action: steps ? `${t.title}\n\nSteps:\n${steps}` : t.title, expected: '', actual: '', pass: t.status === 'passed', comment: '' }];
       return { t, testNum, subs, shots };
     });
 
