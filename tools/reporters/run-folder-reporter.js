@@ -299,7 +299,7 @@ class RunFolderReporter {
       const subs = checks.length
         ? checks.map((c, ci) => ({
             id: `${testNum}${subLetter(ci)}`,
-            action: c.label,
+            action: c.action != null ? String(c.action) : c.label, // detailed Action (recordStep) or the label
             expected: String(c.expected),
             actual: String(c.actual),
             // Pass/Fail is the test's REAL Playwright status — recordCheck is always called next to

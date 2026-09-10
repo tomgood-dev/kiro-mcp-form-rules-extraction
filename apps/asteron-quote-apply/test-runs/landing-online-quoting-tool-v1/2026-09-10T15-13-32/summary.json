@@ -1,0 +1,25 @@
+{
+  "specSlug": "landing-online-quoting-tool-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/landing-online-quoting-tool-v1.spec.js",
+  "runTimestamp": "2026-09-10T15-13-32",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 96186.439,
+  "filtered": false,
+  "total": 2,
+  "passed": 2,
+  "failed": 0,
+  "skipped": 0,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Landing page: Online Quoting Tool (ACB-2239) › AC02/AC03: from the portal I can navigate to the New Business Quoting Tool UI",
+      "status": "passed",
+      "durationMs": 7727
+    },
+    {
+      "title": "Landing page: Online Quoting Tool (ACB-2239) › AC01: the quoting tool is accessed via the Adviser Portal login (login URL is served)",
+      "status": "passed",
+      "durationMs": 10610
+    }
+  ]
+}

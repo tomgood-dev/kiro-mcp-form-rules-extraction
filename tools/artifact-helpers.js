@@ -134,12 +134,61 @@ function recordCheck(testInfo, { label, expected, actual }) {
  */
 async function recordShot(testInfo, page, label, opts = {}) {
   try {
-    const buf = await page.screenshot({ fullPage: !!opts.fullPage });
-    await testInfo.attach(`proof: ${label}`, { body: buf, contentType: 'image/png' });
+    // Wait for the page to actually PAINT before capturing, so we never grab a blank white frame
+    // (the failure mode when a screenshot fires right after a domcontentloaded/redirect). Best-effort:
+    // settle the network, wait for a non-trivial body, then a short RAF/paint delay.
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    await page
+      .waitForFunction(() => document.body && (document.body.innerText || '').trim().length > 20, { timeout: 6000 })
+      .catch(() => {});
+    await page.waitForTimeout(400); // let the compositor paint
+    // Attach by PATH (not body): the run-folder reporter only picks up attachments that have a
+    // .path (body-only attachments have no path and were being silently dropped — which collapsed
+    // multiple recordShot calls down to just the one auto screenshot). Write a unique file per shot.
+    const idx = (testInfo.__proofShotIdx = (testInfo.__proofShotIdx || 0) + 1);
+    const safe = String(label).replace(/[^a-z0-9]+/gi, '-').slice(0, 40).replace(/^-|-$/g, '') || 'shot';
+    const file = testInfo.outputPath(`proof-${String(idx).padStart(2, '0')}-${safe}.png`);
+    await page.screenshot({ path: file, fullPage: !!opts.fullPage });
+    await testInfo.attach(`proof: ${label}`, { path: file, contentType: 'image/png' });
   } catch (err) {
     // Never let an evidence screenshot fail the test itself.
     console.error('[recordShot] skipped:', err && err.message);
   }
+}
+
+/**
+ * Authors ONE sub-test (one row in the Script sheet + its own Test sheet with a screenshot) in a
+ * single call — the reference-quality unit of a tester script. Combines what recordCheck (values
+ * for pass/fail) and recordShot (proof image) do, but adds DETAILED Action and Expected Result
+ * text so the workbook reads like the client's manual template rather than a terse AC dump.
+ *
+ * Each recordStep() call:
+ *   • records a `value-check` annotation carrying { label, action, expected, actual } — the reporter
+ *     uses `action` for the Action column, `expected` for Expected Result, and expected-vs-actual +
+ *     the test's real status for Pass/Fail + Comments.
+ *   • captures a proof screenshot routed to THIS sub-test's sheet (Test 1, Test 1a, ...), in call order.
+ *
+ * Author `action` and `expected` as multi-line, specific prose (exact inputs, exact expected
+ * message/value) — see the client reference sheet. Example:
+ *   await recordStep(testInfo, page, {
+ *     label: 'Age 16 — Cancer min ANB',
+ *     action: 'Create quote - Personal\nLife Cover SI $50,000 + Accl Cancer SI $9,999\nAge 16',
+ *     expected: 'Only message shown: "The minimum Age Next Birthday for Cancer Cover is 17"',
+ *     actual: observedMessage,
+ *     shot: 'Age 16 validation message',
+ *   });
+ *
+ * @param {import('@playwright/test').TestInfo} testInfo
+ * @param {import('@playwright/test').Page} page
+ * @param {{label: string, action?: string, expected: unknown, actual: unknown, shot?: string, fullPage?: boolean}} step
+ */
+async function recordStep(testInfo, page, step) {
+  const { label, action, expected, actual, shot, fullPage } = step;
+  testInfo.annotations.push({
+    type: 'value-check',
+    description: JSON.stringify({ label, action: action != null ? action : label, expected, actual }),
+  });
+  await recordShot(testInfo, page, shot || label, { fullPage });
 }
 
 module.exports = {
@@ -153,4 +202,5 @@ module.exports = {
   embedImage,
   recordCheck,
   recordShot,
+  recordStep,
 };
