@@ -301,10 +301,16 @@ class RunFolderReporter {
             id: `${testNum}${subLetter(ci)}`,
             action: c.label,
             expected: String(c.expected),
-            pass: String(c.expected) === String(c.actual) && t.status !== 'failed',
-            comment: String(c.expected) === String(c.actual) ? '' : `Actual: ${String(c.actual)}`,
+            actual: String(c.actual),
+            // Pass/Fail is the test's REAL Playwright status — recordCheck is always called next to
+            // an expect(), so a passing test means every recorded check held. Do NOT string-compare
+            // expected vs actual here: many expected values are conditions ("status < 400"), not
+            // literals, so "status < 400" !== "200" would wrongly read as a failure.
+            pass: t.status === 'passed',
+            // Only surface the raw actual as a bug-note when the test actually failed.
+            comment: t.status === 'failed' ? `Actual: ${String(c.actual)}` : '',
           }))
-        : [{ id: String(testNum), action: t.title, expected: '', pass: t.status === 'passed', comment: '' }];
+        : [{ id: String(testNum), action: t.title, expected: '', actual: '', pass: t.status === 'passed', comment: '' }];
       return { t, testNum, subs, shots };
     });
 
@@ -348,28 +354,32 @@ class RunFolderReporter {
       }
     });
 
-    // ── One screenshots-only sheet per SUB-test (Test 1, Test 1a, Test 1b, ...) ──
-    // Screenshots aren't yet aligned 1:1 to sub-tests by the specs, so a test's shots all land on
-    // its FIRST sub-test's sheet; sibling sub-test sheets exist (ready for per-sub-test recordShot
-    // calls) and note that their proof lives on the parent sheet.
-    model.forEach(({ testNum, subs, shots }) => {
-      subs.forEach((sub, si) => {
-        const sheet = wb.addSheet(`Test ${sub.id}`);
-        sheet.setColumns([{ width: 160 }]);
-        const mine = si === 0 ? shots : [];
-        if (mine.length === 0) {
-          // no image on this sheet — leave it essentially empty (screenshots-only convention)
-          return;
+    // ── One screenshots-only sheet per SUB-test that HAS a screenshot ──
+    // A test's proof shots (in call order) are assigned to its sub-tests in order: shot 0 -> the
+    // first sub-test's sheet (Test 1), shot 1 -> Test 1a, etc. A sub-test with no shot gets NO
+    // sheet (per the "if there's no screenshot, don't add the sheet" rule). Any extra shots beyond
+    // the sub-test count are appended to the last created sheet so no proof is lost.
+    model.forEach(({ subs, shots }) => {
+      if (!shots.length) return; // whole test produced no proof -> no Test sheets at all
+      let lastSheet = null;
+      shots.forEach((s, shotIdx) => {
+        const sub = subs[shotIdx];
+        let sheet;
+        if (sub) {
+          sheet = wb.addSheet(`Test ${sub.id}`);
+          sheet.setColumns([{ width: 160 }]);
+          lastSheet = sheet;
+        } else {
+          sheet = lastSheet; // more shots than sub-tests: append to the last sheet
         }
-        let rowCursor = 1;
-        mine.forEach((s) => {
-          const img = wb.addImage(fs.readFileSync(s.path));
-          sheet.addImage(img, { row: rowCursor, col: 0, widthPx: 1100 });
-          const scaledH = img.width ? Math.round(img.height * (1100 / img.width)) : 700;
-          const spacerRows = Math.ceil(scaledH / 20) + 2;
-          for (let i = 0; i < spacerRows; i++) sheet.addRow(['']);
-          rowCursor += spacerRows;
-        });
+        if (!sheet) return;
+        // Append the image below whatever is already on this sheet.
+        const img = wb.addImage(fs.readFileSync(s.path));
+        const anchorRow = sheet.rows.length + 1; // 0-based-anchor == current row count (rows added below)
+        sheet.addImage(img, { row: anchorRow, col: 0, widthPx: 1100 });
+        const scaledH = img.width ? Math.round(img.height * (1100 / img.width)) : 700;
+        const spacerRows = Math.ceil(scaledH / 20) + 2;
+        for (let i = 0; i < spacerRows; i++) sheet.addRow(['']);
       });
     });
 

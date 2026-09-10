@@ -47,11 +47,12 @@ test.describe('Landing page: Online Quoting Tool (ACB-2239)', () => {
     ].join('\n') });
     const resp = await page.goto('/CentralPortalsLogin/NewLoginRLANZ', { waitUntil: 'domcontentloaded' }).catch(() => null);
     const status = resp ? resp.status() : null;
+    const servedOk = status !== null && status < 400;
     const isLogin = await page.evaluate(() => location.href.indexOf('Login') >= 0 || /log ?in|sign ?in|password/i.test(document.body.innerText || ''));
     await recordShot(testInfo, page, 'Adviser Portal login screen served (quoting tool gated behind portal login)');
-    recordCheck(testInfo, { label: 'Adviser Portal login URL served (HTTP status < 400)', expected: 'status < 400', actual: String(status) });
+    recordCheck(testInfo, { label: `Adviser Portal login URL served OK (HTTP ${status})`, expected: true, actual: servedOk });
     recordCheck(testInfo, { label: 'Login screen reached', expected: true, actual: isLogin });
-    expect(status !== null && status < 400, `AC01: login URL served (status ${status})`).toBe(true);
+    expect(servedOk, `AC01: login URL served (status ${status})`).toBe(true);
     expect(isLogin, 'AC01: portal login screen').toBe(true);
   });
 });
