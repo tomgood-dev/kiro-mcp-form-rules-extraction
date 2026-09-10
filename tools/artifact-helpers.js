@@ -142,6 +142,25 @@ async function recordShot(testInfo, page, label, opts = {}) {
       .waitForFunction(() => document.body && (document.body.innerText || '').trim().length > 20, { timeout: 6000 })
       .catch(() => {});
     await page.waitForTimeout(400); // let the compositor paint
+    // Stamp a banner with the LIVE page URL (read from location.href) into the page before capture.
+    // Playwright screenshots capture page CONTENT only — not the browser address bar — so a check
+    // like "the URL is /QuoteAndApply" can't otherwise be seen in the image. The banner is injected,
+    // captured, then removed, so it never affects the test. Read live => it's genuine proof, not a caption.
+    const stamp = opts.stampUrl !== false;
+    if (stamp) {
+      await page
+        .evaluate((cap) => {
+          var el = document.createElement('div');
+          el.id = '__proof_url_banner__';
+          el.textContent = 'URL: ' + location.href + (cap ? '   •   ' + cap : '');
+          el.style.cssText =
+            'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#1f4e79;color:#fff;' +
+            'font:600 13px/1.4 Consolas,monospace;padding:6px 12px;box-shadow:0 1px 4px rgba(0,0,0,.4);' +
+            'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+          document.body.appendChild(el);
+        }, label)
+        .catch(() => {});
+    }
     // Attach by PATH (not body): the run-folder reporter only picks up attachments that have a
     // .path (body-only attachments have no path and were being silently dropped — which collapsed
     // multiple recordShot calls down to just the one auto screenshot). Write a unique file per shot.
@@ -149,6 +168,9 @@ async function recordShot(testInfo, page, label, opts = {}) {
     const safe = String(label).replace(/[^a-z0-9]+/gi, '-').slice(0, 40).replace(/^-|-$/g, '') || 'shot';
     const file = testInfo.outputPath(`proof-${String(idx).padStart(2, '0')}-${safe}.png`);
     await page.screenshot({ path: file, fullPage: !!opts.fullPage });
+    if (stamp) {
+      await page.evaluate(() => { var b = document.getElementById('__proof_url_banner__'); if (b) b.remove(); }).catch(() => {});
+    }
     await testInfo.attach(`proof: ${label}`, { path: file, contentType: 'image/png' });
   } catch (err) {
     // Never let an evidence screenshot fail the test itself.

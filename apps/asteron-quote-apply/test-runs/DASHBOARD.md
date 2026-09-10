@@ -1,6 +1,6 @@
 # Asteron Quote & Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-10 05:18 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-10 05:24 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
@@ -31,7 +31,7 @@ _Auto-generated 2026-09-10 05:18 UTC. Shows the latest run of each spec. Rebuild
 | kids-cover-v1 | 6 | 0 | 0 | ✅ PASS | 2026-09-07 18:52 | 15.1 min | outsystems-qa.asteronlife.co.nz |
 | landing-in-progress-quotes-table-v1 | 4 | 0 | 6 | ✅ PASS | 2026-09-08 11:10 | 2.5 min | outsystems-qa.asteronlife.co.nz |
 | landing-inflight-quotes-v1 | 2 | 0 | 1 | ✅ PASS | 2026-09-08 09:26 | 2.0 min | outsystems-qa.asteronlife.co.nz |
-| landing-online-quoting-tool-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-10 15:17 | 1.6 min | outsystems-qa.asteronlife.co.nz |
+| landing-online-quoting-tool-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-10 15:23 | 1.5 min | outsystems-qa.asteronlife.co.nz |
 | lump-sum-life-cover-v1 | 28 | 0 | 4 | ✅ PASS | 2026-09-03 12:00 | 63.7 min | outsystems-dev.asteronlife.co.nz |
 | lumpsum-acd-death-cover-v1 | 1 | 0 | 0 | ✅ PASS | 2026-09-04 10:45 | 3.4 min | outsystems-dev.asteronlife.co.nz |
 | lumpsum-needlestick-cover-v1 | 10 | 1 | 0 | ❌ FAIL | 2026-09-04 13:18 | 31.8 min | outsystems-dev.asteronlife.co.nz |
