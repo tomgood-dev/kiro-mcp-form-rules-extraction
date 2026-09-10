@@ -85,6 +85,15 @@ class Sheet {
     return this;
   }
 
+  /**
+   * Merge a rectangular range. Rows/cols are 1-based. Only the top-left cell should carry a
+   * value; the others should be empty (Excel ignores their content in a merge).
+   */
+  mergeRange(fromRow, fromCol, toRow, toCol) {
+    this.merges.push(`${colLetter(fromCol - 1)}${fromRow}:${colLetter(toCol - 1)}${toRow}`);
+    return this;
+  }
+
   // Place a registered image. row/col are 0-based anchor. Scales to widthPx if given.
   addImage(img, { row = 0, col = 0, widthPx } = {}) {
     let w = img.width;
@@ -130,34 +139,51 @@ class Workbook {
     return idx;
   }
 
-  // ── Style sheet: 0 = normal, 1 = bold, 2 = wrap top-left, 3 = bold+wrap+fill (header) ──
+  // ── Style sheet ──
+  // cellXfs indices (referenced via Workbook.STYLE):
+  //   0 normal, 1 bold, 2 wrap top-left, 3 header (bold+fill+wrap),
+  //   4 pass (green fill, wrap top), 5 fail (red fill, wrap top), 6 skip (blue fill, wrap top),
+  //   7 comment (yellow fill + red font, wrap top)
   _stylesXml() {
     return (
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-      '<fonts count="2">' +
+      '<fonts count="3">' +
       '<font><sz val="11"/><name val="Calibri"/></font>' +
       '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+      '<font><color rgb="FFCC0000"/><sz val="11"/><name val="Calibri"/></font>' + // 2 = red text
       '</fonts>' +
-      '<fills count="3">' +
-      '<fill><patternFill patternType="none"/></fill>' +
-      '<fill><patternFill patternType="gray125"/></fill>' +
-      '<fill><patternFill patternType="solid"><fgColor rgb="FFD9E1F2"/><bgColor indexed="64"/></patternFill></fill>' +
+      '<fills count="7">' +
+      '<fill><patternFill patternType="none"/></fill>' + // 0
+      '<fill><patternFill patternType="gray125"/></fill>' + // 1
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFD9E1F2"/><bgColor indexed="64"/></patternFill></fill>' + // 2 header blue-grey
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>' + // 3 green (pass)
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/><bgColor indexed="64"/></patternFill></fill>' + // 4 red (fail)
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFBDD7EE"/><bgColor indexed="64"/></patternFill></fill>' + // 5 blue (skip)
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill>' + // 6 yellow (comment)
       '</fills>' +
       '<borders count="2">' +
       '<border><left/><right/><top/><bottom/><diagonal/></border>' +
       '<border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border>' +
       '</borders>' +
       '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
-      '<cellXfs count="4">' +
+      '<cellXfs count="8">' +
       // 0 normal
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>' +
       // 1 bold
       '<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>' +
       // 2 wrap, top-left align
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
-      // 3 header: bold + wrap + fill
+      // 3 header: bold + fill + wrap
       '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
+      // 4 pass: green fill, wrap top
+      '<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
+      // 5 fail: red fill, wrap top
+      '<xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
+      // 6 skip: blue fill, wrap top
+      '<xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
+      // 7 comment: yellow fill + red font, wrap top
+      '<xf numFmtId="0" fontId="2" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>' +
       '</cellXfs>' +
       '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
       '</styleSheet>'
@@ -328,3 +354,17 @@ class Workbook {
 }
 
 module.exports = { Workbook, colLetter };
+
+// Named cellXfs style IDs (see _stylesXml).
+const STYLE = {
+  NORMAL: 0,
+  BOLD: 1,
+  WRAP: 2,
+  HEADER: 3,
+  PASS: 4,
+  FAIL: 5,
+  SKIP: 6,
+  COMMENT: 7,
+};
+Workbook.STYLE = STYLE;
+module.exports.STYLE = STYLE;

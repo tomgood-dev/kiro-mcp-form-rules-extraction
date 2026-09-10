@@ -8,7 +8,7 @@
 // portal URL redirects to the Adviser Portal login) concerns the portal login redirect, which we
 // verify via the login URL being reachable/served.
 const { test, expect } = require('@playwright/test');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordShot } = require('../../../../tools/artifact-helpers');
 
 test.describe('Landing page: Online Quoting Tool (ACB-2239)', () => {
   test.describe.configure({ mode: 'parallel' });
@@ -22,6 +22,7 @@ test.describe('Landing page: Online Quoting Tool (ACB-2239)', () => {
     ].join('\n') });
     await page.goto('/QuoteAndApply/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle').catch(() => {});
+    await recordShot(testInfo, page, 'New Business Quoting Tool landing page (Quotes and Applications + New Quote)');
     const ui = await page.evaluate(() => {
       var body = (document.body.innerText || '');
       return {
@@ -47,6 +48,7 @@ test.describe('Landing page: Online Quoting Tool (ACB-2239)', () => {
     const resp = await page.goto('/CentralPortalsLogin/NewLoginRLANZ', { waitUntil: 'domcontentloaded' }).catch(() => null);
     const status = resp ? resp.status() : null;
     const isLogin = await page.evaluate(() => location.href.indexOf('Login') >= 0 || /log ?in|sign ?in|password/i.test(document.body.innerText || ''));
+    await recordShot(testInfo, page, 'Adviser Portal login screen served (quoting tool gated behind portal login)');
     recordCheck(testInfo, { label: 'Adviser Portal login URL served (HTTP status < 400)', expected: 'status < 400', actual: String(status) });
     recordCheck(testInfo, { label: 'Login screen reached', expected: true, actual: isLogin });
     expect(status !== null && status < 400, `AC01: login URL served (status ${status})`).toBe(true);

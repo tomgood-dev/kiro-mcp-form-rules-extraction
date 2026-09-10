@@ -31,15 +31,19 @@ class RunFolderReporter {
 
     const screenshot = result.attachments.find((a) => a.contentType === 'image/png' && a.path);
 
-    // Collect ALL png attachments in call order, so proof shots (recordShot: named `proof: <label>`)
-    // each become a captioned image in this test's worksheet — not just the one failure screenshot.
-    const shots = result.attachments
+    // Collect png attachments. Prefer recordShot proof shots (named `proof: <label>`, captured at
+    // a meaningful moment) — if any exist, use ONLY those and drop Playwright's auto end-of-test
+    // screenshot, which can be a coincidental frame (e.g. a page that navigated away at test end).
+    // If a test recorded no proof shots, fall back to the single auto screenshot so there's still proof.
+    const allImgs = result.attachments
       .filter((a) => a.contentType === 'image/png' && a.path)
       .map((a) => ({
         path: a.path,
-        // recordShot names its attachments `proof: <label>`; Playwright's auto screenshot is `screenshot`.
+        isProof: !!(a.name && a.name.startsWith('proof: ')),
         label: a.name && a.name.startsWith('proof: ') ? a.name.slice('proof: '.length) : (a.name || 'screenshot'),
       }));
+    const proofs = allImgs.filter((s) => s.isProof);
+    const shots = proofs.length ? proofs : allImgs;
 
     const parentTitle = test.parent && test.parent.title;
     const hasDescribeParent = parentTitle && !parentTitle.includes('.spec.js');
@@ -270,85 +274,103 @@ class RunFolderReporter {
    * Builds the SharePoint-style .xlsx deliverable for one spec's run.
    *
    *   Script sheet: Test | Description | Action | Expected Result | Pass/Fail | Comments
-   *     - One parent row per test (Description = the AC/story text).
-   *     - One sub-row (1a, 1b, ...) per recordCheck value-check (Action = its label,
-   *       Expected Result = expected, Pass/Fail derived, Comments = actual/mismatch).
-   *   Test N sheet: header + every proof screenshot recorded for that test, each captioned.
+   *     - One row per SUB-test (1, 1a, 1b, ...). A sub-test = one recordCheck value-check
+   *       (or the whole test if it recorded none).
+   *     - The Description cell (col B) is MERGED vertically across all of a test's sub-test
+   *       rows, matching the client template (value only in the block's top row).
+   *     - Pass/Fail cell is colour-filled (green/red/blue). Comments cell is yellow fill +
+   *       red text (the template's bug-note style) when it carries a note.
+   *   Test sheets: one sheet per SUB-test (Test 1, Test 1a, ...), containing ONLY that
+   *     sub-test's proof screenshots — no title/result/AC/steps text.
    */
   _buildWorkbook(runDir, slug, relSpecFile, tests) {
     const wb = new Workbook();
+    const S = Workbook.STYLE;
     const storyTitle = slug.replace(/-/g, ' ').replace(/\bv\d+$/, '').trim();
+    const statusFill = (status) => (status === 'passed' ? S.PASS : status === 'failed' ? S.FAIL : S.SKIP);
+    const passFailText = (status) => (status === 'passed' ? 'Pass' : status === 'failed' ? 'Fail' : status === 'skipped' ? 'Blocked' : status);
+    const subLetter = (i) => (i === 0 ? '' : String.fromCharCode(96 + i)); // 0->'', 1->'a', 2->'b'
+
+    // Pre-compute each test's sub-tests so we know how many rows/sheets it spans.
+    const model = tests.map((t, ti) => {
+      const testNum = ti + 1;
+      const checks = t.valueChecks || [];
+      const shots = (t.shots || []).filter((s) => s.path && fs.existsSync(s.path));
+      const subs = checks.length
+        ? checks.map((c, ci) => ({
+            id: `${testNum}${subLetter(ci)}`,
+            action: c.label,
+            expected: String(c.expected),
+            pass: String(c.expected) === String(c.actual) && t.status !== 'failed',
+            comment: String(c.expected) === String(c.actual) ? '' : `Actual: ${String(c.actual)}`,
+          }))
+        : [{ id: String(testNum), action: t.title, expected: '', pass: t.status === 'passed', comment: '' }];
+      return { t, testNum, subs, shots };
+    });
 
     // ── Script sheet ──
     const script = wb.addSheet('Script');
     script.setColumns([{ width: 10 }, { width: 46 }, { width: 40 }, { width: 40 }, { width: 12 }, { width: 46 }]);
-    script.mergeTitle(`${storyTitle}  (${relSpecFile})`, 6, 3);
-    script.addRow([''], { styleId: 0 }); // spacer row (matches template's blank row 2)
-    script.addRow(['Test', 'Description', 'Action', 'Expected Result', 'Pass/Fail', 'Comments'], { styleId: 3 });
+    script.mergeTitle(`${storyTitle}  (${relSpecFile})`, 6, S.HEADER);
+    script.addRow([''], { styleId: S.NORMAL }); // spacer row (matches template's blank row 2)
+    script.addRow(['Test', 'Description', 'Action', 'Expected Result', 'Pass/Fail', 'Comments'], { styleId: S.HEADER });
 
-    tests.forEach((t, ti) => {
-      const testNum = ti + 1;
-      const passFail = t.status === 'passed' ? 'Pass' : t.status === 'failed' ? 'Fail' : t.status === 'skipped' ? 'Blocked' : t.status;
+    model.forEach(({ t, subs }) => {
       const description = t.acceptanceCriteria || t.title;
-      const parentComment = t.status === 'failed'
+      // A whole-test comment (failure/skip reason) lands on the FIRST sub-row's Comments.
+      const testComment = t.status === 'failed'
         ? (t.error ? String(t.error).split('\n').slice(0, 4).join(' ') : '')
         : t.status === 'skipped'
           ? (t.skipReason || 'Deferred — see spec.')
           : '';
 
-      const checks = t.valueChecks || [];
-      if (checks.length === 0) {
-        // No per-check rows — single row carries the whole test.
-        script.addRow([testNum, description, t.title, '', passFail, parentComment], { styleId: 2 });
-      } else {
-        // Parent row + one sub-row per check (1, 1a, 1b, ...), Description only on the parent.
-        script.addRow([testNum, description, '', '', passFail, parentComment], { styleId: 2 });
-        checks.forEach((c, ci) => {
-          const subId = ci === 0 ? String(testNum) : `${testNum}${String.fromCharCode(96 + ci)}`; // 1a, 1b...
-          const same = String(c.expected) === String(c.actual);
-          script.addRow(
-            [
-              subId,
-              '',
-              c.label,
-              String(c.expected),
-              same ? 'Pass' : (t.status === 'passed' ? 'Pass' : 'Fail'),
-              same ? '' : `Actual: ${String(c.actual)}`,
-            ],
-            { styleId: 2 }
-          );
-        });
+      const firstRowNum = script.rows.length + 1; // 1-based, next row to be added
+      subs.forEach((sub, si) => {
+        // Pass/Fail cell: colour by the sub-test's own pass state (fail overrides), skip = whole test skipped.
+        const status = t.status === 'skipped' ? 'skipped' : sub.pass ? 'passed' : 'failed';
+        const comment = si === 0 ? (sub.comment || testComment) : sub.comment;
+        script.addRow(
+          [
+            { v: sub.id, styleId: S.WRAP },
+            { v: si === 0 ? description : '', styleId: S.WRAP }, // only top cell carries the merged value
+            { v: sub.action, styleId: S.WRAP },
+            { v: sub.expected, styleId: S.WRAP },
+            { v: passFailText(status), styleId: statusFill(status) },
+            { v: comment, styleId: comment ? S.COMMENT : S.WRAP },
+          ],
+          { styleId: S.WRAP }
+        );
+      });
+      const lastRowNum = script.rows.length;
+      // Merge the Description column (B = col 2) vertically across this test's sub rows.
+      if (lastRowNum > firstRowNum) {
+        script.mergeRange(firstRowNum, 2, lastRowNum, 2);
       }
     });
 
-    // ── One "Test N" sheet per test, with its proof screenshots ──
-    tests.forEach((t, ti) => {
-      const testNum = ti + 1;
-      const sheet = wb.addSheet(`Test ${testNum}`);
-      sheet.setColumns([{ width: 140 }]);
-      sheet.addRow([`Test ${testNum}: ${t.title}`], { styleId: 1 });
-      const passFail = t.status === 'passed' ? 'Pass' : t.status === 'failed' ? 'Fail' : t.status === 'skipped' ? 'Blocked' : t.status;
-      sheet.addRow([`Result: ${passFail}`], { styleId: 1 });
-      if (t.acceptanceCriteria) {
-        sheet.addRow([t.acceptanceCriteria], { styleId: 2, height: Math.min(300, 15 * (t.acceptanceCriteria.split('\n').length + 1)) });
-      }
-      sheet.addRow(['']);
-
-      const shots = (t.shots || []).filter((s) => s.path && fs.existsSync(s.path));
-      if (shots.length === 0) {
-        sheet.addRow(['(No screenshots captured for this test.)'], { styleId: 2 });
-      } else {
-        shots.forEach((s) => {
-          // caption row, then the image anchored on the row below it
-          const capRow = sheet.addRow([`Proof: ${s.label}`], { styleId: 1 });
+    // ── One screenshots-only sheet per SUB-test (Test 1, Test 1a, Test 1b, ...) ──
+    // Screenshots aren't yet aligned 1:1 to sub-tests by the specs, so a test's shots all land on
+    // its FIRST sub-test's sheet; sibling sub-test sheets exist (ready for per-sub-test recordShot
+    // calls) and note that their proof lives on the parent sheet.
+    model.forEach(({ testNum, subs, shots }) => {
+      subs.forEach((sub, si) => {
+        const sheet = wb.addSheet(`Test ${sub.id}`);
+        sheet.setColumns([{ width: 160 }]);
+        const mine = si === 0 ? shots : [];
+        if (mine.length === 0) {
+          // no image on this sheet — leave it essentially empty (screenshots-only convention)
+          return;
+        }
+        let rowCursor = 1;
+        mine.forEach((s) => {
           const img = wb.addImage(fs.readFileSync(s.path));
-          sheet.addImage(img, { row: capRow, col: 0, widthPx: 1000 }); // capRow is 1-based == 0-based next row
-          // reserve vertical space so the next caption doesn't overlap the image
-          const scaledH = img.width ? Math.round(img.height * (1000 / img.width)) : 600;
-          const spacerRows = Math.ceil(scaledH / 20) + 1;
+          sheet.addImage(img, { row: rowCursor, col: 0, widthPx: 1100 });
+          const scaledH = img.width ? Math.round(img.height * (1100 / img.width)) : 700;
+          const spacerRows = Math.ceil(scaledH / 20) + 2;
           for (let i = 0; i < spacerRows; i++) sheet.addRow(['']);
+          rowCursor += spacerRows;
         });
-      }
+      });
     });
 
     fs.writeFileSync(path.join(runDir, `${slug}.xlsx`), wb.toBuffer());
