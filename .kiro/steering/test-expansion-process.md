@@ -242,6 +242,34 @@ This is fully automated by a custom reporter (`tools/reporters/run-folder-report
 app-agnostic, wired up in both `playwright.config.js` and `playwright.edge.config.js`) —
 you don't create these folders or files by hand.
 
+#### SharePoint deliverable: the `.xlsx` workbook (2026-09-10)
+
+Alongside `report.md`/`summary.json`, each run now ALSO emits a
+**`<spec-slug>.xlsx`** in the same run folder — the artifact the client's testers upload to
+SharePoint (they work in Excel-per-ticket, not Markdown). It matches their template
+(`apps/asteron-quote-apply/docs/reference/…(Script).csv`):
+
+- **Script sheet** — columns `Test | Description | Action | Expected Result | Pass/Fail | Comments`.
+  A title/merged banner (row 1), header (after a spacer), then a parent row per test
+  (Description = the AC/story text) and one sub-row (`1`, `1a`, `1b`, …) per `recordCheck`
+  value-check (Action = its label, Expected Result = its expected, Pass/Fail derived, Comments
+  = the actual value on a mismatch / skip reason / failure message).
+- **One "Test N" sheet per test** — the AC text, result, then **every proof screenshot** for
+  that test, each captioned. This is why we screenshot EVERY test now, not just failures:
+  the workbook is proof-of-execution against the ACs.
+
+Built by a **dependency-free** xlsx writer (`tools/lib/xlsx-writer.js` on
+`tools/lib/zip-writer.js`) because this environment has **no npm** — only the bundled Node
+runtime. Do NOT try to `npm install exceljs`/`jszip` here; it will fail. The writers use
+`zlib.deflateRawSync` + a hand-rolled ZIP/OOXML layout and are verified to open in Excel/
+Windows ZIP.
+
+**Capturing proof screenshots:** the edge config sets `screenshot: 'on'` so every test yields
+at least one shot automatically. For step-by-step proof (matching the template's "every Action
+produces screenshots"), call `recordShot(testInfo, page, 'business-readable caption')` from
+`tools/artifact-helpers.js` at each meaningful action — each becomes a captioned image in that
+test's Test N sheet, in call order. It never fails the test (screenshot errors are swallowed).
+
 **What `report.md` contains (in this order):**
 
 1. **Header** — spec file path, run timestamp, environment (from `BASE_URL`), duration,

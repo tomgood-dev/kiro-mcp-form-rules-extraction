@@ -40,7 +40,7 @@ module.exports = defineConfig({
     headless: true,
     actionTimeout: 15_000,
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    screenshot: 'on', // capture a screenshot for EVERY test (pass or fail) — proof for the xlsx workbook, not just failures
     ignoreHTTPSErrors: true,
     channel: 'msedge',
     storageState: './apps/asteron-quote-apply/.auth/' + (process.env.AUTH_STATE_FILENAME || 'state.json'),

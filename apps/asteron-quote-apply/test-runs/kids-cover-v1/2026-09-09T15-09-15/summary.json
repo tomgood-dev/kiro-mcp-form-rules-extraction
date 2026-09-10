@@ -1,0 +1,20 @@
+{
+  "specSlug": "kids-cover-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/kids-cover-v1.spec.js",
+  "runTimestamp": "2026-09-09T15-09-15",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 218981.045,
+  "filtered": true,
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "skipped": 0,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Apply for Kids Cover (ACB-2295) › AC01/AC02/AC07: Kids Cover selectable; number-of-kids drives per-kid First/Surname/DOB/Gender/SI fields",
+      "status": "passed",
+      "durationMs": 141984
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+﻿ACB-15435 - Accl Cancer & SA Trauma + MTB Min SI / age Validation messages,,,,,
+,,,,,
+Test,Description,Action,Expected Result,Pass/Fail,Comments
+1,"Accl Cancer - when the minimum or maximum age messages are displayed along with a minimum Sum Insured error (min Si for Cancer is $10,000) - only the Age message should show - both are being displayed
+
+The SI messages should only show once age is valid
+
+Example:
+Create quote - Personal
+Life Cover SI - $50,000 + Accl Cancer - SI - $9,999
+Age 16
+
+The only message that should display is: The minimum Age Next Birthday for Cancer Cover is 17
+
+Messages being displayed are: (Standalone Cancer correctly only showing the Age messages)","Age 16
+
+Standalone Cancer SI = $9,999 - Stepped, Level to 65, Level to 70
+Accelerated Cancer SI = $9,999 - Stepped, Level to 65, Level to 70","Correct messages show:
+The minimum Age Next Birthday for Cancer Cover is 17
+",Pass,"When age changed to 17 - the message is removed but only Accl Cancer A is showing the message ""The minimum the Cancer Cover sum Insured is $10,000""
+
+This should also show for Accl Cancer B or Accl Cancer C
+
+Bug raised: https://rlaanz.atlassian.net/browse/ACB-15501
+"
+1a,,"Age 66
+
+Standalone Cancer SI = $9,999 - Stepped
+Accelerated Cancer SI = $9,999 - Stepped",The maximum Age Next Birthday for Stepped premium Cancer Cover is 65,Pass,
+1b,,"Age 61
+
+Standalone Cancer SI = $9,999 - Level to 65
+Accelerated Cancer SI = $9,999 - Level to 65",The maximum Age Next Birthday for Level to 65 Cancer Cover is 60,Pass,
+1c,,"Age 66
+
+Standalone Cancer SI = $9,999 - Level to 70
+Accelerated Cancer SI = $9,999 - Level to 70",The maximum Age Next Birthday for Level to 70 Cancer Cover is 65,Pass,"When age changed to 65 - the message is removed but only the message ""The minimum the Cancer Cover sum Insured is $10,000"" is not showing - it should be for each Accl Cancer Cover
+
+Bug raised: https://rlaanz.atlassian.net/browse/ACB-15501"
+2,"Standalone Trauma + Major Trauma - when both SI’s are below $5,000, Two messages should be displayed:
+The minimum Trauma Cover sum insured is $5,000.
+The minimum Major Trauma Benefit sum insured is $5,000.
+
+Only one is being displayed:
+
+Example:
+Create quote - Personal or Business
+
+Standalone Trauma - $4,999 + Major Trauma - SI - $4,999 - message displayed is: The minimum Trauma Cover sum insured is $5,000.
+
+Standalone Trauma - $5,000 + Major Trauma - SI - $4,999 - message displayed is: The minimum Major Trauma Benefit sum insured is $5,000.
+
+Accelerated Trauma shows both messages","Standalone Trauma & MTB SI = $4,999
+
+Change Trauma & MTB SI = $5,000
+
+Regression Accelerated Trauma","The minimum Trauma Cover sum insured is $5,000.
+The minimum Major Trauma Benefit sum insured is $5,000.",Pass,
+3,"Standalone Trauma + MTB and Accelerated Trauma + MTB - when the minimum or maximum age messages are displayed along with a minimum Sum Insured error (min Si for Trauma & MTB is $5,000) - only the Age message should show - both are being displayed
+
+Example 1:
+Create quote - Personal
+Standalone Trauma - SI $5,000+ MTB - SI - $4,999 - Stepped
+Age 71
+
+The only message that should display is: The maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70
+
+Messages being displayed are:
+The maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70
+The minimum Major Trauma Benefit sum insured is $5,000.
+
+
+Example 2:
+Create quote - Personal
+Life Cover SI - $50,000 + Accl Trauma - SI $4,999+ MTB - SI - $4,999 - Stepped
+Age 71
+
+The only message that should display is: The maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70
+
+Messages being displayed are:
+The maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70
+The minimum Major Trauma Benefit sum insured is $5,000.
+","Age 16
+
+Standalone Trauma + MTB SI = $4,999 - Stepped, Level to 65, Level to 70
+Accelerated Trauma + MTB SI = $4,999 - Stepped, Level to 65, Level to 70",The minimum Age Next Birthday for Trauma Recovery Cover is 17,Pass,
+3a,,"Age71
+
+Standalone Trauma + MTB SI = $4,999 - Stepped
+Accelerated Trauma + MTB SI = $4,999 - Stepped",The maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70,Pass,
+3b,,"Age 61
+
+Standalone Trauma + MTB SI = $4,999 - Level to 65
+Accelerated Trauma + MTB SI = $4,999 - Level to 65",The maximum Age Next Birthday for Level to 65 Trauma Recovery Cover is 60,Pass,
+3c,,"Age 66
+
+Standalone Trauma + MTB SI = $4,999 - Level to 70
+Accelerated Trauma + MTB SI = $4,999 - Level to 70",The maximum Age Next Birthday for Level to 70 Trauma Recovery Cover is 65,Pass,
+4,"Cancer & Trauma together - Age - Premium Structures & min SI's
+Include Business","Age 16
+Standalone Trauma + MTB SI = $4,999 
+Accelerated Trauma + MTB SI = $4,999 
+Standalone Cancer SI = $9,999
+Accelerated Cancer SI = $9,999 
+","Corrent messages are displayed
+",Pass,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,

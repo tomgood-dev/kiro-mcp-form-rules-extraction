@@ -23,9 +23,15 @@
    (checkboxes:[]) — the ONLY mandatory control is the Yes/No confirmation. Set **Yes** (real mouse
    click) then click the footer **Next** (real mouse click on its box) -> advances to Personal Details.
    (Earlier "couldn't pass DoD" was the Next button not being clicked via a real mouse gesture, now fixed.)
-4. **Personal Details** (`PersonalDetails?...`): mandatory = Title, Marital Status, **Height (Cm) OR imperial
-   — fill only ONE unit; filling BOTH Cm AND Feet/Inches invalidates it**, **Weight (Kg) only**, Mobile
-   Number, Email, Address (type-ahead), + paramedical/terms per on-screen errors.
+4. **Personal Details** (`PersonalDetails?ApplicationId=`): COMPLETE mandatory set (all confirmed 2026-09-10):
+   - **Title** (select) — must pick a real value (e.g. Mr); "Please select" fails with "Select a value in this field".
+   - **Marital Status** (select) — pick any real value.
+   - **Height**: fill **Cm ONLY** (e.g. 180); leave Feet/Inches BLANK (filling both unit systems invalidates it).
+   - **Weight**: fill **Kg ONLY** (e.g. 80); leave Stones/Pounds BLANK.
+   - **Mobile Number** (tel), **Email** (email) — required.
+   - **Address**: `Input_AddressLookup` is a live address-search. Type e.g. "Queen" (or a longer string) →
+     real suggestions appear (e.g. "1 Queenwood Road, Levin 5510") → click one to select. CONFIRMED working.
+   - Home/Work phone appear optional. Fill ALL the above, then footer Next -> next screen.
 5. (next) Insurance History / Occupation / Financial / Tele-Interview -> Personal Statement -> Underwriting/Owner/Payment/Submit (per apply-flow/page.md). Payment likely the real wall — TBC.
 
 ## KEY LESSONS (applied)

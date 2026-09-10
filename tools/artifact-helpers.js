@@ -112,6 +112,36 @@ function recordCheck(testInfo, { label, expected, actual }) {
   });
 }
 
+/**
+ * Captures a labeled PROOF screenshot for the current test and attaches it, so the run-folder
+ * reporter can embed it (with its label as a caption) into that test's "Test N" worksheet in the
+ * generated .xlsx workbook. Unlike the config's `screenshot: 'on'` (which only fires at
+ * success/failure boundaries), this lets a test drop a proof shot at each meaningful ACTION —
+ * matching the tester template where every Action produces screenshots of proof.
+ *
+ * Call it liberally in a spec, e.g. right after a state change you want evidenced:
+ *   const { recordShot } = require('../../../tools/artifact-helpers');
+ *   await recordShot(testInfo, page, 'Bundling discount shows 15% for 2 covers');
+ *
+ * Screenshots are attached with contentType image/png and a name prefixed `proof:` +
+ * the label, so the reporter can distinguish ordered proof shots from Playwright's own
+ * auto screenshots and keep them in call order.
+ *
+ * @param {import('@playwright/test').TestInfo} testInfo
+ * @param {import('@playwright/test').Page} page
+ * @param {string} label  business-readable caption for this proof shot
+ * @param {{fullPage?: boolean}} [opts]
+ */
+async function recordShot(testInfo, page, label, opts = {}) {
+  try {
+    const buf = await page.screenshot({ fullPage: !!opts.fullPage });
+    await testInfo.attach(`proof: ${label}`, { body: buf, contentType: 'image/png' });
+  } catch (err) {
+    // Never let an evidence screenshot fail the test itself.
+    console.error('[recordShot] skipped:', err && err.message);
+  }
+}
+
 module.exports = {
   REPO_ROOT,
   PENDING_ROOT,
@@ -122,4 +152,5 @@ module.exports = {
   pendingDir,
   embedImage,
   recordCheck,
+  recordShot,
 };

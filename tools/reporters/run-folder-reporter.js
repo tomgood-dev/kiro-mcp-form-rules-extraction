@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { REPO_ROOT, PENDING_ROOT, formatRunTimestamp, slugifySpecFile, getRunDir, pendingDir, embedImage } = require('../artifact-helpers');
+const { Workbook } = require('../lib/xlsx-writer');
 
 class RunFolderReporter {
   constructor(options = {}) {
@@ -29,6 +30,16 @@ class RunFolderReporter {
     if (!this.bySpecFile.has(specFile)) this.bySpecFile.set(specFile, []);
 
     const screenshot = result.attachments.find((a) => a.contentType === 'image/png' && a.path);
+
+    // Collect ALL png attachments in call order, so proof shots (recordShot: named `proof: <label>`)
+    // each become a captioned image in this test's worksheet — not just the one failure screenshot.
+    const shots = result.attachments
+      .filter((a) => a.contentType === 'image/png' && a.path)
+      .map((a) => ({
+        path: a.path,
+        // recordShot names its attachments `proof: <label>`; Playwright's auto screenshot is `screenshot`.
+        label: a.name && a.name.startsWith('proof: ') ? a.name.slice('proof: '.length) : (a.name || 'screenshot'),
+      }));
 
     const parentTitle = test.parent && test.parent.title;
     const hasDescribeParent = parentTitle && !parentTitle.includes('.spec.js');
@@ -64,6 +75,7 @@ class RunFolderReporter {
       duration: result.duration,
       error: cleanError,
       screenshotPath: screenshot ? screenshot.path : null,
+      shots,
       acceptanceCriteria: acAnnotation ? acAnnotation.description : null,
       skipReason: skipAnnotation ? skipAnnotation.description : null,
       valueChecks,
@@ -225,6 +237,15 @@ class RunFolderReporter {
         tests: tests.map((t) => ({ title: t.title, status: t.status, durationMs: t.duration || 0 })),
       };
       fs.writeFileSync(path.join(runDir, 'summary.json'), JSON.stringify(summary, null, 2));
+
+      // ── Write the SharePoint-style Excel workbook (the tester deliverable) ──
+      // Script sheet (Test|Description|Action|Expected Result|Pass/Fail|Comments) + one
+      // "Test N" sheet per test containing that test's proof screenshots.
+      try {
+        this._buildWorkbook(runDir, slug, relSpecFile, tests);
+      } catch (err) {
+        console.error('[xlsx] skipped (non-fatal):', err.message, err.stack);
+      }
     }
 
     // Clean up the transient holding area.
@@ -243,6 +264,94 @@ class RunFolderReporter {
     } catch (err) {
       console.error('[dashboard] skipped (non-fatal):', err.message);
     }
+  }
+
+  /**
+   * Builds the SharePoint-style .xlsx deliverable for one spec's run.
+   *
+   *   Script sheet: Test | Description | Action | Expected Result | Pass/Fail | Comments
+   *     - One parent row per test (Description = the AC/story text).
+   *     - One sub-row (1a, 1b, ...) per recordCheck value-check (Action = its label,
+   *       Expected Result = expected, Pass/Fail derived, Comments = actual/mismatch).
+   *   Test N sheet: header + every proof screenshot recorded for that test, each captioned.
+   */
+  _buildWorkbook(runDir, slug, relSpecFile, tests) {
+    const wb = new Workbook();
+    const storyTitle = slug.replace(/-/g, ' ').replace(/\bv\d+$/, '').trim();
+
+    // ── Script sheet ──
+    const script = wb.addSheet('Script');
+    script.setColumns([{ width: 10 }, { width: 46 }, { width: 40 }, { width: 40 }, { width: 12 }, { width: 46 }]);
+    script.mergeTitle(`${storyTitle}  (${relSpecFile})`, 6, 3);
+    script.addRow([''], { styleId: 0 }); // spacer row (matches template's blank row 2)
+    script.addRow(['Test', 'Description', 'Action', 'Expected Result', 'Pass/Fail', 'Comments'], { styleId: 3 });
+
+    tests.forEach((t, ti) => {
+      const testNum = ti + 1;
+      const passFail = t.status === 'passed' ? 'Pass' : t.status === 'failed' ? 'Fail' : t.status === 'skipped' ? 'Blocked' : t.status;
+      const description = t.acceptanceCriteria || t.title;
+      const parentComment = t.status === 'failed'
+        ? (t.error ? String(t.error).split('\n').slice(0, 4).join(' ') : '')
+        : t.status === 'skipped'
+          ? (t.skipReason || 'Deferred — see spec.')
+          : '';
+
+      const checks = t.valueChecks || [];
+      if (checks.length === 0) {
+        // No per-check rows — single row carries the whole test.
+        script.addRow([testNum, description, t.title, '', passFail, parentComment], { styleId: 2 });
+      } else {
+        // Parent row + one sub-row per check (1, 1a, 1b, ...), Description only on the parent.
+        script.addRow([testNum, description, '', '', passFail, parentComment], { styleId: 2 });
+        checks.forEach((c, ci) => {
+          const subId = ci === 0 ? String(testNum) : `${testNum}${String.fromCharCode(96 + ci)}`; // 1a, 1b...
+          const same = String(c.expected) === String(c.actual);
+          script.addRow(
+            [
+              subId,
+              '',
+              c.label,
+              String(c.expected),
+              same ? 'Pass' : (t.status === 'passed' ? 'Pass' : 'Fail'),
+              same ? '' : `Actual: ${String(c.actual)}`,
+            ],
+            { styleId: 2 }
+          );
+        });
+      }
+    });
+
+    // ── One "Test N" sheet per test, with its proof screenshots ──
+    tests.forEach((t, ti) => {
+      const testNum = ti + 1;
+      const sheet = wb.addSheet(`Test ${testNum}`);
+      sheet.setColumns([{ width: 140 }]);
+      sheet.addRow([`Test ${testNum}: ${t.title}`], { styleId: 1 });
+      const passFail = t.status === 'passed' ? 'Pass' : t.status === 'failed' ? 'Fail' : t.status === 'skipped' ? 'Blocked' : t.status;
+      sheet.addRow([`Result: ${passFail}`], { styleId: 1 });
+      if (t.acceptanceCriteria) {
+        sheet.addRow([t.acceptanceCriteria], { styleId: 2, height: Math.min(300, 15 * (t.acceptanceCriteria.split('\n').length + 1)) });
+      }
+      sheet.addRow(['']);
+
+      const shots = (t.shots || []).filter((s) => s.path && fs.existsSync(s.path));
+      if (shots.length === 0) {
+        sheet.addRow(['(No screenshots captured for this test.)'], { styleId: 2 });
+      } else {
+        shots.forEach((s) => {
+          // caption row, then the image anchored on the row below it
+          const capRow = sheet.addRow([`Proof: ${s.label}`], { styleId: 1 });
+          const img = wb.addImage(fs.readFileSync(s.path));
+          sheet.addImage(img, { row: capRow, col: 0, widthPx: 1000 }); // capRow is 1-based == 0-based next row
+          // reserve vertical space so the next caption doesn't overlap the image
+          const scaledH = img.width ? Math.round(img.height * (1000 / img.width)) : 600;
+          const spacerRows = Math.ceil(scaledH / 20) + 1;
+          for (let i = 0; i < spacerRows; i++) sheet.addRow(['']);
+        });
+      }
+    });
+
+    fs.writeFileSync(path.join(runDir, `${slug}.xlsx`), wb.toBuffer());
   }
 }
 

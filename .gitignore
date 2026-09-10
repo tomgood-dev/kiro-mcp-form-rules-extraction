@@ -35,3 +35,6 @@ reference/**/*.csv
 !reference/**/SOURCE.md
 !reference/**/*analysis*.md
 !reference/**/*audit*.md
+
+# Excel lock/temp files
+~$*.xlsx

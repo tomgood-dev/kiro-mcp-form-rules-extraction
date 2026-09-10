@@ -1,19 +1,22 @@
 # Asteron Quote & Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-09 00:22 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-10 04:32 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
 | Specs | Tests | ✅ Passed | ❌ Failed | ⏭️ Skipped | Specs with failures |
 |---|---|---|---|---|---|
-| 40 | 346 | 284 | 24 | 38 | 13 |
+| 43 | 349 | 286 | 25 | 38 | 14 |
 
-**Pass rate:** 82% of 346 tests (skipped = deferred/blocked ACs, documented per spec).
+**Pass rate:** 82% of 349 tests (skipped = deferred/blocked ACs, documented per spec).
 
 ## Specs (latest run each)
 
 | Spec | ✅ | ❌ | ⏭️ | Result | Last run | Duration | Env |
 |---|---|---|---|---|---|---|---|
+| _probe-address | 1 | 0 | 0 | ✅ PASS | 2026-09-10 13:19 | 6.7 min | outsystems-qa.asteronlife.co.nz |
+| _probe-drive-wall | 1 | 0 | 0 | ✅ PASS | 2026-09-10 13:36 | 7.2 min | outsystems-qa.asteronlife.co.nz |
+| _probe-title-dom | 0 | 1 | 0 | ❌ FAIL | 2026-09-10 13:44 | 6.5 min | outsystems-qa.asteronlife.co.nz |
 | business-expenses-cover-v1 | 13 | 0 | 0 | ✅ PASS | 2026-09-08 11:10 | 45.3 min | outsystems-qa.asteronlife.co.nz |
 | business-farmers-disability-cover-v1 | 29 | 0 | 1 | ✅ PASS | 2026-09-07 14:32 | 101.9 min | outsystems-qa.asteronlife.co.nz |
 | business-life-cover-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-07 12:22 | 8.6 min | outsystems-qa.asteronlife.co.nz |
@@ -31,7 +34,7 @@ _Auto-generated 2026-09-09 00:22 UTC. Shows the latest run of each spec. Rebuild
 | kids-cover-v1 | 6 | 0 | 0 | ✅ PASS | 2026-09-07 18:52 | 15.1 min | outsystems-qa.asteronlife.co.nz |
 | landing-in-progress-quotes-table-v1 | 4 | 0 | 6 | ✅ PASS | 2026-09-08 11:10 | 2.5 min | outsystems-qa.asteronlife.co.nz |
 | landing-inflight-quotes-v1 | 2 | 0 | 1 | ✅ PASS | 2026-09-08 09:26 | 2.0 min | outsystems-qa.asteronlife.co.nz |
-| landing-online-quoting-tool-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-09 10:18 | 3.9 min | outsystems-qa.asteronlife.co.nz |
+| landing-online-quoting-tool-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-10 14:30 | 1.4 min | outsystems-qa.asteronlife.co.nz |
 | lump-sum-life-cover-v1 | 28 | 0 | 4 | ✅ PASS | 2026-09-03 12:00 | 63.7 min | outsystems-dev.asteronlife.co.nz |
 | lumpsum-acd-death-cover-v1 | 1 | 0 | 0 | ✅ PASS | 2026-09-04 10:45 | 3.4 min | outsystems-dev.asteronlife.co.nz |
 | lumpsum-needlestick-cover-v1 | 10 | 1 | 0 | ❌ FAIL | 2026-09-04 13:18 | 31.8 min | outsystems-dev.asteronlife.co.nz |
@@ -59,6 +62,7 @@ _Auto-generated 2026-09-09 00:22 UTC. Shows the latest run of each spec. Rebuild
 
 | Spec | Failing tests |
 |---|---|
+| _probe-title-dom | PROBE: Title/Marital control DOM |
 | business-specific-injury-cover-v1 | 1 failing |
 | create-a-new-business-quote-v1 | 1 failing |
 | discounts-bundling-v1 | 2 failing |
