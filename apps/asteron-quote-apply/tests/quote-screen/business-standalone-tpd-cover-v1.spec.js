@@ -24,7 +24,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function getTpdStructure(page, index = 0) {
   return page.evaluate((idx) => {
@@ -95,12 +95,12 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await waitForSettle(quote, 1800);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'TPD');
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'TPD is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'TPD is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: TPD selectable').toBe(true);
   });
 
@@ -112,18 +112,18 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     ].join('\n') });
     const quote = await freshBizTpdQuote(page);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'TPD Sum Insured field present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'TPD Sum Insured field present', expected: true, actual: siVisible });
     expect(siVisible, 'AC03: SI field present').toBe(true);
     const struct = await getTpdStructure(quote);
-    recordCheck(testInfo, { label: 'TPD Premium Structure default + options', expected: 'Stepped(def); Stepped/Level to 65/Level to 70', actual: `${struct?.selected}; ${(struct?.options||[]).join('/')}` });
+    await recordStep(testInfo, page, { label: 'TPD Premium Structure default + options', expected: 'Stepped(def); Stepped/Level to 65/Level to 70', actual: `${struct?.selected}; ${(struct?.options||[]).join('/')}` });
     expect(struct?.selected, 'AC03: Structure default Stepped').toBe('Stepped');
     expect(struct?.options, 'AC03: Structure options').toEqual(['Stepped', 'Level to 65', 'Level to 70']);
     const def = await getTpdDefinition(quote);
-    recordCheck(testInfo, { label: 'TPD Definition default + options', expected: 'Own(def); Own/Any/Modified', actual: `${def?.selected}; ${(def?.options||[]).join('/')}` });
+    await recordStep(testInfo, page, { label: 'TPD Definition default + options', expected: 'Own(def); Own/Any/Modified', actual: `${def?.selected}; ${(def?.options||[]).join('/')}` });
     expect(def?.selected, 'AC03: Definition default Own').toBe('Own');
     expect(def?.options, 'AC03: Definition options').toEqual(['Own', 'Any', 'Modified']);
     const bs = await getCheckboxStateByLabel(quote, 'Business Security');
-    recordCheck(testInfo, { label: 'Business Security checkbox present + default unchecked', expected: 'present, unchecked', actual: JSON.stringify(bs) });
+    await recordStep(testInfo, page, { label: 'Business Security checkbox present + default unchecked', expected: 'present, unchecked', actual: JSON.stringify(bs) });
     expect(bs, 'AC03: Business Security present').not.toBeNull();
     expect(bs?.checked, 'AC03: Business Security default unchecked').toBe(false);
   });
@@ -138,7 +138,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD ANB < 17', expected: 'minimum Age Next Birthday ... TPD ... 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD ANB < 17', expected: 'minimum Age Next Birthday ... TPD ... 17', actual: e });
     expect(/minimum Age Next Birthday.*TPD.*is 17/i.test(e), `AC04. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -154,7 +154,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Age Next Birthday.*TPD.*is 17/i.test(e);
-    recordCheck(testInfo, { label: 'Business TPD min age at ANB 17 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business TPD min age at ANB 17 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC04 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -168,7 +168,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD Stepped + ANB > 65', expected: 'maximum ... Stepped ... TPD ... 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD Stepped + ANB > 65', expected: 'maximum ... Stepped ... TPD ... 65', actual: e });
     expect(/maximum Age Next Birthday for Stepped.*TPD.*65/i.test(e), `AC05. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -183,7 +183,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Stepped.*TPD.*65/i.test(e);
-    recordCheck(testInfo, { label: 'Business TPD Stepped max at ANB 65 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business TPD Stepped max at ANB 65 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC05 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -198,7 +198,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await setTpdStructure(quote, 'Level to 65');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD Level to 65 + ANB > 60', expected: 'Level to 65 ... TPD ... 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD Level to 65 + ANB > 60', expected: 'Level to 65 ... TPD ... 60', actual: e });
     expect(/Level to 65.*TPD.*60/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -213,7 +213,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await setTpdStructure(quote, 'Level to 70');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD Level to 70 + ANB > 65', expected: 'Level to 70 ... TPD ... 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD Level to 70 + ANB > 65', expected: 'Level to 70 ... TPD ... 65', actual: e });
     expect(/Level to 70.*TPD.*65/i.test(e), `AC07. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -228,7 +228,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '250001');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD ANB 17-21 + SI > $250k', expected: 'Age Next Birthday 17 - 21 is $250,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD ANB 17-21 + SI > $250k', expected: 'Age Next Birthday 17 - 21 is $250,000', actual: e });
     expect(/Age Next Birthday 17\s*-\s*21 is \$?250,?000/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -244,7 +244,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Business TPD ANB 17-21 SI exactly $250,000 accepted', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Business TPD ANB 17-21 SI exactly $250,000 accepted', expected: false, actual: hasCap });
     expect(hasCap, `AC08 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -258,7 +258,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Non-Modified TPD at ANB 17-21 raises the Modified-only error', expected: 'only eligible for Modified TPD', actual: e });
+    await recordStep(testInfo, page, { label: 'Non-Modified TPD at ANB 17-21 raises the Modified-only error', expected: 'only eligible for Modified TPD', actual: e });
     expect(/only eligible for Modified TPD/i.test(e), `AC09. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -272,7 +272,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '5000001');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business TPD SI > $5,000,000', expected: 'maximum total Sum Insured per life for TPD Cover is $5,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business TPD SI > $5,000,000', expected: 'maximum total Sum Insured per life for TPD Cover is $5,000,000', actual: e });
     expect(/maximum total Sum Insured per life for TPD Cover is \$?5,?000,?000/i.test(e), `AC10. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -287,7 +287,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = /maximum total Sum Insured per life for TPD Cover is \$?5,?000,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Business TPD SI exactly $5,000,000 accepted', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Business TPD SI exactly $5,000,000 accepted', expected: false, actual: hasCap });
     expect(hasCap, `AC10 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -301,22 +301,22 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await waitForSettle(quote, 800);
     const d1 = (await getTpdStructure(quote, 0))?.selected;
-    recordCheck(testInfo, { label: '1st TPD default structure', expected: 'Stepped', actual: d1 });
+    await recordStep(testInfo, page, { label: '1st TPD default structure', expected: 'Stepped', actual: d1 });
     expect(d1, 'AC11: 1st TPD default Stepped').toBe('Stepped');
     await activateCover(quote, 'TPD');
     await fillCalcMask(sumInsuredInput(quote, 1), '110000');
     await waitForSettle(quote, 1200);
     const d2 = (await getTpdStructure(quote, 1))?.selected;
-    recordCheck(testInfo, { label: '2nd TPD default structure', expected: 'Level to 65', actual: d2 });
+    await recordStep(testInfo, page, { label: '2nd TPD default structure', expected: 'Level to 65', actual: d2 });
     expect(d2, 'AC11: 2nd TPD default Level to 65').toBe('Level to 65');
     await activateCover(quote, 'TPD');
     await fillCalcMask(sumInsuredInput(quote, 2), '120000');
     await waitForSettle(quote, 1200);
     const d3 = (await getTpdStructure(quote, 2))?.selected;
-    recordCheck(testInfo, { label: '3rd TPD default structure', expected: 'Level to 70', actual: d3 });
+    await recordStep(testInfo, page, { label: '3rd TPD default structure', expected: 'Level to 70', actual: d3 });
     expect(d3, 'AC11: 3rd TPD default Level to 70').toBe('Level to 70');
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='TPD'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+TPD disabled after 3 covers', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+TPD disabled after 3 covers', expected: true, actual: disabled });
     expect(disabled, 'AC14: +TPD disabled after 3').toBe(true);
   });
 
@@ -334,7 +334,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await setTpdDefinition(quote, 'Any', 1);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Mismatched TPD definitions raise the same-definition error', expected: 'same TPD definition for TPD cover on the same policy', actual: e });
+    await recordStep(testInfo, page, { label: 'Mismatched TPD definitions raise the same-definition error', expected: 'same TPD definition for TPD cover on the same policy', actual: e });
     expect(/same TPD definition for TPD cover on the same policy/i.test(e), `AC15. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -349,7 +349,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await tickBusinessSecurity(quote);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
     expect(/maximum Age Next Birthday for Business Security is 56/i.test(e), `AC17. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -365,7 +365,7 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Business Security is 56/i.test(e);
-    recordCheck(testInfo, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC17 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -379,12 +379,12 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'TPD Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'TPD Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC12: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'TPD Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'TPD Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC12: removed').toBe(0);
   });
 
@@ -401,9 +401,9 @@ test.describe('Business Policy Lumpsum Standalone TPD Cover (ACB-2940)', () => {
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'TPD discount-bands tooltip present', expected: 'contains bands for TPD Cover', actual: /discount bands for TPD Cover/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'TPD discount-bands tooltip present', expected: 'contains bands for TPD Cover', actual: /discount bands for TPD Cover/i.test(hay) });
     expect(hay, 'AC13: TPD discount-bands tooltip').toMatch(/discount bands for TPD Cover/i);
-    recordCheck(testInfo, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
     expect(hay, 'AC13: Business Security tooltip').toMatch(/future increases without medical underwriting/i);
   });
 

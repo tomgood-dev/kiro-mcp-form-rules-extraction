@@ -24,7 +24,7 @@ const {
   tickCheckboxByLabel,
   getTpdOnTraumaDefinition,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Trauma Premium Structure select: fingerprint by its distinctive 3-option set.
 async function getTraumaStructureId(page) {
@@ -79,7 +79,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await setMinimumPersonalDetails(quote, { age: 35, gender: 'Male', occupationCode: '1' });
     for (const c of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury']) {
       const present = await coverButtonExists(quote, c);
-      recordCheck(testInfo, { label: `Lump sum cover "${c}" button present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Lump sum cover "${c}" button present`, expected: true, actual: present });
       expect(present, `AC02: "${c}" cover button present`).toBe(true);
     }
   });
@@ -98,9 +98,9 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     expect(await sumInsuredInput(quote, 0).isVisible(), 'AC03: Trauma SI field present').toBe(true);
     const structure = await getTraumaStructureDefault(quote);
     expect(structure, 'AC03: Trauma Premium Structure select present').not.toBeNull();
-    recordCheck(testInfo, { label: 'Trauma Premium Structure default value', expected: 'Stepped', actual: structure.selected });
+    await recordStep(testInfo, page, { label: 'Trauma Premium Structure default value', expected: 'Stepped', actual: structure.selected });
     expect(structure.selected, 'AC03: default Stepped').toBe('Stepped');
-    recordCheck(testInfo, { label: 'Trauma Premium Structure has Stepped/Level to 65/Level to 70 options', expected: 3, actual: structure.options.filter((o) => /Stepped|Level to 65|Level to 70/.test(o)).length });
+    await recordStep(testInfo, page, { label: 'Trauma Premium Structure has Stepped/Level to 65/Level to 70 options', expected: 3, actual: structure.options.filter((o) => /Stepped|Level to 65|Level to 70/.test(o)).length });
     expect(structure.options.filter((o) => /Stepped|Level to 65|Level to 70/.test(o)).length, 'AC03: has Stepped/Level to 65/Level to 70').toBeGreaterThanOrEqual(3);
     expect(await coverButtonExists(quote, 'Major Trauma'), 'AC03: Major Trauma sub-cover present').toBe(true);
     expect(await coverButtonExists(quote, 'TPD on Trauma'), 'AC03: TPD on Trauma sub-cover present').toBe(true);
@@ -119,7 +119,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma ANB < 17', expected: 'minimum Age Next Birthday for Trauma Recovery Cover is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma ANB < 17', expected: 'minimum Age Next Birthday for Trauma Recovery Cover is 17', actual: e });
     expect(/minimum Age Next Birthday for Trauma Recovery Cover is 17/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -136,7 +136,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma Stepped + ANB > 70', expected: 'maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma Stepped + ANB > 70', expected: 'maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70', actual: e });
     expect(/maximum Age Next Birthday for Stepped Trauma Recovery Cover is 70/i.test(e), `AC07. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -154,7 +154,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await setTraumaStructure(quote, 'Level to 65');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma Level to 65 + ANB > 60', expected: 'Level to 65 Trauma Recovery cover is 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma Level to 65 + ANB > 60', expected: 'Level to 65 Trauma Recovery cover is 60', actual: e });
     expect(/Level to 65 Trauma Recovery cover is 60/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -172,7 +172,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await setTraumaStructure(quote, 'Level to 70');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma Level to 70 + ANB > 65', expected: 'Level to 70 Trauma Recovery cover is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma Level to 70 + ANB > 65', expected: 'Level to 70 Trauma Recovery cover is 65', actual: e });
     expect(/Level to 70 Trauma Recovery cover is 65/i.test(e), `AC09. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -206,7 +206,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
       await clickApply(quote);
       const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
       const hasAgeErr = c.badMsg.test(e);
-      recordCheck(testInfo, { label: `Trauma ${c.label} at ANB ${c.age} accepted (no age error)`, expected: false, actual: hasAgeErr });
+      await recordStep(testInfo, page, { label: `Trauma ${c.label} at ANB ${c.age} accepted (no age error)`, expected: false, actual: hasAgeErr });
       expect(hasAgeErr, `${c.ac} boundary: ANB ${c.age} must be accepted for Trauma ${c.label}. Errors: ${e.slice(0, 200)}`).toBe(false);
     });
   }
@@ -225,7 +225,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     const ok = /Trauma Recovery Cover/i.test(e) && /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Error shown for Trauma ANB 17-21 + SI > $250k', expected: 'Trauma Recovery Cover ... Age Next Birthday 17 - 21 is $250,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma ANB 17-21 + SI > $250k', expected: 'Trauma Recovery Cover ... Age Next Birthday 17 - 21 is $250,000', actual: e });
     expect(ok, `AC10. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -242,7 +242,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '2000001');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma ANB 22-70 + SI > $2M', expected: 'Trauma Recovery Cover, including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma ANB 22-70 + SI > $2M', expected: 'Trauma Recovery Cover, including Cancer Cover, is $2,000,000', actual: e });
     expect(/Trauma Recovery Cover, including Cancer Cover, is \$?2,?000,?000/i.test(e), `AC14. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -259,7 +259,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '4000');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Trauma ANB 22-70 + SI < $5,000', expected: 'minimum Trauma Cover sum insured is $5,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma ANB 22-70 + SI < $5,000', expected: 'minimum Trauma Cover sum insured is $5,000', actual: e });
     expect(/minimum Trauma Cover sum insured is \$?5,?000/i.test(e), `AC21. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -278,7 +278,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await clickApply(quote);
     let e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     let hasErr = /Age Next Birthday 17\s*-\s*21 is \$?250,?000/i.test(e);
-    recordCheck(testInfo, { label: 'AC10 boundary: SI $250,000 at ANB 17-21 accepted (no cap error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'AC10 boundary: SI $250,000 at ANB 17-21 accepted (no cap error)', expected: false, actual: hasErr });
     expect(hasErr, `AC10 boundary: $250,000 must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
     // AC14 accept: $2,000,000 at ANB 40
     quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
@@ -286,7 +286,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await clickApply(quote);
     e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     hasErr = /Trauma Recovery Cover, including Cancer Cover, is \$?2,?000,?000/i.test(e);
-    recordCheck(testInfo, { label: 'AC14 boundary: SI $2,000,000 at ANB 22-70 accepted (no cap error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'AC14 boundary: SI $2,000,000 at ANB 22-70 accepted (no cap error)', expected: false, actual: hasErr });
     expect(hasErr, `AC14 boundary: $2,000,000 must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
     // AC21 accept: $5,000 at ANB 40 (min SI). Note a $5k Trauma SI may trip the $240 min-premium
     // rule — assert specifically that the MIN-SI error is absent (the boundary under test).
@@ -295,7 +295,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await clickApply(quote);
     e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     hasErr = /minimum Trauma Cover sum insured is \$?5,?000/i.test(e);
-    recordCheck(testInfo, { label: 'AC21 boundary: SI $5,000 at ANB 22-70 accepted (no min-SI error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'AC21 boundary: SI $5,000 at ANB 22-70 accepted (no min-SI error)', expected: false, actual: hasErr });
     expect(hasErr, `AC21 boundary: $5,000 must be accepted (no min-SI error). Errors: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -318,7 +318,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await waitForSettle(quote, 1000);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
     const hasErr = /maximum Sum Insured for Major Trauma Benefit/i.test(e);
-    recordCheck(testInfo, { label: 'AC23 boundary: Major Trauma SI = 3x Trauma SI accepted (no 300% cap error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'AC23 boundary: Major Trauma SI = 3x Trauma SI accepted (no 300% cap error)', expected: false, actual: hasErr });
     expect(hasErr, `AC23 boundary: Major Trauma $60,000 (=3x $20,000) must be accepted. Errors: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -338,7 +338,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await activateCover(quote, 'Major Trauma');
     await fillCalcMask(sumInsuredInput(quote, 1), '60001');
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Major Trauma SI > 3x Trauma SI', expected: 'maximum Sum Insured for Major Trauma Benefit', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Major Trauma SI > 3x Trauma SI', expected: 'maximum Sum Insured for Major Trauma Benefit', actual: e });
     expect(/maximum Sum Insured for Major Trauma Benefit/i.test(e), `AC23. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -358,7 +358,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '4000');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for Major Trauma SI < $5,000', expected: 'minimum Major Trauma Benefit sum insured is $5,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Major Trauma SI < $5,000', expected: 'minimum Major Trauma Benefit sum insured is $5,000', actual: e });
     expect(/minimum Major Trauma Benefit sum insured is \$?5,?000/i.test(e), `AC22. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -383,7 +383,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
       if (!btn) return null;
       return btn.disabled || btn.getAttribute('aria-disabled') === 'true' || (btn.className || '').toLowerCase().includes('disabled');
     });
-    recordCheck(testInfo, { label: 'Trauma cover button disabled after 3 covers added', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: 'Trauma cover button disabled after 3 covers added', expected: true, actual: disabled });
     expect(disabled, 'AC18: Trauma button disabled after 3').toBe(true);
   });
 
@@ -402,7 +402,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma ANB < 17', expected: 'minimum Age Next Birthday for TPD on Trauma is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma ANB < 17', expected: 'minimum Age Next Birthday for TPD on Trauma is 17', actual: e });
     expect(/minimum Age Next Birthday for TPD on Trauma is 17/i.test(e), `AC25. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -421,7 +421,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma ANB > 60', expected: 'maximum Age Next Birthday for TPD on Trauma is 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma ANB > 60', expected: 'maximum Age Next Birthday for TPD on Trauma is 60', actual: e });
     expect(/maximum Age Next Birthday for TPD on Trauma is 60/i.test(e), `AC26. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -445,7 +445,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
       const sels = [...document.querySelectorAll('select')].filter((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.length === 1 && o[0] === 'Stepped'; });
       return sels.length > 0;
     });
-    recordCheck(testInfo, { label: 'Major Trauma Premium Structure mirrors Trauma (Stepped)', expected: true, actual: mtStepped });
+    await recordStep(testInfo, page, { label: 'Major Trauma Premium Structure mirrors Trauma (Stepped)', expected: true, actual: mtStepped });
     expect(mtStepped, 'AC04: Major Trauma Premium Structure = Stepped (mirrors Trauma)').toBe(true);
   });
 
@@ -467,9 +467,9 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await activateCover(quote, 'TPD on Trauma');
     const def = await getTpdOnTraumaDefinition(quote);
     expect(def, 'AC05: TPD on Trauma Definition dropdown present').not.toBeNull();
-    recordCheck(testInfo, { label: 'TPD on Trauma Definition default value', expected: 'Own', actual: def.selected });
+    await recordStep(testInfo, page, { label: 'TPD on Trauma Definition default value', expected: 'Own', actual: def.selected });
     expect(def.selected, 'AC05: Definition default Own').toBe('Own');
-    recordCheck(testInfo, { label: 'TPD on Trauma Definition options', expected: ['Own', 'Any'], actual: def.options });
+    await recordStep(testInfo, page, { label: 'TPD on Trauma Definition options', expected: ['Own', 'Any'], actual: def.options });
     expect(def.options.includes('Own') && def.options.includes('Any'), 'AC05: Definition options include Own and Any').toBe(true);
   });
 
@@ -489,7 +489,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'Error shown for ANB 17-21 + TPD on Trauma (non-Modified)', expected: 'only eligible for Modified TPD', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for ANB 17-21 + TPD on Trauma (non-Modified)', expected: 'only eligible for Modified TPD', actual: e });
     expect(/only eligible for Modified TPD/i.test(e), `AC27. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -509,7 +509,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     await tickCheckboxByLabel(quote, 'Trauma Reinstatement');
     const continuous = await getCheckboxStateByLabel(quote, 'Continuous Trauma');
     expect(continuous, 'AC20: Continuous Trauma checkbox present').not.toBeNull();
-    recordCheck(testInfo, { label: 'Continuous Trauma disabled after selecting Trauma Reinstatement', expected: true, actual: continuous.disabled });
+    await recordStep(testInfo, page, { label: 'Continuous Trauma disabled after selecting Trauma Reinstatement', expected: true, actual: continuous.disabled });
     expect(continuous.disabled, 'AC20: Continuous Trauma disabled after selecting Reinstatement').toBe(true);
   });
 
@@ -543,7 +543,7 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
       await fillCalcMask(sumInsuredInput(quote, 1), c.sis[1]);
       await clickApply(quote);
       const e = await getVisibleErrors(quote).then((x) => x.join(' | '));
-      recordCheck(testInfo, { label: `Error shown for Trauma + ${c.covers.join(' + ')} combined SI over $${c.cap} (ANB ${c.age})`, expected: `combined-cap error mentioning $${c.cap}`, actual: e });
+      await recordStep(testInfo, page, { label: `Error shown for Trauma + ${c.covers.join(' + ')} combined SI over $${c.cap} (ANB ${c.age})`, expected: `combined-cap error mentioning $${c.cap}`, actual: e });
       expect(c.msg.test(e), `${c.ac}: expected $${c.cap} cap error. Got: ${e.slice(0, 250)}`).toBe(true);
     });
   }
@@ -584,11 +584,11 @@ test.describe('Personal Lump Sum Trauma Cover', () => {
     const quote = await freshTraumaQuote(page, { age: 40, gender: 'Male', occupationCode: '1' });
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     const premiumAfterAdd = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Yearly premium after adding Trauma cover', expected: 'greater than 0', actual: premiumAfterAdd });
+    await recordStep(testInfo, page, { label: 'Yearly premium after adding Trauma cover', expected: 'greater than 0', actual: premiumAfterAdd });
     expect(premiumAfterAdd, 'AC19: premium after add').toBeGreaterThan(0);
     await removeAllCoverCards(quote);
     const after = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Yearly premium after removing Trauma cover', expected: 'null or 0', actual: after });
+    await recordStep(testInfo, page, { label: 'Yearly premium after removing Trauma cover', expected: 'null or 0', actual: after });
     expect(after === null || after === 0, 'AC19: premium cleared after remove').toBe(true);
   });
 

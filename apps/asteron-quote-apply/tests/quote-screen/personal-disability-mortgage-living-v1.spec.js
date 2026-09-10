@@ -29,7 +29,7 @@ const {
   clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Fingerprint each M&L dropdown by its distinctive option set.
 async function getSelectByOptions(page, mustInclude) {
@@ -71,13 +71,13 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed', income: 150000 });
     for (const cover of ['Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Mortgage & Living');
     await waitForSettle(quote, 1000);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Mortgage & Living is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Mortgage & Living is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: M&L selectable').toBe(true);
   });
 
@@ -89,36 +89,36 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     ].join('\n') });
     const quote = await freshMlQuote(page);
     const coverType = await getSelectByOptions(quote, ['Annual Income', 'Monthly Mortgage']);
-    recordCheck(testInfo, { label: 'Cover Type options + default', expected: 'Annual Income(default), Monthly Mortgage', actual: `${(coverType?.options||[]).join(', ')} [def=${coverType?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Cover Type options + default', expected: 'Annual Income(default), Monthly Mortgage', actual: `${(coverType?.options||[]).join(', ')} [def=${coverType?.selected}]` });
     expect(coverType?.options, 'AC03: Cover Type options').toEqual(['Annual Income', 'Monthly Mortgage']);
     expect(coverType?.selected, 'AC03: Cover Type default Annual Income').toBe('Annual Income');
     const method = await getSelectByOptions(quote, ['Agreed Value', 'Agreed Value Plus']);
-    recordCheck(testInfo, { label: 'Method options + default', expected: 'Agreed Value, Agreed Value Plus(default)', actual: `${(method?.options||[]).join(', ')} [def=${method?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Method options + default', expected: 'Agreed Value, Agreed Value Plus(default)', actual: `${(method?.options||[]).join(', ')} [def=${method?.selected}]` });
     expect(method?.options, 'AC03: Method options').toEqual(['Agreed Value', 'Agreed Value Plus']);
     expect(method?.selected, 'AC03: Method default Agreed Value Plus').toBe('Agreed Value Plus');
     const struct = await getSelectByOptions(quote, ['Stepped', 'Level to Expiry']);
-    recordCheck(testInfo, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
     expect(struct?.options, 'AC03: Structure options').toEqual(['Stepped', 'Level to Expiry']);
     expect(struct?.selected, 'AC03: Structure default Stepped').toBe('Stepped');
     const benefit = await getSelectByOptions(quote, ['2 Years', 'To Age 65', 'To Age 70']);
-    recordCheck(testInfo, { label: 'Benefit Period options + default', expected: '2 Years, 5 Years, To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Benefit Period options + default', expected: '2 Years, 5 Years, To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
     expect(benefit?.options, 'AC03: Benefit Period options').toEqual(['2 Years', '5 Years', 'To Age 65', 'To Age 70']);
     expect(benefit?.selected, 'AC03: Benefit Period default To Age 65').toBe('To Age 65');
     const waiting = await getSelectByOptions(quote, ['14 Days', '30 Days', '730 Days']);
-    recordCheck(testInfo, { label: 'Waiting Period options + default', expected: '14/30(default)/60/90/180/365/730 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Waiting Period options + default', expected: '14/30(default)/60/90/180/365/730 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
     expect(waiting?.options, 'AC03: Waiting Period options').toEqual(['14 Days', '30 Days', '60 Days', '90 Days', '180 Days', '365 Days', '730 Days']);
     expect(waiting?.selected, 'AC03: Waiting Period default 30 Days').toBe('30 Days');
     // Increasing Claim default-ticked.
     const incClaim = await getCheckboxStateByLabel(quote, 'Increasing Claim');
-    recordCheck(testInfo, { label: 'Increasing Claim checkbox default', expected: 'checked', actual: incClaim?.checked });
+    await recordStep(testInfo, page, { label: 'Increasing Claim checkbox default', expected: 'checked', actual: incClaim?.checked });
     expect(incClaim?.checked, 'AC03: Increasing Claim default-ticked').toBe(true);
     for (const label of ['Income Top-up Package', 'Specific Injury Support Benefit', 'Immediate Assist Package', 'Ten-Hour Benefit', 'Mental Health Discount']) {
       const st = await getCheckboxStateByLabel(quote, label);
-      recordCheck(testInfo, { label: `Optional benefit "${label}" is present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
+      await recordStep(testInfo, page, { label: `Optional benefit "${label}" is present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
       expect(st, `AC03: "${label}" checkbox present`).not.toBeNull();
     }
     const splitPresent = await quote.evaluate(() => /Split Benefit/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Split Benefit option present', expected: true, actual: splitPresent });
+    await recordStep(testInfo, page, { label: 'Split Benefit option present', expected: true, actual: splitPresent });
     expect(splitPresent, 'AC03: Split Benefit present').toBe(true);
   });
 
@@ -130,7 +130,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     ].join('\n') });
     const quote = await freshMlQuote(page);
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='Mortgage & Living'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+Mortgage & Living disabled after 1', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Mortgage & Living disabled after 1', expected: true, actual: disabled });
     expect(disabled, 'AC08: +M&L disabled after 1').toBe(true);
   });
 
@@ -144,12 +144,12 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'M&L Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'M&L Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC09: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'M&L Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'M&L Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC09: removed').toBe(0);
   });
 
@@ -163,7 +163,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for M&L ANB > 61', expected: 'maximum Age Next Birthday for Mortgage & Living ... 61', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for M&L ANB > 61', expected: 'maximum Age Next Birthday for Mortgage & Living ... 61', actual: e });
     expect(/maximum Age Next Birthday for Mortgage & Living.*is 61/i.test(e), `AC10. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -178,7 +178,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Mortgage & Living.*is 61/i.test(e);
-    recordCheck(testInfo, { label: 'M&L max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'M&L max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC10 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -196,7 +196,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await fillCalcMask(sumInsuredInput(quote, 0), '5626'); // $5,625 cap + $1
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for M&L AV+ Monthly Benefit > $5,625', expected: 'Agreed Value Plus is $5,625', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for M&L AV+ Monthly Benefit > $5,625', expected: 'Agreed Value Plus is $5,625', actual: e });
     expect(/Mortgage and Living Cover Agreed Value Plus is \$?5,?625/i.test(e), `AC11. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -211,7 +211,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /Mortgage and Living Cover Agreed Value Plus is \$?5,?625/i.test(e);
-    recordCheck(testInfo, { label: 'M&L AV+ Monthly Benefit exactly $5,625 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'M&L AV+ Monthly Benefit exactly $5,625 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC11 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -229,12 +229,12 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     // Confirm Increasing Claim is on (default), then untick Inflation Adjustment Benefit.
     const inflBefore = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
     await quote.evaluate(() => { const cb=document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]'); if(cb&&cb.checked){cb.scrollIntoView({block:'center'}); cb.click();} });
     await waitForSettle(quote, 1500);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
+    await recordStep(testInfo, page, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
     expect(/If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken/i.test(e), `AC18. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -246,7 +246,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     ].join('\n') });
     const quote = await freshMlQuote(page, { age: 40, gender: 'Male', occupationCode: '1', employmentStatus: 'Employed', income: 150000 });
     const st = await getCheckboxStateByLabel(quote, 'Ten-Hour Benefit');
-    recordCheck(testInfo, { label: 'Ten-Hour Benefit default state (Employed)', expected: 'unticked & enabled', actual: JSON.stringify(st) });
+    await recordStep(testInfo, page, { label: 'Ten-Hour Benefit default state (Employed)', expected: 'unticked & enabled', actual: JSON.stringify(st) });
     expect(st?.checked, 'AC26: Ten-Hour Benefit unticked for Employed').toBe(false);
     expect(st?.disabled, 'AC26: Ten-Hour Benefit selectable for Employed').toBe(false);
   });
@@ -259,7 +259,7 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
     ].join('\n') });
     const quote = await freshMlQuote(page, { age: 40, gender: 'Male', occupationCode: '1', employmentStatus: 'Self-Employed', income: 150000 });
     const st = await getCheckboxStateByLabel(quote, 'Ten-Hour Benefit');
-    recordCheck(testInfo, { label: 'Ten-Hour Benefit default state (Self-Employed)', expected: 'ticked', actual: JSON.stringify(st) });
+    await recordStep(testInfo, page, { label: 'Ten-Hour Benefit default state (Self-Employed)', expected: 'ticked', actual: JSON.stringify(st) });
     expect(st?.checked, 'AC25: Ten-Hour Benefit ticked for Self-Employed').toBe(true);
   });
 
@@ -275,9 +275,9 @@ test.describe('Personal Disability Cover — Mortgage & Living (ACB-2653)', () =
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Split Benefit tooltip text present', expected: 'contains "Splits the total monthly benefit into two"', actual: /Splits the total monthly benefit into two/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Split Benefit tooltip text present', expected: 'contains "Splits the total monthly benefit into two"', actual: /Splits the total monthly benefit into two/i.test(hay) });
     expect(hay, 'AC12: Split Benefit tooltip').toMatch(/Splits the total monthly benefit into two/i);
-    recordCheck(testInfo, { label: 'Agreed Value Plus tooltip text present', expected: "contains \"will not offset 'other income'\"", actual: /will not offset .other income./i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Agreed Value Plus tooltip text present', expected: "contains \"will not offset 'other income'\"", actual: /will not offset .other income./i.test(hay) });
     expect(hay, 'AC12: Agreed Value Plus tooltip').toMatch(/will not offset .other income./i);
   });
 

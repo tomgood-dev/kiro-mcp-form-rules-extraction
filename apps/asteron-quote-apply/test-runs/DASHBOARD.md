@@ -1,6 +1,6 @@
 # Asteron Quote & Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-10 05:58 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-10 23:19 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
@@ -23,8 +23,8 @@ _Auto-generated 2026-09-10 05:58 UTC. Shows the latest run of each spec. Rebuild
 | clone-quote-v1 | 0 | 0 | 1 | ⏭️ all skipped | 2026-09-08 08:40 | 2.0 min | outsystems-qa.asteronlife.co.nz |
 | create-a-new-business-quote-v1 | 17 | 1 | 1 | ❌ FAIL | 2026-09-03 15:17 | 28.9 min | outsystems-dev.asteronlife.co.nz |
 | create-business-policy-quote-v1 | 6 | 0 | 1 | ✅ PASS | 2026-09-04 16:26 | 15.5 min | outsystems-dev.asteronlife.co.nz |
-| discounts-bundling-v1 | 0 | 6 | 0 | ❌ FAIL | 2026-09-10 15:30 | 7.7 min | outsystems-qa.asteronlife.co.nz |
-| early-trauma-benefit-v1 | 1 | 0 | 1 | ✅ PASS | 2026-09-08 11:10 | 4.2 min | outsystems-qa.asteronlife.co.nz |
+| discounts-bundling-v1 | 0 | 6 | 0 | ❌ FAIL | 2026-09-11 08:47 | 7.7 min | outsystems-qa.asteronlife.co.nz |
+| early-trauma-benefit-v1 | 1 | 0 | 1 | ✅ PASS | 2026-09-11 09:16 | 3.8 min | outsystems-qa.asteronlife.co.nz |
 | enter-commissions-v1 | 5 | 1 | 1 | ❌ FAIL | 2026-09-07 16:48 | 16.6 min | outsystems-qa.asteronlife.co.nz |
 | enter-loadings-v1 | 0 | 2 | 0 | ❌ FAIL | 2026-09-07 17:08 | 6.6 min | outsystems-qa.asteronlife.co.nz |
 | kids-cover | 1 | 0 | 0 | ✅ PASS | 2026-09-02 14:28 | 19.7 min | outsystems-dev.asteronlife.co.nz |

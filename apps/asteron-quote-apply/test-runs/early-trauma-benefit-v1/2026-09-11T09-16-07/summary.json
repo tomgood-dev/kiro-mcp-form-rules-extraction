@@ -1,0 +1,25 @@
+{
+  "specSlug": "early-trauma-benefit-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/early-trauma-benefit-v1.spec.js",
+  "runTimestamp": "2026-09-11T09-16-07",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 228530.809,
+  "filtered": false,
+  "total": 2,
+  "passed": 1,
+  "failed": 0,
+  "skipped": 1,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Early Trauma Benefit (ACB-10105) › AC00 (reachable part): Early Trauma Benefit is a selectable option on a Trauma cover",
+      "status": "passed",
+      "durationMs": 146195
+    },
+    {
+      "title": "Early Trauma Benefit (ACB-10105) › AC01/AC02/AC03/AC04/AC05: calculated Early Trauma SI (20% / min $10k / max $100k) + PDF/L400",
+      "status": "skipped",
+      "durationMs": 1018
+    }
+  ]
+}

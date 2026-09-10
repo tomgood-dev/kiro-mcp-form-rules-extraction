@@ -23,7 +23,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Trauma Premium Structure select (fingerprint {Stepped, Level to 65, Level to 70}); nth by cover order.
 async function getStructure(page, index = 0) {
@@ -79,12 +79,12 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await waitForSettle(quote, 1800);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Trauma');
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Trauma is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Trauma is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: Trauma selectable').toBe(true);
   });
 
@@ -96,17 +96,17 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     ].join('\n') });
     const quote = await freshBizTraumaQuote(page);
     const struct = await getStructure(quote);
-    recordCheck(testInfo, { label: 'Trauma Premium Structure default + options', expected: 'Stepped(def); Stepped/Level to 65/Level to 70', actual: `${struct?.selected}; ${(struct?.options||[]).join('/')}` });
+    await recordStep(testInfo, page, { label: 'Trauma Premium Structure default + options', expected: 'Stepped(def); Stepped/Level to 65/Level to 70', actual: `${struct?.selected}; ${(struct?.options||[]).join('/')}` });
     expect(struct?.selected, 'AC03: Structure default Stepped').toBe('Stepped');
     expect(struct?.options, 'AC03: Structure options').toEqual(['Stepped', 'Level to 65', 'Level to 70']);
     for (const label of ['Business Security', 'Early Trauma Benefit', 'Trauma Reinstatement', 'Continuous Trauma Benefit']) {
       const st = await getCheckboxStateByLabel(quote, label);
-      recordCheck(testInfo, { label: `Optional benefit "${label}" present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
+      await recordStep(testInfo, page, { label: `Optional benefit "${label}" present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
       expect(st, `AC03: "${label}" present`).not.toBeNull();
     }
     for (const sub of ['Major Trauma', 'TPD on Trauma']) {
       const present = await coverButtonExists(quote, sub);
-      recordCheck(testInfo, { label: `Additional cover "${sub}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Additional cover "${sub}" present`, expected: true, actual: present });
       expect(present, `AC03: "${sub}" present`).toBe(true);
     }
   });
@@ -121,7 +121,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma ANB < 17', expected: 'minimum Age Next Birthday for Trauma Recovery cover is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma ANB < 17', expected: 'minimum Age Next Birthday for Trauma Recovery cover is 17', actual: e });
     expect(/minimum Age Next Birthday for Trauma Recovery cover is 17/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -136,7 +136,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Age Next Birthday for Trauma Recovery cover is 17/i.test(e);
-    recordCheck(testInfo, { label: 'Business Trauma min age at ANB 17 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Trauma min age at ANB 17 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC06 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -150,7 +150,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma Stepped + ANB > 70', expected: 'maximum ... Stepped Trauma Recovery cover is 70', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma Stepped + ANB > 70', expected: 'maximum ... Stepped Trauma Recovery cover is 70', actual: e });
     expect(/maximum Age Next Birthday for Stepped Trauma Recovery cover is 70/i.test(e), `AC07. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -165,7 +165,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Stepped Trauma Recovery cover is 70/i.test(e);
-    recordCheck(testInfo, { label: 'Business Trauma Stepped max at ANB 70 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Trauma Stepped max at ANB 70 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC07 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -180,7 +180,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await setStructure(quote, 'Level to 65');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma Level to 65 + ANB > 60', expected: 'Level to 65 Trauma Recovery cover is 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma Level to 65 + ANB > 60', expected: 'Level to 65 Trauma Recovery cover is 60', actual: e });
     expect(/Level to 65 Trauma Recovery cover is 60/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -195,7 +195,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await setStructure(quote, 'Level to 70');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma Level to 70 + ANB > 65', expected: 'Level to 70 Trauma Recovery cover is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma Level to 70 + ANB > 65', expected: 'Level to 70 Trauma Recovery cover is 65', actual: e });
     expect(/Level to 70 Trauma Recovery cover is 65/i.test(e), `AC09. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -209,7 +209,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '250001');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma ANB 17-21 + SI > $250k', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma ANB 17-21 + SI > $250k', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
     expect(RX_YOUNG.test(e), `AC10. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -224,7 +224,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = RX_YOUNG.test(e);
-    recordCheck(testInfo, { label: 'Business Trauma ANB 17-21 SI exactly $250,000 accepted', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Business Trauma ANB 17-21 SI exactly $250,000 accepted', expected: false, actual: hasCap });
     expect(hasCap, `AC10 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -243,7 +243,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 1), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma+Major Trauma combined > $250k (ANB 17-21)', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma+Major Trauma combined > $250k (ANB 17-21)', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
     expect(RX_YOUNG.test(e), `AC11. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -257,7 +257,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '2000001');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma ANB 22-70 + SI > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma ANB 22-70 + SI > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
     expect(RX_2M.test(e), `AC12. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -272,7 +272,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = RX_2M.test(e);
-    recordCheck(testInfo, { label: 'Business Trauma ANB 22-70 SI exactly $2,000,000 accepted', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Business Trauma ANB 22-70 SI exactly $2,000,000 accepted', expected: false, actual: hasCap });
     expect(hasCap, `AC12 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -291,7 +291,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 1), '600000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma+Major Trauma combined > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma+Major Trauma combined > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
     expect(RX_2M.test(e), `AC13. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -305,7 +305,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '4000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Trauma SI < $5,000', expected: 'minimum Trauma Cover sum insured is $5,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Trauma SI < $5,000', expected: 'minimum Trauma Cover sum insured is $5,000', actual: e });
     expect(/minimum Trauma Cover sum insured is \$?5,?000/i.test(e), `AC16. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -320,7 +320,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Trauma Cover sum insured is \$?5,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Business Trauma SI exactly $5,000 accepted (no min-SI error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Trauma SI exactly $5,000 accepted (no min-SI error)', expected: false, actual: hasErr });
     expect(hasErr, `AC16 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -335,7 +335,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma ANB < 17', expected: 'minimum Age Next Birthday for TPD on Trauma is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma ANB < 17', expected: 'minimum Age Next Birthday for TPD on Trauma is 17', actual: e });
     expect(/minimum Age Next Birthday for TPD on Trauma is 17/i.test(e), `AC19. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -350,7 +350,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma ANB > 60', expected: 'maximum Age Next Birthday for TPD on Trauma is 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma ANB > 60', expected: 'maximum Age Next Birthday for TPD on Trauma is 60', actual: e });
     expect(/maximum Age Next Birthday for TPD on Trauma is 60/i.test(e), `AC20. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -365,7 +365,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'TPD on Trauma at ANB 17-21 non-Modified raises the Modified-only error', expected: 'only eligible for Modified TPD', actual: e });
+    await recordStep(testInfo, page, { label: 'TPD on Trauma at ANB 17-21 non-Modified raises the Modified-only error', expected: 'only eligible for Modified TPD', actual: e });
     expect(/only eligible for Modified TPD/i.test(e), `AC22. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -381,7 +381,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 1), '4000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Major Trauma SI < $5,000', expected: 'minimum Major Trauma Benefit sum insured is $5,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Major Trauma SI < $5,000', expected: 'minimum Major Trauma Benefit sum insured is $5,000', actual: e });
     expect(/minimum Major Trauma Benefit sum insured is \$?5,?000/i.test(e), `AC23. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -399,7 +399,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 2), '120000');
     await waitForSettle(quote, 1500);
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='Trauma'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+Trauma disabled after 3 covers', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Trauma disabled after 3 covers', expected: true, actual: disabled });
     expect(disabled, 'AC14: +Trauma disabled after 3').toBe(true);
   });
 
@@ -414,7 +414,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await tickBusinessSecurity(quote);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
     expect(/maximum Age Next Birthday for Business Security is 56/i.test(e), `AC21. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -430,7 +430,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Business Security is 56/i.test(e);
-    recordCheck(testInfo, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC21 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -445,7 +445,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await activateCover(quote, 'Major Trauma');
     await waitForSettle(quote, 1000);
     const mtSi = await sumInsuredInput(quote, 1).isVisible();
-    recordCheck(testInfo, { label: 'Major Trauma Sum Insured field present (AC04)', expected: true, actual: mtSi });
+    await recordStep(testInfo, page, { label: 'Major Trauma Sum Insured field present (AC04)', expected: true, actual: mtSi });
     expect(mtSi, 'AC04: Major Trauma SI field present').toBe(true);
     await activateCover(quote, 'TPD on Trauma');
     await waitForSettle(quote, 1200);
@@ -453,7 +453,7 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
       const sel = [...document.querySelectorAll('select')].find((s) => { const o=[...s.options].map((x)=>x.text.trim()); return o.length<=3 && o.includes('Own') && o.includes('Any') && !o.includes('Modified'); });
       return sel ? { selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) } : null;
     });
-    recordCheck(testInfo, { label: 'TPD on Trauma Definition options + default (AC05)', expected: 'Own(default), Any', actual: JSON.stringify(def) });
+    await recordStep(testInfo, page, { label: 'TPD on Trauma Definition options + default (AC05)', expected: 'Own(default), Any', actual: JSON.stringify(def) });
     expect(def?.options, 'AC05: TPD on Trauma Definition [Own, Any]').toEqual(['Own', 'Any']);
     expect(def?.selected, 'AC05: TPD on Trauma Definition default Own').toBe('Own');
   });
@@ -471,9 +471,9 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Trauma discount-bands tooltip present', expected: 'contains bands for Trauma Recovery Cover', actual: /discount bands for Trauma Recovery Cover/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Trauma discount-bands tooltip present', expected: 'contains bands for Trauma Recovery Cover', actual: /discount bands for Trauma Recovery Cover/i.test(hay) });
     expect(hay, 'AC18: Trauma discount-bands tooltip').toMatch(/discount bands for Trauma Recovery Cover/i);
-    recordCheck(testInfo, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
     expect(hay, 'AC18: Business Security tooltip').toMatch(/future increases without medical underwriting/i);
   });
 
@@ -487,12 +487,12 @@ test.describe('Business Policy Lump Sum Standalone Trauma Cover (ACB-2939)', () 
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Trauma Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'Trauma Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC15: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'Trauma Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'Trauma Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC15: removed').toBe(0);
   });
 

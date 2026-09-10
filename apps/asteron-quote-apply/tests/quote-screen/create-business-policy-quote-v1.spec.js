@@ -18,7 +18,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Open a fresh quote and switch to the Business policy tab (the "Business" button — confirmed via probe).
 async function freshBusinessQuote(page) {
@@ -41,13 +41,13 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
     const quote = await openNewQuote(page);
     await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed', income: 150000 });
     const businessPresent = await quote.evaluate(() => [...document.querySelectorAll('button')].some((b) => (b.innerText || '').trim() === 'Business'));
-    recordCheck(testInfo, { label: 'A "Business" policy control is present on a new quote', expected: true, actual: businessPresent });
+    await recordStep(testInfo, page, { label: 'A "Business" policy control is present on a new quote', expected: true, actual: businessPresent });
     expect(businessPresent, 'AC02: Business policy selectable').toBe(true);
     await clickButtonByLabel(quote, 'Business', 'Business policy button');
     await waitForSettle(quote, 2000);
     // After selecting Business, a business-specific cover (Business Disability) becomes available.
     const bizCover = await coverButtonExists(quote, 'Business Disability');
-    recordCheck(testInfo, { label: 'Selecting Business reveals business-policy covers (e.g. Business Disability)', expected: true, actual: bizCover });
+    await recordStep(testInfo, page, { label: 'Selecting Business reveals business-policy covers (e.g. Business Disability)', expected: true, actual: bizCover });
     expect(bizCover, 'AC02: Business policy activated (business covers shown)').toBe(true);
   });
 
@@ -73,7 +73,7 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
       };
     });
     for (const [field, present] of Object.entries(fields)) {
-      recordCheck(testInfo, { label: `Personal Details field "${field}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Personal Details field "${field}" present`, expected: true, actual: present });
       expect(present, `AC03: Personal Details field "${field}" present`).toBe(true);
     }
   });
@@ -90,13 +90,13 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
     const quote = await freshBusinessQuote(page);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Specific Injury', 'Business Disability', 'Farmers Disability', 'Business Expenses']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business cover "${cover}" is present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business cover "${cover}" is present`, expected: true, actual: present });
       expect(present, `AC04: business cover "${cover}" present`).toBe(true);
     }
     // Negative/absence: personal-only lump-sum covers must NOT appear on the business policy.
     for (const cover of ['Cancer', 'Acd. Death', 'Needlestick']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Personal-only cover "${cover}" is ABSENT on the business policy`, expected: false, actual: present });
+      await recordStep(testInfo, page, { label: `Personal-only cover "${cover}" is ABSENT on the business policy`, expected: false, actual: present });
       expect(present, `AC04: "${cover}" absent on business policy`).toBe(false);
     }
   });
@@ -110,15 +110,15 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
     const quote = await freshBusinessQuote(page);
     const flexi = quote.locator('select[id*="FlexiRate"]').first();
     const info = await flexi.evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-    recordCheck(testInfo, { label: 'Flexi Rate default', expected: 'N/A', actual: info.selected });
+    await recordStep(testInfo, page, { label: 'Flexi Rate default', expected: 'N/A', actual: info.selected });
     expect(info.selected, 'AC05: Flexi Rate default N/A').toBe('N/A');
     const expectedLadder = ['N/A', '2.5%', '5.0%', '7.5%', '10.0%', '12.5%', '15.0%', '17.5%', '20.0%', '22.5%', '25.0%', '27.5%', '30.0%'];
-    recordCheck(testInfo, { label: 'Flexi Rate full ladder (N/A + 2.5% steps to 30.0%)', expected: expectedLadder, actual: info.options });
+    await recordStep(testInfo, page, { label: 'Flexi Rate full ladder (N/A + 2.5% steps to 30.0%)', expected: expectedLadder, actual: info.options });
     expect(info.options, 'AC05: exact Flexi Rate ladder').toEqual(expectedLadder);
     await flexi.selectOption({ label: '15.0%' });
     await waitForSettle(quote, 1000);
     const selectedAfter = await flexi.evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
-    recordCheck(testInfo, { label: 'Flexi Rate selection updates to 15.0%', expected: '15.0%', actual: selectedAfter });
+    await recordStep(testInfo, page, { label: 'Flexi Rate selection updates to 15.0%', expected: '15.0%', actual: selectedAfter });
     expect(selectedAfter, 'AC05: Flexi Rate selectable/saved').toBe('15.0%');
   });
 
@@ -131,14 +131,14 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
     const quote = await freshBusinessQuote(page);
     const wePay = quote.locator('select').filter({ has: quote.locator('option', { hasText: '30 days' }) }).first();
     const info = await wePay.evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-    recordCheck(testInfo, { label: 'We Pay Your Premiums default value', expected: 'None', actual: info.selected });
+    await recordStep(testInfo, page, { label: 'We Pay Your Premiums default value', expected: 'None', actual: info.selected });
     expect(info.selected, 'AC06: We Pay defaults to None').toBe('None');
-    recordCheck(testInfo, { label: 'We Pay Your Premiums option list', expected: ['None', '30 days', '60 days', '90 days'], actual: info.options });
+    await recordStep(testInfo, page, { label: 'We Pay Your Premiums option list', expected: ['None', '30 days', '60 days', '90 days'], actual: info.options });
     expect(info.options, 'AC06: options None/30/60/90 days').toEqual(['None', '30 days', '60 days', '90 days']);
     await wePay.selectOption({ label: '30 days' });
     await waitForSettle(quote, 1500);
     await expectErrorContaining(quote, 'At least one lump sum cover must be selected with We Pay Your Premiums');
-    recordCheck(testInfo, { label: 'We Pay with no lump sum cover shows the required-cover warning', expected: 'warning shown', actual: 'warning shown' });
+    await recordStep(testInfo, page, { label: 'We Pay with no lump sum cover shows the required-cover warning', expected: 'warning shown', actual: 'warning shown' });
   });
 
   test('AC07: Business policy "?" tooltips show the We Pay Your Premiums / Flexi-Rate text', async ({ page }, testInfo) => {
@@ -153,9 +153,9 @@ test.describe('Create a New Business Quote for Business Policy (ACB-3343)', () =
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'We Pay Your Premiums tooltip text present', expected: 'contains "Waives the premiums for all the lump sum cover"', actual: /Waives the premiums for all the lump sum cover/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'We Pay Your Premiums tooltip text present', expected: 'contains "Waives the premiums for all the lump sum cover"', actual: /Waives the premiums for all the lump sum cover/i.test(hay) });
     expect(hay, 'AC07: We Pay tooltip').toMatch(/Waives the premiums for all the lump sum cover/i);
-    recordCheck(testInfo, { label: 'Flexi-Rate tooltip text present', expected: 'contains "discount your clients premium by reducing"', actual: /discount your clients premium by reducing/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Flexi-Rate tooltip text present', expected: 'contains "discount your clients premium by reducing"', actual: /discount your clients premium by reducing/i.test(hay) });
     expect(hay, 'AC07: Flexi-Rate tooltip').toMatch(/discount your clients premium by reducing/i);
   });
 

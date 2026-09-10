@@ -15,7 +15,7 @@ const { test, expect } = require('@playwright/test');
 const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function clickAction(page, label) {
   await page.evaluate((lbl) => { var b = [].slice.call(document.querySelectorAll('button, a')).filter(function (x) { return x.offsetParent !== null && (x.innerText || '').trim().split('\n')[0] === lbl; })[0]; if (b) b.click(); }, label);
@@ -48,7 +48,7 @@ test.describe('Saved Quote / Application Navigation', () => {
     ].join('\n') });
     const quote = await freshValidQuote(page);
     const actions = await quote.evaluate(() => [].slice.call(document.querySelectorAll('button, a')).map(function (e) { return (e.innerText || '').trim().split('\n')[0]; }));
-    recordCheck(testInfo, { label: 'Save + Save as New available', expected: 'both present', actual: `${actions.includes('Save') ? 'Save' : ''} ${actions.includes('Save as New') ? 'Save as New' : ''}`.trim() });
+    await recordStep(testInfo, page, { label: 'Save + Save as New available', expected: 'both present', actual: `${actions.includes('Save') ? 'Save' : ''} ${actions.includes('Save as New') ? 'Save as New' : ''}`.trim() });
     expect(actions.includes('Save') && actions.includes('Save as New'), 'AC01').toBe(true);
   });
 
@@ -62,7 +62,7 @@ test.describe('Saved Quote / Application Navigation', () => {
     await clickAction(quote, 'Save');
     await waitForSettle(quote, 2000);
     const p = await readRefPopup(quote);
-    recordCheck(testInfo, { label: 'Reference popup (30-char) with Save + Cancel', expected: 'ref30 + Save + Cancel', actual: `${p.hasRef ? 'ref' + p.maxLength : 'no-ref'} ${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
+    await recordStep(testInfo, page, { label: 'Reference popup (30-char) with Save + Cancel', expected: 'ref30 + Save + Cancel', actual: `${p.hasRef ? 'ref' + p.maxLength : 'no-ref'} ${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
     expect(p.hasRef, 'AC02: ref field').toBe(true);
     expect(p.maxLength, 'AC02: 30-char').toBe(30);
     expect(p.hasSave && p.hasCancel, 'AC02: Save + Cancel').toBe(true);
@@ -82,7 +82,7 @@ test.describe('Saved Quote / Application Navigation', () => {
     await waitForSettle(quote, 1500);
     const closed = !(await readRefPopup(quote)).hasRef;
     const onQuote = await quote.evaluate(() => !!document.querySelector('input[id*="Input_AgeNextBirthday"]'));
-    recordCheck(testInfo, { label: 'Popup closed + on quote page after Cancel', expected: 'closed + on-quote', actual: `${closed ? 'closed' : 'open'} ${onQuote ? 'on-quote' : 'off'}`.trim() });
+    await recordStep(testInfo, page, { label: 'Popup closed + on quote page after Cancel', expected: 'closed + on-quote', actual: `${closed ? 'closed' : 'open'} ${onQuote ? 'on-quote' : 'off'}`.trim() });
     expect(closed && onQuote, 'AC04').toBe(true);
   });
 
@@ -96,7 +96,7 @@ test.describe('Saved Quote / Application Navigation', () => {
     await clickAction(quote, 'Save as New');
     await waitForSettle(quote, 2000);
     const p = await readRefPopup(quote);
-    recordCheck(testInfo, { label: 'Save-as-New reference popup (30-char) with Save + Cancel', expected: 'ref30 + Save + Cancel', actual: `${p.hasRef ? 'ref' + p.maxLength : 'no-ref'} ${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
+    await recordStep(testInfo, page, { label: 'Save-as-New reference popup (30-char) with Save + Cancel', expected: 'ref30 + Save + Cancel', actual: `${p.hasRef ? 'ref' + p.maxLength : 'no-ref'} ${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
     expect(p.hasRef && p.maxLength === 30 && p.hasSave && p.hasCancel, 'AC05').toBe(true);
   });
 
@@ -114,7 +114,7 @@ test.describe('Saved Quote / Application Navigation', () => {
     await waitForSettle(quote, 1500);
     const closed = !(await readRefPopup(quote)).hasRef;
     const onQuote = await quote.evaluate(() => !!document.querySelector('input[id*="Input_AgeNextBirthday"]'));
-    recordCheck(testInfo, { label: 'Popup closed + on quote page after Cancel (Save as New)', expected: 'closed + on-quote', actual: `${closed ? 'closed' : 'open'} ${onQuote ? 'on-quote' : 'off'}`.trim() });
+    await recordStep(testInfo, page, { label: 'Popup closed + on quote page after Cancel (Save as New)', expected: 'closed + on-quote', actual: `${closed ? 'closed' : 'open'} ${onQuote ? 'on-quote' : 'off'}`.trim() });
     expect(closed && onQuote, 'AC07').toBe(true);
   });
 

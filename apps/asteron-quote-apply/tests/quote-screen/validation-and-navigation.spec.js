@@ -12,7 +12,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -35,7 +35,7 @@ test('VAL-11: Apply is blocked while Employment Status is still "Select one"', a
   await clickApply(quote);
 
   const stayedOnIllustration = await isOnClientSummary(quote);
-  recordCheck(testInfo, { label: 'Apply should not succeed while Employment Status is unset', expected: false, actual: stayedOnIllustration });
+  await recordStep(testInfo, page, { label: 'Apply should not succeed while Employment Status is unset', expected: false, actual: stayedOnIllustration });
   expect(stayedOnIllustration, 'Apply should not succeed while Employment Status is unset').toBe(false);
 
   // Per VAL-11/VAL-23, the exact message is "Please complete the client's employment
@@ -51,7 +51,7 @@ test('VAL-11: Apply is blocked while Employment Status is still "Select one"', a
     });
     return inline || modal;
   });
-  recordCheck(testInfo, { label: 'expected "...employment details before applying" as an inline error or modal', expected: true, actual: found });
+  await recordStep(testInfo, page, { label: 'expected "...employment details before applying" as an inline error or modal', expected: true, actual: found });
   expect(found, 'expected "...employment details before applying" as an inline error or modal').toBe(true);
 });
 
@@ -71,7 +71,7 @@ test('VAL-08/VAL-09/VAL-10: a fully valid single-cover configuration allows Appl
   // log the URL comparison for information.
   console.log(`  [info] URL before: ${urlBefore}`);
   console.log(`  [info] URL after:  ${urlAfter}`);
-  recordCheck(testInfo, { label: 'Apply proceeds to Client Summary for a fully valid single-cover configuration', expected: true, actual: navigated });
+  await recordStep(testInfo, page, { label: 'Apply proceeds to Client Summary for a fully valid single-cover configuration', expected: true, actual: navigated });
   expect(navigated).toBe(true);
 });
 
@@ -82,9 +82,9 @@ test('VAL-10: an invalid configuration keeps you on the Illustration screen with
   await clickApply(quote);
 
   const navigatedToSummary = await isOnClientSummary(quote);
-  recordCheck(testInfo, { label: 'Apply blocked for an invalid configuration (sum insured over the $5,000,000 max)', expected: false, actual: navigatedToSummary });
+  await recordStep(testInfo, page, { label: 'Apply blocked for an invalid configuration (sum insured over the $5,000,000 max)', expected: false, actual: navigatedToSummary });
   expect(navigatedToSummary).toBe(false);
   const stillOnIllustration = await quote.evaluate(() => document.body.innerText.includes('Illustration'));
-  recordCheck(testInfo, { label: 'Illustration screen still shown after Apply is blocked', expected: true, actual: stillOnIllustration });
+  await recordStep(testInfo, page, { label: 'Illustration screen still shown after Apply is blocked', expected: true, actual: stillOnIllustration });
   expect(stillOnIllustration).toBe(true);
 });

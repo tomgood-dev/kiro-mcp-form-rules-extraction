@@ -29,7 +29,7 @@ const {
   getPremiumStructure,
   setPremiumStructure,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function freshLifeQuote(page, personal) {
   return test.step('open a fresh quote + activate Life', async () => {
@@ -76,10 +76,10 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     expect(await sumInsuredInput(quote, 0).isVisible(), 'AC03: Sum Insured field present').toBe(true);
     const inflationChecked = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment auto-ticked when Life cover is selected', expected: true, actual: inflationChecked });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment auto-ticked when Life cover is selected', expected: true, actual: inflationChecked });
     expect(inflationChecked, 'AC03: Inflation Adjustment auto-ticked').toBe(true);
     const structureDefault = await getPremiumStructure(quote);
-    recordCheck(testInfo, { label: 'Premium Structure default value when Life cover is selected', expected: 'Stepped', actual: structureDefault });
+    await recordStep(testInfo, page, { label: 'Premium Structure default value when Life cover is selected', expected: 'Stepped', actual: structureDefault });
     expect(structureDefault, 'AC03: Premium Structure defaults to Stepped').toBe('Stepped');
     // AC03 negative ("Sum Insured (digits only)"): typing non-digit characters must not land as text —
     // the calc-mask field strips them, so after typing "12ab34" only the digits remain.
@@ -92,7 +92,7 @@ test.describe('Lump Sum Life Cover', () => {
     await waitForSettle(quote, 800);
     const siValue = await si.inputValue();
     const siDigitsOnly = /[a-zA-Z]/.test(siValue) === false;
-    recordCheck(testInfo, { label: 'AC03 (negative): Sum Insured rejects non-digit characters (digits only)', expected: 'no letters in field', actual: siValue });
+    await recordStep(testInfo, page, { label: 'AC03 (negative): Sum Insured rejects non-digit characters (digits only)', expected: 'no letters in field', actual: siValue });
     expect(siDigitsOnly, 'AC03: Sum Insured is digits-only (letters not accepted)').toBe(true);
   });
 
@@ -110,7 +110,7 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
     const premium = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Life cover premium calculated for $500,000 Sum Insured', expected: '> 0', actual: premium });
+    await recordStep(testInfo, page, { label: 'Life cover premium calculated for $500,000 Sum Insured', expected: '> 0', actual: premium });
     expect(premium, 'AC05: premium calculated and > 0').toBeGreaterThan(0);
   });
 
@@ -128,11 +128,11 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
     const premiumAfterAdd = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Life cover premium calculated after adding cover', expected: '> 0', actual: premiumAfterAdd });
+    await recordStep(testInfo, page, { label: 'Life cover premium calculated after adding cover', expected: '> 0', actual: premiumAfterAdd });
     expect(premiumAfterAdd, 'AC06: premium after add').toBeGreaterThan(0);
     await removeAllCoverCards(quote);
     const after = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Premium cleared after cover removed', expected: 'null or 0', actual: after });
+    await recordStep(testInfo, page, { label: 'Premium cleared after cover removed', expected: 'null or 0', actual: after });
     expect(after === null || after === 0, 'AC06: premium cleared after remove').toBe(true);
   });
 
@@ -152,7 +152,7 @@ test.describe('Lump Sum Life Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const errors = await getVisibleErrors(quote);
-    recordCheck(testInfo, { label: 'Age Next Birthday must be between 11 and 75 error shown for out-of-range age', expected: 'contains "Age Next Birthday must be between 11 and 75"', actual: errors.join(' | ') });
+    await recordStep(testInfo, page, { label: 'Age Next Birthday must be between 11 and 75 error shown for out-of-range age', expected: 'contains "Age Next Birthday must be between 11 and 75"', actual: errors.join(' | ') });
     expect(errors.some((e) => /Age Next Birthday must be between 11 and 75/i.test(e)), 'AC07: age-range error').toBe(true);
   });
 
@@ -191,7 +191,7 @@ test.describe('Lump Sum Life Cover', () => {
       const errors = await getVisibleErrors(quote);
       const joined = errors.join(' | ');
       const matched = c.msgCore.every((frag) => new RegExp(frag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined));
-      recordCheck(testInfo, { label: `${c.label} maximum age error shown for Age Next Birthday ${c.over}`, expected: `contains ${c.msgCore.join(' ... ')}`, actual: joined });
+      await recordStep(testInfo, page, { label: `${c.label} maximum age error shown for Age Next Birthday ${c.over}`, expected: `contains ${c.msgCore.join(' ... ')}`, actual: joined });
       expect(matched, `${c.ac}: expected ${c.label} max-age error. Got: ${joined.slice(0, 200)}`).toBe(true);
     });
 
@@ -219,7 +219,7 @@ test.describe('Lump Sum Life Cover', () => {
       const capNum = c.msgCore[c.msgCore.length - 1]; // e.g. "is 45"
       const hasMaxAgeErr = new RegExp(c.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined)
         && new RegExp(capNum.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(joined);
-      recordCheck(testInfo, { label: `${c.label} AT cap age ${c.atCap} is accepted (no "${capNum}" max-age error)`, expected: false, actual: hasMaxAgeErr });
+      await recordStep(testInfo, page, { label: `${c.label} AT cap age ${c.atCap} is accepted (no "${capNum}" max-age error)`, expected: false, actual: hasMaxAgeErr });
       expect(hasMaxAgeErr, `${c.ac} boundary: age ${c.atCap} must be accepted for ${c.label}. Errors: ${joined.slice(0, 200)}`).toBe(false);
     });
   }
@@ -243,7 +243,7 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Minimum Age Next Birthday for level/i.test(errors) && /Life Cover/i.test(errors) && /is 17/i.test(errors);
-    recordCheck(testInfo, { label: 'Minimum Age Next Birthday for level "Life Cover" is 17 error shown for age < 17', expected: 'contains "Minimum Age Next Birthday for level" ... "Life Cover" ... "is 17"', actual: errors });
+    await recordStep(testInfo, page, { label: 'Minimum Age Next Birthday for level "Life Cover" is 17 error shown for age < 17', expected: 'contains "Minimum Age Next Birthday for level" ... "Life Cover" ... "is 17"', actual: errors });
     expect(matched, `AC15: expected min-age error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
@@ -265,7 +265,7 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Life Cover/i.test(errors) && /under Age Next Birthday 17 is \$?50,?000/i.test(errors);
-    recordCheck(testInfo, { label: 'Under Age Next Birthday 17 $50,000 Life Cover cap error shown', expected: 'contains "Life Cover" ... "under Age Next Birthday 17 is $50,000"', actual: errors });
+    await recordStep(testInfo, page, { label: 'Under Age Next Birthday 17 $50,000 Life Cover cap error shown', expected: 'contains "Life Cover" ... "under Age Next Birthday 17 is $50,000"', actual: errors });
     expect(matched, `AC16: expected under-17 $50k cap error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
@@ -290,7 +290,7 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const hasCapErr = /under Age Next Birthday 17 is \$?50,?000/i.test(errors);
-    recordCheck(testInfo, { label: 'SI $50,000 at the under-17 cap is accepted (no cap error)', expected: false, actual: hasCapErr });
+    await recordStep(testInfo, page, { label: 'SI $50,000 at the under-17 cap is accepted (no cap error)', expected: false, actual: hasCapErr });
     expect(hasCapErr, `AC16 boundary: SI $50,000 must be accepted at the cap. Errors: ${errors.slice(0, 200)}`).toBe(false);
   });
 
@@ -308,7 +308,7 @@ test.describe('Lump Sum Life Cover', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '1000');
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
-    recordCheck(testInfo, { label: 'Minimum premium $240.00 error shown for very low Sum Insured', expected: 'contains "minimum premium is $240.00"', actual: errors });
+    await recordStep(testInfo, page, { label: 'Minimum premium $240.00 error shown for very low Sum Insured', expected: 'contains "minimum premium is $240.00"', actual: errors });
     expect(/minimum premium is \$?240\.00/i.test(errors), `AC19: expected min-premium error. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
@@ -327,12 +327,12 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     await fillCalcMask(sumInsuredInput(quote, 0), '500000');
     const premium = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Above-floor premium ($500k SI) is >= $240/yr', expected: '>= 240', actual: premium });
+    await recordStep(testInfo, page, { label: 'Above-floor premium ($500k SI) is >= $240/yr', expected: '>= 240', actual: premium });
     expect(premium, 'AC19 boundary: $500k SI prices above the $240 floor').toBeGreaterThanOrEqual(240);
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const hasMinErr = /minimum premium is \$?240\.00/i.test(errors);
-    recordCheck(testInfo, { label: 'Above-floor premium: minimum-premium error is ABSENT', expected: false, actual: hasMinErr });
+    await recordStep(testInfo, page, { label: 'Above-floor premium: minimum-premium error is ABSENT', expected: false, actual: hasMinErr });
     expect(hasMinErr, `AC19 boundary: above-floor premium must be accepted. Errors: ${errors.slice(0, 200)}`).toBe(false);
   });
 
@@ -350,11 +350,11 @@ test.describe('Lump Sum Life Cover', () => {
     const quote = await freshLifeQuote(page);
     // Precondition: Inflation is auto-ticked. Tick Premium Freeze, then verify Inflation flips off.
     const inflationBeforeFreeze = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment ticked on activation (AC21 precondition)', expected: true, actual: inflationBeforeFreeze });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment ticked on activation (AC21 precondition)', expected: true, actual: inflationBeforeFreeze });
     expect(inflationBeforeFreeze, 'AC21 precondition: Inflation ticked on activation').toBe(true);
     await setPremiumFreeze(quote);
     const inflationChecked = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment auto-unticked when Premium Freeze is selected', expected: false, actual: inflationChecked });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment auto-unticked when Premium Freeze is selected', expected: false, actual: inflationChecked });
     expect(inflationChecked, 'AC21: Inflation auto-unticked when Premium Freeze selected').toBe(false);
   });
 
@@ -376,7 +376,7 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const matched = /Age Next Birthday 17\s*-\s*21/i.test(errors) && /not earning any income is \$?250,?000/i.test(errors);
-    recordCheck(testInfo, { label: '$250,000 combined Sum Insured cap error shown for Age Next Birthday 17-21 with no income', expected: 'contains "Age Next Birthday 17 - 21" ... "not earning any income is $250,000"', actual: errors });
+    await recordStep(testInfo, page, { label: '$250,000 combined Sum Insured cap error shown for Age Next Birthday 17-21 with no income', expected: 'contains "Age Next Birthday 17 - 21" ... "not earning any income is $250,000"', actual: errors });
     expect(matched, `AC17: expected $250k young no-income cap error. Got: ${errors.slice(0, 250)}`).toBe(true);
   });
 
@@ -400,7 +400,7 @@ test.describe('Lump Sum Life Cover', () => {
     await clickApply(quote);
     const errors = await getVisibleErrors(quote).then((es) => es.join(' | '));
     const hasCapErr = /Age Next Birthday 17\s*-\s*21/i.test(errors) && /not earning any income is \$?250,?000/i.test(errors);
-    recordCheck(testInfo, { label: 'SI $250,000 at the young-no-income cap is accepted (no cap error)', expected: false, actual: hasCapErr });
+    await recordStep(testInfo, page, { label: 'SI $250,000 at the young-no-income cap is accepted (no cap error)', expected: false, actual: hasCapErr });
     expect(hasCapErr, `AC17 boundary: SI $250,000 must be accepted at the cap. Errors: ${errors.slice(0, 200)}`).toBe(false);
   });
 
@@ -427,7 +427,7 @@ test.describe('Lump Sum Life Cover', () => {
       if (!btn) return null;
       return btn.disabled || btn.getAttribute('aria-disabled') === 'true' || btn.className.toLowerCase().includes('disabled');
     });
-    recordCheck(testInfo, { label: 'Life cover button disabled after 3 Life covers added', expected: true, actual: lifeDisabled });
+    await recordStep(testInfo, page, { label: 'Life cover button disabled after 3 Life covers added', expected: true, actual: lifeDisabled });
     expect(lifeDisabled, 'AC23: Life button disabled after 3 covers').toBe(true);
   });
 

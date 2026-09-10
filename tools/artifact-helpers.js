@@ -134,6 +134,22 @@ function recordCheck(testInfo, { label, expected, actual }) {
  */
 async function recordShot(testInfo, page, label, opts = {}) {
   try {
+    // Resolve the BEST page to screenshot. Many specs open the quote form in a popup tab
+    // (`const quote = await openNewQuote(page)`), so the passed-in `page` may be the now-blank
+    // original tab. Prefer the frontmost/last-opened page in the context that actually has content,
+    // so callers can uniformly pass `page` and still get the real form captured. Opt out with
+    // opts.exactPage=true to force the exact page given.
+    if (!opts.exactPage && page && typeof page.context === 'function') {
+      try {
+        const pages = page.context().pages().filter((p) => !p.isClosed());
+        // Walk newest-first; pick the first page with a non-trivial body (the active form/popup).
+        for (let i = pages.length - 1; i >= 0; i--) {
+          const p = pages[i];
+          const txt = await p.evaluate(() => (document.body && document.body.innerText || '').trim().length).catch(() => 0);
+          if (txt > 20) { page = p; break; }
+        }
+      } catch (_) {}
+    }
     // Wait for the page to actually PAINT before capturing, so we never grab a blank white frame
     // (the failure mode when a screenshot fires right after a domcontentloaded/redirect). Best-effort:
     // settle the network, wait for a non-trivial body, then a short RAF/paint delay.

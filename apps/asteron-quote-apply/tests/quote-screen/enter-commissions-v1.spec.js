@@ -14,7 +14,7 @@ const { test, expect } = require('@playwright/test');
 const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Open a priced quote (Life $200k) and open the Adviser Use / Commissions pop-up.
 async function openCommissions(page, { flexi } = {}) {
@@ -50,10 +50,10 @@ test.describe('Enter Commissions (ACB-3598)', () => {
     ].join('\n') });
     const quote = await openCommissions(page);
     const dfa = await getSelectByOptions(quote, ['Upfront', 'Level 30', 'Spread 20']);
-    recordCheck(testInfo, { label: 'Default-for-Agency dropdown present with the commission structures', expected: 'Upfront/Level 30/Spread 20', actual: JSON.stringify(dfa?.options) });
+    await recordStep(testInfo, page, { label: 'Default-for-Agency dropdown present with the commission structures', expected: 'Upfront/Level 30/Spread 20', actual: JSON.stringify(dfa?.options) });
     expect(dfa, 'AC02: Default-for-Agency dropdown present').not.toBeNull();
     const split = await quote.evaluate(() => /Split Commission/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Split Commission control present', expected: true, actual: split });
+    await recordStep(testInfo, page, { label: 'Split Commission control present', expected: true, actual: split });
     expect(split, 'AC02: Split Commission present').toBe(true);
   });
 
@@ -65,7 +65,7 @@ test.describe('Enter Commissions (ACB-3598)', () => {
     ].join('\n') });
     const quote = await openCommissions(page);
     const icrc = await getSelectByOptions(quote, ['IC-100%, RC-100%']);
-    recordCheck(testInfo, { label: 'IC/RC default with no flexi', expected: 'IC-100%, RC-100%', actual: icrc?.selected });
+    await recordStep(testInfo, page, { label: 'IC/RC default with no flexi', expected: 'IC-100%, RC-100%', actual: icrc?.selected });
     expect(icrc?.selected, 'AC02: IC/RC default IC-100%, RC-100%').toMatch(/IC-100%,?\s*RC-100%/i);
   });
 
@@ -80,7 +80,7 @@ test.describe('Enter Commissions (ACB-3598)', () => {
       const sel = [...document.querySelectorAll('select')].find((s) => [...s.options].some((o) => /^IC-/i.test(o.text.trim())) && [...s.options].some((o) => /Please Select/i.test(o.text.trim())));
       return sel ? sel.options[sel.selectedIndex].text.trim() : null;
     });
-    recordCheck(testInfo, { label: 'IC/RC default with a Flexi Rate selected', expected: 'Please Select', actual: icrc });
+    await recordStep(testInfo, page, { label: 'IC/RC default with a Flexi Rate selected', expected: 'Please Select', actual: icrc });
     expect(icrc, 'AC08: IC/RC default Please Select with flexi').toMatch(/Please Select/i);
   });
 
@@ -92,7 +92,7 @@ test.describe('Enter Commissions (ACB-3598)', () => {
     ].join('\n') });
     const quote = await openCommissions(page, { flexi: '30.0%' });
     const hasNil = await quote.evaluate(() => /Nil Comm - 30% Discount Flexirate has been selected|Commission (must be|is) Nil/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: '30% Flexi Rate shows the Nil-Comm commissions message', expected: 'Nil Comm - 30% Discount Flexirate message', actual: hasNil });
+    await recordStep(testInfo, page, { label: '30% Flexi Rate shows the Nil-Comm commissions message', expected: 'Nil Comm - 30% Discount Flexirate message', actual: hasNil });
     expect(hasNil, 'AC11: 30% flexi -> Nil-Comm message').toBe(true);
   });
 
@@ -108,7 +108,7 @@ test.describe('Enter Commissions (ACB-3598)', () => {
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Split Commission tooltip text present', expected: 'contains "existing default commission split"', actual: /existing default commission split/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Split Commission tooltip text present', expected: 'contains "existing default commission split"', actual: /existing default commission split/i.test(hay) });
     expect(hay, 'AC12: Split Commission tooltip').toMatch(/existing default commission split/i);
   });
 
@@ -122,7 +122,7 @@ test.describe('Enter Commissions (ACB-3598)', () => {
     await quote.evaluate(() => { const b = [...document.querySelectorAll('button,a')].find((x) => /^(Cancel|Close)$/i.test((x.innerText || '').trim())); if (b) b.click(); });
     await waitForSettle(quote, 1500);
     const backOnQuote = await sumInsuredInput(quote, 0).isVisible().catch(() => false);
-    recordCheck(testInfo, { label: 'Cancel closes the pop-up and returns to the Quote screen', expected: true, actual: backOnQuote });
+    await recordStep(testInfo, page, { label: 'Cancel closes the pop-up and returns to the Quote screen', expected: true, actual: backOnQuote });
     expect(backOnQuote, 'AC07: Cancel returns to Quote').toBe(true);
   });
 

@@ -26,7 +26,7 @@ const {
   clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function getSelectByOptions(page, mustInclude) {
   return page.evaluate((inc) => {
@@ -60,13 +60,13 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed', income: 150000 });
     for (const cover of ['Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Income Protection');
     await waitForSettle(quote, 1000);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Income Protection is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Income Protection is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: IP selectable').toBe(true);
   });
 
@@ -78,31 +78,31 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     ].join('\n') });
     const quote = await freshIpQuote(page);
     const def = await getSelectByOptions(quote, ['Loss Of Earnings', 'Loss Of Earnings Plus']);
-    recordCheck(testInfo, { label: 'Definition options + default', expected: 'Loss Of Earnings, Loss Of Earnings Plus(default)', actual: `${(def?.options||[]).join(', ')} [def=${def?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Definition options + default', expected: 'Loss Of Earnings, Loss Of Earnings Plus(default)', actual: `${(def?.options||[]).join(', ')} [def=${def?.selected}]` });
     expect(def?.options, 'AC03: Definition options').toEqual(['Loss Of Earnings', 'Loss Of Earnings Plus']);
     expect(def?.selected, 'AC03: Definition default LOE Plus').toBe('Loss Of Earnings Plus');
     const struct = await getSelectByOptions(quote, ['Stepped', 'Level to Expiry']);
-    recordCheck(testInfo, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
     expect(struct?.options, 'AC03: Structure options').toEqual(['Stepped', 'Level to Expiry']);
     expect(struct?.selected, 'AC03: Structure default Stepped').toBe('Stepped');
     const benefit = await getSelectByOptions(quote, ['2 Years', 'To Age 65', 'To Age 70']);
-    recordCheck(testInfo, { label: 'Benefit Period options + default', expected: '2 Years, 5 Years, To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Benefit Period options + default', expected: '2 Years, 5 Years, To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
     expect(benefit?.options, 'AC03: Benefit Period options').toEqual(['2 Years', '5 Years', 'To Age 65', 'To Age 70']);
     expect(benefit?.selected, 'AC03: Benefit Period default To Age 65').toBe('To Age 65');
     const waiting = await getSelectByOptions(quote, ['14 Days', '30 Days', '730 Days']);
-    recordCheck(testInfo, { label: 'Waiting Period options + default', expected: '14/30(default)/60/90/180/365/730 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Waiting Period options + default', expected: '14/30(default)/60/90/180/365/730 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
     expect(waiting?.options, 'AC03: Waiting Period options').toEqual(['14 Days', '30 Days', '60 Days', '90 Days', '180 Days', '365 Days', '730 Days']);
     expect(waiting?.selected, 'AC03: Waiting Period default 30 Days').toBe('30 Days');
     const incClaim = await getCheckboxStateByLabel(quote, 'Increasing Claim');
-    recordCheck(testInfo, { label: 'Increasing Claim checkbox default', expected: 'checked', actual: incClaim?.checked });
+    await recordStep(testInfo, page, { label: 'Increasing Claim checkbox default', expected: 'checked', actual: incClaim?.checked });
     expect(incClaim?.checked, 'AC03: Increasing Claim default-ticked').toBe(true);
     for (const label of ['Income Top-up Package', 'Specific Injury Support Benefit', 'Immediate Assist Package', 'Mental Health Discount']) {
       const st = await getCheckboxStateByLabel(quote, label);
-      recordCheck(testInfo, { label: `Optional benefit "${label}" is present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
+      await recordStep(testInfo, page, { label: `Optional benefit "${label}" is present`, expected: 'present', actual: st ? 'present' : 'ABSENT' });
       expect(st, `AC03: "${label}" checkbox present`).not.toBeNull();
     }
     const splitPresent = await quote.evaluate(() => /Split Waiting Period/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Split Waiting Period option present', expected: true, actual: splitPresent });
+    await recordStep(testInfo, page, { label: 'Split Waiting Period option present', expected: true, actual: splitPresent });
     expect(splitPresent, 'AC03: Split Waiting Period present').toBe(true);
   });
 
@@ -114,7 +114,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     ].join('\n') });
     const quote = await freshIpQuote(page);
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='Income Protection'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+Income Protection disabled after 1', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Income Protection disabled after 1', expected: true, actual: disabled });
     expect(disabled, 'AC06: +IP disabled after 1').toBe(true);
   });
 
@@ -128,12 +128,12 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'IP Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'IP Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC08: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'IP Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'IP Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC08: removed').toBe(0);
   });
 
@@ -147,7 +147,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for IP ANB > 61', expected: 'maximum Age Next Birthday for Income Protection ... 61', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for IP ANB > 61', expected: 'maximum Age Next Birthday for Income Protection ... 61', actual: e });
     expect(/maximum Age Next Birthday for Income Protection.*is 61/i.test(e), `AC17. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -162,7 +162,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Income Protection.*is 61/i.test(e);
-    recordCheck(testInfo, { label: 'IP max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'IP max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC17 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -180,7 +180,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await fillCalcMask(sumInsuredInput(quote, 0), '9376'); // $9,375 cap + $1
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for IP Monthly Benefit > $9,375', expected: 'Income Protection benefit is $9,375', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for IP Monthly Benefit > $9,375', expected: 'Income Protection benefit is $9,375', actual: e });
     expect(/Income Protection benefit is \$?9,?375/i.test(e), `AC19. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -195,7 +195,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /Income Protection benefit is \$?9,?375/i.test(e);
-    recordCheck(testInfo, { label: 'IP Monthly Benefit exactly $9,375 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'IP Monthly Benefit exactly $9,375 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC19 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -213,7 +213,7 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     await fillCalcMask(sumInsuredInput(quote, 0), '30001'); // just over the absolute $30,000 cap
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for IP Monthly Benefit > $30,000 (high income)', expected: 'Income Protection benefit is $30,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for IP Monthly Benefit > $30,000 (high income)', expected: 'Income Protection benefit is $30,000', actual: e });
     expect(/Income Protection benefit is \$?30,?000/i.test(e), `AC25. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -226,12 +226,12 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
     const quote = await freshIpQuote(page);
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     const inflBefore = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
     await quote.evaluate(() => { const cb=document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]'); if(cb&&cb.checked){cb.scrollIntoView({block:'center'}); cb.click();} });
     await waitForSettle(quote, 1500);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
+    await recordStep(testInfo, page, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
     expect(/If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken/i.test(e), `AC22. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -260,9 +260,9 @@ test.describe('Personal Disability Cover — Income Protection (ACB-2646)', () =
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Split Waiting Period tooltip text present', expected: 'contains "each with a different waiting period"', actual: /each with a different waiting period/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Split Waiting Period tooltip text present', expected: 'contains "each with a different waiting period"', actual: /each with a different waiting period/i.test(hay) });
     expect(hay, 'AC18: Split Waiting Period tooltip').toMatch(/each with a different waiting period/i);
-    recordCheck(testInfo, { label: 'Income Top-up Package tooltip text present', expected: 'contains "Income booster"', actual: /Income booster/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Income Top-up Package tooltip text present', expected: 'contains "Income booster"', actual: /Income booster/i.test(hay) });
     expect(hay, 'AC18: Income Top-up tooltip').toMatch(/Income booster/i);
   });
 

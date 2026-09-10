@@ -11,7 +11,7 @@ const {
   openNewQuote, setMinimumPersonalDetails, setAge, setGender, activateCover, fillCalcMask, sumInsuredInput,
   getVisibleErrors, clickApply, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 const errText = (page) => getVisibleErrors(page).then((x) => x.join(' | '));
 async function setOccCode(page, label) {
@@ -47,9 +47,9 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
         hasTypeahead: !!document.querySelector('[placeholder="Select an option"], .vscomp-toggle-button'),
       };
     });
-    recordCheck(testInfo, { label: 'Occupation typeahead present', expected: true, actual: controls.hasTypeahead });
+    await recordStep(testInfo, page, { label: 'Occupation typeahead present', expected: true, actual: controls.hasTypeahead });
     expect(controls.hasTypeahead, 'AC01/AC02: occupation typeahead present').toBe(true);
-    recordCheck(testInfo, { label: 'Occupation Code dropdown risk-class list', expected: 'AM/AA/A1/A2/B/C/S/U/IC', actual: (controls.codeOptions || []).join('/') });
+    await recordStep(testInfo, page, { label: 'Occupation Code dropdown risk-class list', expected: 'AM/AA/A1/A2/B/C/S/U/IC', actual: (controls.codeOptions || []).join('/') });
     expect(controls.codeOptions, 'BR: code values').toEqual(['AM', 'AA', 'A1', 'A2', 'B', 'C', 'S', 'U', 'IC']);
   });
 
@@ -66,7 +66,7 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasOccErr = /must complete.*Occupation|Occupation.*required|enter the value for Occupation/i.test(e);
-    recordCheck(testInfo, { label: 'Life quote on code-only (AA) has no occupation-required error', expected: false, actual: hasOccErr });
+    await recordStep(testInfo, page, { label: 'Life quote on code-only (AA) has no occupation-required error', expected: false, actual: hasOccErr });
     expect(hasOccErr, `AC05. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -83,7 +83,7 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'TPD + occupation code U raises not-eligible error', expected: 'This occupation is not eligible', actual: e });
+    await recordStep(testInfo, page, { label: 'TPD + occupation code U raises not-eligible error', expected: 'This occupation is not eligible', actual: e });
     expect(/This occupation is not eligible/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -104,7 +104,7 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'TPD + code IC raises the Individual-Consideration message', expected: 'requires Individual Consideration', actual: e });
+    await recordStep(testInfo, page, { label: 'TPD + code IC raises the Individual-Consideration message', expected: 'requires Individual Consideration', actual: e });
     expect(/requires Individual Consideration/i.test(e), `AC11. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -120,7 +120,7 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'TPD missing Gender/ANB/Occupation combined error', expected: 'must complete ... Gender, Age Next Birthday & Occupation', actual: e });
+    await recordStep(testInfo, page, { label: 'TPD missing Gender/ANB/Occupation combined error', expected: 'must complete ... Gender, Age Next Birthday & Occupation', actual: e });
     expect(/complete the following fields.*Gender.*Age Next Birthday.*Occupation/i.test(e), `AC31. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -137,7 +137,7 @@ test.describe('Occupational Codes in the Quote Screen (ACB-6504)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Life + code IC raises the Individual-Consideration message', expected: 'requires Individual Consideration', actual: e });
+    await recordStep(testInfo, page, { label: 'Life + code IC raises the Individual-Consideration message', expected: 'requires Individual Consideration', actual: e });
     expect(/requires Individual Consideration/i.test(e), `AC12. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 

@@ -9,7 +9,7 @@ const { test, expect } = require('@playwright/test');
 const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput, getVisibleErrors, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function openLoadings(page, { priced = true } = {}) {
   const quote = await openNewQuote(page);
@@ -44,10 +44,10 @@ test.describe('Enter Loadings (ACB-3599)', () => {
     const quote = await openLoadings(page);
     const pct = await getPercentageSelect(quote);
     const expected = ['None', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%', '225%', '250%', '275%', '300%', '325%', '350%', '375%', '400%'];
-    recordCheck(testInfo, { label: 'Loadings Percentage dropdown options', expected: expected.join(', '), actual: (pct?.options || []).join(', ') });
+    await recordStep(testInfo, page, { label: 'Loadings Percentage dropdown options', expected: expected.join(', '), actual: (pct?.options || []).join(', ') });
     expect(pct?.options, 'AC02: Percentage options None + 25% steps to 400%').toEqual(expected);
     const hasPerMille = await quote.evaluate(() => /per mille/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Per Mille loading option present', expected: true, actual: hasPerMille });
+    await recordStep(testInfo, page, { label: 'Per Mille loading option present', expected: true, actual: hasPerMille });
     expect(hasPerMille, 'AC02: Per Mille present').toBe(true);
   });
 
@@ -59,7 +59,7 @@ test.describe('Enter Loadings (ACB-3599)', () => {
     ].join('\n') });
     const quote = await openLoadings(page);
     const disabledCount = await quote.evaluate(() => [...document.querySelectorAll('input[type="number"],input[type="text"]')].filter((i) => i.disabled).length);
-    recordCheck(testInfo, { label: 'A disabled Per Mille input exists (TPD/Disability greyed)', expected: '>= 1 disabled input', actual: disabledCount });
+    await recordStep(testInfo, page, { label: 'A disabled Per Mille input exists (TPD/Disability greyed)', expected: '>= 1 disabled input', actual: disabledCount });
     expect(disabledCount, 'AC06: TPD/Disability per-mille greyed').toBeGreaterThan(0);
   });
 
@@ -88,7 +88,7 @@ test.describe('Enter Loadings (ACB-3599)', () => {
     await quote.evaluate(() => { const b = [...document.querySelectorAll('button,a')].find((x) => /^(Cancel|Close)$/i.test((x.innerText || '').trim())); if (b) b.click(); });
     await waitForSettle(quote, 1500);
     const backOnQuote = await sumInsuredInput(quote, 0).isVisible().catch(() => false);
-    recordCheck(testInfo, { label: 'Cancel returns to the Quote screen', expected: true, actual: backOnQuote });
+    await recordStep(testInfo, page, { label: 'Cancel returns to the Quote screen', expected: true, actual: backOnQuote });
     expect(backOnQuote, 'AC03: Cancel returns to Quote').toBe(true);
   });
 
@@ -104,7 +104,7 @@ test.describe('Enter Loadings (ACB-3599)', () => {
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Loadings tooltip explains percentage/per-mille loadings', expected: 'contains "loadings are applied where a client"', actual: /loadings are applied where a client/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Loadings tooltip explains percentage/per-mille loadings', expected: 'contains "loadings are applied where a client"', actual: /loadings are applied where a client/i.test(hay) });
     expect(hay, 'AC09: loadings tooltip present').toMatch(/loadings are applied where a client/i);
   });
 
@@ -122,7 +122,7 @@ test.describe('Enter Loadings (ACB-3599)', () => {
     });
     const errs = await errText(quote);
     const hasError = (errs && errs.length > 0) || /premium|calculate a quote|add a cover|no cover/i.test(msg);
-    recordCheck(testInfo, { label: 'Loadings on an unpriced quote shows an error/blocking message', expected: 'error/blocking message shown', actual: (errs || '') + ' | ' + msg.slice(0, 120) });
+    await recordStep(testInfo, page, { label: 'Loadings on an unpriced quote shows an error/blocking message', expected: 'error/blocking message shown', actual: (errs || '') + ' | ' + msg.slice(0, 120) });
     expect(hasError, `AC10: unpriced-quote Loadings error. Got errs="${errs}" msg="${msg.slice(0,120)}"`).toBe(true);
   });
 

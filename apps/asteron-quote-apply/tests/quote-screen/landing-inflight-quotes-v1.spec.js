@@ -8,7 +8,7 @@
 // showing a rate-change validation on re-entry) — both are TIME-DEPENDENT and require aged records (a
 // 45-day-old last-modified date), which cannot be manufactured on demand. Deferred with that evidence.
 const { test, expect } = require('@playwright/test');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function gotoLanding(page) {
   await page.goto('/QuoteAndApply/', { waitUntil: 'domcontentloaded' });
@@ -30,8 +30,8 @@ test.describe('Landing page: Inflight Quotes', () => {
       heading: /Quotes and Applications/i.test(document.body.innerText || ''),
       newQuote: [].slice.call(document.querySelectorAll('button, a')).some(function (b) { return /^new quote$/i.test((b.innerText || '').trim().split('\n')[0]); }),
     }));
-    recordCheck(testInfo, { label: 'On the quoting tool UI (Quotes and Applications)', expected: true, actual: ui.heading });
-    recordCheck(testInfo, { label: 'New Quote action available', expected: true, actual: ui.newQuote });
+    await recordStep(testInfo, page, { label: 'On the quoting tool UI (Quotes and Applications)', expected: true, actual: ui.heading });
+    await recordStep(testInfo, page, { label: 'New Quote action available', expected: true, actual: ui.newQuote });
     expect(ui.heading && ui.newQuote, 'AC01: quoting tool UI').toBe(true);
   });
 
@@ -43,7 +43,7 @@ test.describe('Landing page: Inflight Quotes', () => {
     ].join('\n') });
     await gotoLanding(page);
     const opts = await page.evaluate(() => { var s = document.getElementById('Dropdown1'); return s ? [].slice.call(s.options).map(function (o) { return o.text.trim(); }) : []; });
-    recordCheck(testInfo, { label: 'Inflight statuses available in filter', expected: 'Quote, Pre application, Submitted, Application in progress, Application in progress - with Teleinterview, Expired', actual: opts.join(' | ') });
+    await recordStep(testInfo, page, { label: 'Inflight statuses available in filter', expected: 'Quote, Pre application, Submitted, Application in progress, Application in progress - with Teleinterview, Expired', actual: opts.join(' | ') });
     for (const s of ['Quote', 'Pre application', 'Submitted', 'Application in progress', 'Application in progress - with Teleinterview', 'Expired']) {
       expect(opts.some((o) => o.toLowerCase() === s.toLowerCase()), `AC02: status "${s}" available`).toBe(true);
     }

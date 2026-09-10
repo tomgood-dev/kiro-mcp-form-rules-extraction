@@ -43,7 +43,9 @@ class RunFolderReporter {
         label: a.name && a.name.startsWith('proof: ') ? a.name.slice('proof: '.length) : (a.name || 'screenshot'),
       }));
     const proofs = allImgs.filter((s) => s.isProof);
-    const shots = proofs.length ? proofs : allImgs;
+    // Skipped/deferred tests (test.fixme/skip) never ran their body, so any auto screenshot is a
+    // blank/unstarted frame — not proof. Drop shots entirely for skipped tests (no image sheet).
+    const shots = result.status === 'skipped' ? [] : (proofs.length ? proofs : allImgs);
 
     const parentTitle = test.parent && test.parent.title;
     const hasDescribeParent = parentTitle && !parentTitle.includes('.spec.js');

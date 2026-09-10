@@ -1,0 +1,45 @@
+{
+  "specSlug": "discounts-bundling-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/discounts-bundling-v1.spec.js",
+  "runTimestamp": "2026-09-10T16-01-31",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 59751070.465,
+  "filtered": false,
+  "total": 6,
+  "passed": 0,
+  "failed": 5,
+  "skipped": 0,
+  "other": 1,
+  "tests": [
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC01: Bundling Discounts is shown when multiple eligible covers are selected",
+      "status": "timedOut",
+      "durationMs": 38652077
+    },
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC02: 2 eligible covers (both >= min SI) → 15% bundling discount",
+      "status": "failed",
+      "durationMs": 21810
+    },
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC03: 3 eligible covers → 20% bundling discount",
+      "status": "failed",
+      "durationMs": 9993
+    },
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC02 boundary: a 2nd cover BELOW its minimum SI does NOT count toward bundling (stays None/lower)",
+      "status": "failed",
+      "durationMs": 6938
+    },
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC04: removing an eligible cover recalculates/removes the bundling discount",
+      "status": "failed",
+      "durationMs": 4709
+    },
+    {
+      "title": "Discounts & Bundling Discounts (ACB-2296) › AC05/AC06: Bundling Discounts shows in the right-hand details banner + \"?\" tooltip explains 15%/20%",
+      "status": "failed",
+      "durationMs": 7771
+    }
+  ]
+}

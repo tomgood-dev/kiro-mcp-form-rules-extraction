@@ -1,7 +1,7 @@
 // Verifies: apps/asteron-quote-apply/docs/business-rules/quote-screen/kids-cover-and-multi-life/page.md
 const { test, expect } = require('@playwright/test');
 const { openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, clickApply, expectErrorContaining, sumInsuredInput, waitForSettle, getTotalYearlyPremium } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -23,7 +23,7 @@ function numberOfKidsSelect(page) {
 
 test('KID-01: Number of Kids offers exactly 0–9', async ({}, testInfo) => {
   const options = await numberOfKidsSelect(quote).locator('option').allInnerTexts();
-  recordCheck(testInfo, { label: 'Number of Kids dropdown offers exactly 0–9', expected: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], actual: options });
+  await recordStep(testInfo, page, { label: 'Number of Kids dropdown offers exactly 0–9', expected: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], actual: options });
   expect(options).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 });
 
@@ -45,11 +45,11 @@ test('KID-07: Kid Sum Insured tier list runs $50,000 (Free) to $200,000 in $10,0
 
   const tierDropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$50,000 (Free)' }) }).first();
   const options = await tierDropdown.locator('option').allInnerTexts();
-  recordCheck(testInfo, { label: 'Kid Sum Insured tier list starts at $50,000 (Free)', expected: '$50,000 (Free)', actual: options[0] });
+  await recordStep(testInfo, page, { label: 'Kid Sum Insured tier list starts at $50,000 (Free)', expected: '$50,000 (Free)', actual: options[0] });
   expect(options[0]).toBe('$50,000 (Free)');
-  recordCheck(testInfo, { label: 'Kid Sum Insured tier list ends at $200,000', expected: '$200,000', actual: options.at(-1) });
+  await recordStep(testInfo, page, { label: 'Kid Sum Insured tier list ends at $200,000', expected: '$200,000', actual: options.at(-1) });
   expect(options.at(-1)).toBe('$200,000');
-  recordCheck(testInfo, { label: 'Kid Sum Insured tier list has 16 options ($50,000 (Free) to $200,000 in $10,000 steps)', expected: 16, actual: options.length });
+  await recordStep(testInfo, page, { label: 'Kid Sum Insured tier list has 16 options ($50,000 (Free) to $200,000 in $10,000 steps)', expected: 16, actual: options.length });
   expect(options).toHaveLength(16);
 });
 
@@ -88,13 +88,13 @@ test('KID-10: Kids Cover premium is only charged once Sum Insured exceeds the fr
   await waitForSettle(quote);
   // Default SI tier is $50,000 (Free) per KID-07 - premium should be unchanged.
   const premiumAtFreeTier = await getTotalYearlyPremium(quote);
-  recordCheck(testInfo, { label: 'Total yearly premium unchanged with Kids Cover at the $50,000 (Free) tier', expected: premiumBeforeKids, actual: premiumAtFreeTier });
+  await recordStep(testInfo, page, { label: 'Total yearly premium unchanged with Kids Cover at the $50,000 (Free) tier', expected: premiumBeforeKids, actual: premiumAtFreeTier });
   expect(premiumAtFreeTier).toBe(premiumBeforeKids);
 
   const tierDropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '$50,000 (Free)' }) }).first();
   await tierDropdown.selectOption({ label: '$60,000' });
   await waitForSettle(quote);
   const premiumAtNextTier = await getTotalYearlyPremium(quote);
-  recordCheck(testInfo, { label: 'Total yearly premium increases once Kid Sum Insured exceeds the $50,000 free tier (next tier: $60,000)', expected: `> ${premiumBeforeKids}`, actual: premiumAtNextTier });
+  await recordStep(testInfo, page, { label: 'Total yearly premium increases once Kid Sum Insured exceeds the $50,000 free tier (next tier: $60,000)', expected: `> ${premiumBeforeKids}`, actual: premiumAtNextTier });
   expect(premiumAtNextTier).toBeGreaterThan(premiumBeforeKids);
 });

@@ -15,7 +15,7 @@ const {
   waitForSettle,
   sumInsuredInput,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -52,7 +52,7 @@ test.describe('PD-11/PD-12/PD-26/PD-27 — Age next birthday valid range (11–7
       await setGender(quote, 'Male');
       const errors = await getVisibleErrors(quote);
       const hasRangeError = errors.some((e) => e.includes('between 11 and 75'));
-      recordCheck(testInfo, { label: `Age ${age}: no "between 11 and 75" range error shown`, expected: false, actual: hasRangeError });
+      await recordStep(testInfo, page, { label: `Age ${age}: no "between 11 and 75" range error shown`, expected: false, actual: hasRangeError });
       expect(hasRangeError).toBe(false);
     }
   });
@@ -63,7 +63,7 @@ test.describe('PD-11/PD-12/PD-26/PD-27 — Age next birthday valid range (11–7
     const hasClientMsg = errors.some((e) => e.includes('Age next birthday should be between 11 and 75'));
     const hasServerMsg = errors.some((e) => e.includes('Age Next Birthday must be between 11 and 75'));
     const hasEitherRangeMsg = hasClientMsg || hasServerMsg;
-    recordCheck(testInfo, { label: 'Client-side or server-side age range error message shown for an out-of-range age', expected: true, actual: hasEitherRangeMsg });
+    await recordStep(testInfo, page, { label: 'Client-side or server-side age range error message shown for an out-of-range age', expected: true, actual: hasEitherRangeMsg });
     expect(hasEitherRangeMsg).toBe(true);
   });
 });
@@ -118,17 +118,17 @@ test('PD-01: First Name accepts up to 20 characters, caps at the 21st', async ({
 
   await typeReal(quote, firstName, variedChars(19));
   const valueAt19 = (await firstName.inputValue()).length;
-  recordCheck(testInfo, { label: 'First Name at 19 characters (below the 20-char max) is accepted in full', expected: 19, actual: valueAt19 });
+  await recordStep(testInfo, page, { label: 'First Name at 19 characters (below the 20-char max) is accepted in full', expected: 19, actual: valueAt19 });
   expect(valueAt19).toBe(19);
 
   await typeReal(quote, firstName, variedChars(20));
   const valueAt20 = (await firstName.inputValue()).length;
-  recordCheck(testInfo, { label: 'First Name at exactly 20 characters (the documented max, PD-01) is accepted in full', expected: 20, actual: valueAt20 });
+  await recordStep(testInfo, page, { label: 'First Name at exactly 20 characters (the documented max, PD-01) is accepted in full', expected: 20, actual: valueAt20 });
   expect(valueAt20).toBe(20);
 
   await typeReal(quote, firstName, variedChars(21));
   const valueAt21 = (await firstName.inputValue()).length;
-  recordCheck(testInfo, { label: 'First Name at 21 characters (over the 20-char max) is capped at 20, the 21st character rejected', expected: 20, actual: valueAt21 });
+  await recordStep(testInfo, page, { label: 'First Name at 21 characters (over the 20-char max) is capped at 20, the 21st character rejected', expected: 20, actual: valueAt21 });
   expect(valueAt21).toBe(20);
 });
 
@@ -137,17 +137,17 @@ test('PD-02: Last Name accepts up to 30 characters, caps at the 31st', async ({}
 
   await typeReal(quote, lastName, variedChars(29));
   const valueAt29 = (await lastName.inputValue()).length;
-  recordCheck(testInfo, { label: 'Last Name at 29 characters (below the 30-char max) is accepted in full', expected: 29, actual: valueAt29 });
+  await recordStep(testInfo, page, { label: 'Last Name at 29 characters (below the 30-char max) is accepted in full', expected: 29, actual: valueAt29 });
   expect(valueAt29).toBe(29);
 
   await typeReal(quote, lastName, variedChars(30));
   const valueAt30 = (await lastName.inputValue()).length;
-  recordCheck(testInfo, { label: 'Last Name at exactly 30 characters (the documented max, PD-02) is accepted in full', expected: 30, actual: valueAt30 });
+  await recordStep(testInfo, page, { label: 'Last Name at exactly 30 characters (the documented max, PD-02) is accepted in full', expected: 30, actual: valueAt30 });
   expect(valueAt30).toBe(30);
 
   await typeReal(quote, lastName, variedChars(31));
   const valueAt31 = (await lastName.inputValue()).length;
-  recordCheck(testInfo, { label: 'Last Name at 31 characters (over the 30-char max) is capped at 30, the 31st character rejected', expected: 30, actual: valueAt31 });
+  await recordStep(testInfo, page, { label: 'Last Name at 31 characters (over the 30-char max) is capped at 30, the 31st character rejected', expected: 30, actual: valueAt31 });
   expect(valueAt31).toBe(30);
 });
 
@@ -174,13 +174,13 @@ test('PD-15/PD-16: DOB auto-calculates Age, and manually typing Age clears DOB',
   });
   await waitForSettle(quote);
   const ageAfterDob = await ageField.inputValue();
-  recordCheck(testInfo, { label: 'Age Next Birthday auto-populated after Date of birth is set', expected: 'not blank', actual: ageAfterDob });
+  await recordStep(testInfo, page, { label: 'Age Next Birthday auto-populated after Date of birth is set', expected: 'not blank', actual: ageAfterDob });
   await expect(ageField).not.toHaveValue('');
 
   // Manually typing Age (via the proven click+clear+type+tab pattern, not .fill()) should clear DOB.
   await setAge(quote, 40);
   const dobAfterManualAge = await dob.inputValue();
-  recordCheck(testInfo, { label: 'Date of birth cleared after manually typing Age Next Birthday', expected: '', actual: dobAfterManualAge });
+  await recordStep(testInfo, page, { label: 'Date of birth cleared after manually typing Age Next Birthday', expected: '', actual: dobAfterManualAge });
   await expect(dob).toHaveValue('');
 });
 
@@ -194,7 +194,7 @@ test('PD-20: Disability Covers buttons are visible regardless of Employment Stat
     const btn = [...document.querySelectorAll('button')].find((b) => b.innerText.trim().split('\n')[0] === 'Mortgage & Living');
     return { present: !!btn, visible: btn ? btn.getBoundingClientRect().width > 0 : false, disabled: btn ? btn.disabled : null };
   });
-  recordCheck(testInfo, { label: 'Disability cover buttons are visible/enabled before Employment Status is set', expected: { present: true, visible: true, disabled: false }, actual: visibility });
+  await recordStep(testInfo, page, { label: 'Disability cover buttons are visible/enabled before Employment Status is set', expected: { present: true, visible: true, disabled: false }, actual: visibility });
   expect(visibility, 'PD-20: Disability cover buttons are visible/enabled before Employment Status is set').toEqual({ present: true, visible: true, disabled: false });
 
   await activateCover(quote, 'Mortgage & Living');
@@ -219,6 +219,6 @@ test('Sanity: minimum Personal Details + a $200,000 Life cover prices successful
   await fillCalcMask(quote.locator('input[id*="SumInsured"]').first(), '200000');
   await waitForSettle(quote);
   const premium = await getTotalYearlyPremium(quote);
-  recordCheck(testInfo, { label: 'Total yearly premium for a $200,000 Life cover is greater than zero', expected: '> 0', actual: premium });
+  await recordStep(testInfo, page, { label: 'Total yearly premium for a $200,000 Life cover is greater than zero', expected: '> 0', actual: premium });
   expect(premium).toBeGreaterThan(0);
 });

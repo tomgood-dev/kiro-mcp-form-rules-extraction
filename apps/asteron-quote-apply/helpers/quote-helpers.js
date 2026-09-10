@@ -37,6 +37,33 @@ const {
  * 2026-09-09. So we must capture and drive the REAL popup tab, not deep-link. Returns the popup page
  * (or the same page if, in some environments, it opens in-place).
  */
+/**
+ * Best-effort: select an Adviser in the "Operating as / Adviser" vscomp dropdown on the
+ * /QuoteAndApply landing page. This must be set before "New Quote" will fire window.open
+ * (confirmed 2026-09-11). No-op if the dropdown isn't present or already has a value.
+ */
+async function selectAdviserIfPresent(page) {
+  try {
+    const toggle = page.locator('#b5-DropdownSearchAdviser .vscomp-toggle-button, [id*="DropdownSearchAdviser"] .vscomp-toggle-button').first();
+    if (!(await toggle.count())) return;
+    const current = (await toggle.innerText().catch(() => '')) || '';
+    if (current && !/select/i.test(current.trim())) return; // already chosen
+    await toggle.click().catch(() => {});
+    await waitForSettle(page, 800);
+    // Options render in a .vscomp-options list; pick the first real (non-placeholder) option.
+    const opt = page.locator('.vscomp-option:not(.disabled)').filter({ hasNotText: /^select/i }).first();
+    await opt.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    if (await opt.count()) {
+      await opt.click().catch(() => {});
+      await waitForSettle(page, 1200);
+      console.log('  [step] Adviser selected in the Operating-as dropdown');
+    } else {
+      // Close the dropdown if we couldn't pick, to avoid intercepting the New Quote click.
+      await page.keyboard.press('Escape').catch(() => {});
+    }
+  } catch (_) { /* best-effort */ }
+}
+
 async function openNewQuote(page) {
   console.log('  [step] Opening a new quote...');
   await page.goto('/QuoteAndApply/');
@@ -45,26 +72,40 @@ async function openNewQuote(page) {
   await link.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
   await waitForSettle(page, 1500);
 
+  // Select an Adviser first — the "Adviser: Select..." vscomp dropdown (id b5-DropdownSearchAdviser)
+  // must have a value before "New Quote" fires window.open (confirmed 2026-09-11: with no adviser
+  // selected, clicking New Quote no-ops — no popup, no nav). Best-effort: open the vscomp, pick the
+  // first real option. Skip silently if it's already set or not present.
+  await selectAdviserIfPresent(page);
+
   // The New Quote handler (OutSystems chooseNav) runs UpdateAdviserInSession then window.open(...) to
   // a NEW TAB — that adviser-session context is what makes Apply functional and the footer action bar
   // render. Deep-linking to the quote URL SKIPS this and yields an inert Apply (confirmed 2026-09-09).
   // So we MUST capture the real popup tab. Canonical pattern: arm the popup waiter, THEN click.
   const context = page.context();
   let popup = null;
-  for (let attempt = 1; attempt <= 2 && !popup; attempt++) {
+  for (let attempt = 1; attempt <= 4 && !popup; attempt++) {
     try {
+      // On retries, re-navigate + re-settle so the New Quote link/list is fresh (the flake is
+      // usually the list not being fully ready when we click).
+      if (attempt > 1) {
+        await page.goto('/QuoteAndApply/').catch(() => {});
+        await page.waitForLoadState('domcontentloaded').catch(() => {});
+        await waitForSettle(page, 2000 + attempt * 1000);
+      }
+      const freshLink = page.locator('a', { hasText: 'New Quote' }).first();
+      await freshLink.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
       const [p] = await Promise.all([
         context.waitForEvent('page', { timeout: 25000 }),
-        link.click(),
+        freshLink.click(),
       ]);
       popup = p;
     } catch (_) {
-      // retry: some runs need the list to settle first
       await waitForSettle(page, 2000);
     }
   }
   if (!popup) {
-    throw new Error('openNewQuote: New Quote did not open a popup tab after 2 attempts. The quote MUST be '
+    throw new Error('openNewQuote: New Quote did not open a popup tab after 4 attempts. The quote MUST be '
       + 'entered via the New Quote button (it runs UpdateAdviserInSession + window.open) — deep-linking '
       + 'the quote URL yields an inert Apply and no footer action bar. Aborting rather than proceeding on a broken quote.');
   }

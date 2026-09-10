@@ -26,7 +26,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Open a fresh quote, switch to Business policy, activate Life.
 async function freshBizLifeQuote(page, personal) {
@@ -74,20 +74,20 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await waitForSettle(quote, 1800);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business lump sum cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     const opts = await quote.evaluate(() => {
       const has = (txt) => [...document.querySelectorAll('select')].some((s) => [...s.options].some((o) => o.text.trim() === txt));
       return { inflation: !!document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]')?.checked, wePay: has('30 days'), flexi: has('N/A') && has('2.5%') };
     });
-    recordCheck(testInfo, { label: 'Inflation Adjustment default-ticked; We Pay + Flexi present', expected: 'inflation=true, wePay=true, flexi=true', actual: JSON.stringify(opts) });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment default-ticked; We Pay + Flexi present', expected: 'inflation=true, wePay=true, flexi=true', actual: JSON.stringify(opts) });
     expect(opts.inflation, 'AC02: Inflation default-ticked').toBe(true);
     expect(opts.wePay, 'AC02: We Pay present').toBe(true);
     expect(opts.flexi, 'AC02: Flexi present').toBe(true);
     await activateCover(quote, 'Life');
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Life is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Life is selectable (Sum Insured field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: Life selectable').toBe(true);
   });
 
@@ -99,18 +99,18 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     ].join('\n') });
     const quote = await freshBizLifeQuote(page);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Life Sum Insured field present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Life Sum Insured field present', expected: true, actual: siVisible });
     expect(siVisible, 'AC03: SI field present').toBe(true);
     const struct = await getPremiumStructure(quote);
-    recordCheck(testInfo, { label: 'Life Premium Structure default', expected: 'Stepped', actual: struct });
+    await recordStep(testInfo, page, { label: 'Life Premium Structure default', expected: 'Stepped', actual: struct });
     expect(struct, 'AC03: Structure default Stepped').toBe('Stepped');
     const bs = await getCheckboxStateByLabel(quote, 'Business Security');
-    recordCheck(testInfo, { label: 'Business Security present + default unticked', expected: 'present, unticked', actual: JSON.stringify(bs) });
+    await recordStep(testInfo, page, { label: 'Business Security present + default unticked', expected: 'present, unticked', actual: JSON.stringify(bs) });
     expect(bs, 'AC03: Business Security present').not.toBeNull();
     expect(bs?.checked, 'AC03: Business Security default unticked').toBe(false);
     for (const sub of ['Acc. TPD', 'Acc. Trauma']) {
       const present = await coverButtonExists(quote, sub);
-      recordCheck(testInfo, { label: `Additional cover "${sub}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Additional cover "${sub}" present`, expected: true, actual: present });
       expect(present, `AC03: "${sub}" present`).toBe(true);
     }
   });
@@ -125,7 +125,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Life Stepped ANB 76', expected: 'Age Next Birthday must be between 11 and 75 (or a 75 max)', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Life Stepped ANB 76', expected: 'Age Next Birthday must be between 11 and 75 (or a 75 max)', actual: e });
     expect(/between 11 and 75|Age Next Birthday.*75/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -140,7 +140,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /between 11 and 75/i.test(e);
-    recordCheck(testInfo, { label: 'Business Life Stepped at ANB 75 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Life Stepped at ANB 75 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC08 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -158,7 +158,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
       await clickApply(quote);
       const e = await errText(quote);
       const rx = new RegExp(`${c.structure}.{0,30}Life Cover.{0,10}is ${c.max}|Maximum Age Next Birthday for ${c.structure}.*${c.max}`, 'i');
-      recordCheck(testInfo, { label: `Error shown for Life ${c.structure} + ANB > ${c.max}`, expected: `${c.structure} ... ${c.max}`, actual: e });
+      await recordStep(testInfo, page, { label: `Error shown for Life ${c.structure} + ANB > ${c.max}`, expected: `${c.structure} ... ${c.max}`, actual: e });
       expect(rx.test(e), `${c.ac}. Got: ${e.slice(0, 220)}`).toBe(true);
     });
 
@@ -174,7 +174,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
       await clickApply(quote);
       const e = await errText(quote);
       const rx = new RegExp(`${c.structure}.{0,30}Life Cover.{0,10}is ${c.max}|Maximum Age Next Birthday for ${c.structure}.*${c.max}`, 'i');
-      recordCheck(testInfo, { label: `Life ${c.structure} at ANB ${c.max} accepted`, expected: false, actual: rx.test(e) });
+      await recordStep(testInfo, page, { label: `Life ${c.structure} at ANB ${c.max} accepted`, expected: false, actual: rx.test(e) });
       expect(rx.test(e), `${c.ac} boundary. Got: ${e.slice(0, 220)}`).toBe(false);
     });
   }
@@ -189,7 +189,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 0), '60000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Life ANB<17 + SI > $50,000', expected: 'under Age Next Birthday 17 is $50,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Life ANB<17 + SI > $50,000', expected: 'under Age Next Birthday 17 is $50,000', actual: e });
     expect(/under Age Next Birthday 17 is \$?50,?000/i.test(e), `AC16. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -204,7 +204,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /under Age Next Birthday 17 is \$?50,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Life ANB<17 SI exactly $50,000 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Life ANB<17 SI exactly $50,000 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC16 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -219,7 +219,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await tickBusinessSecurity(quote);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB > 56 raises the max-age error', expected: 'maximum Age Next Birthday for Business Security is 56', actual: e });
     expect(/maximum Age Next Birthday for Business Security is 56/i.test(e), `AC35. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -235,7 +235,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Business Security is 56/i.test(e);
-    recordCheck(testInfo, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB 56 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC35 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -251,7 +251,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 1), '300000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Acc TPD SI > Life SI raises the cannot-exceed error', expected: 'Accelerated TPD Benefit sum insured cannot exceed the life cover sum insured', actual: e });
+    await recordStep(testInfo, page, { label: 'Acc TPD SI > Life SI raises the cannot-exceed error', expected: 'Accelerated TPD Benefit sum insured cannot exceed the life cover sum insured', actual: e });
     expect(/Accelerated TPD Benefit sum insured cannot exceed the life cover sum insured/i.test(e), `AC29. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -268,7 +268,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /Accelerated TPD Benefit sum insured cannot exceed the life cover sum insured/i.test(e);
-    recordCheck(testInfo, { label: 'Acc TPD SI == Life SI accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Acc TPD SI == Life SI accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC29 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -284,7 +284,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 1), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Acc TPD Stepped + ANB > 65', expected: 'Stepped Accelerated TPD Cover is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Acc TPD Stepped + ANB > 65', expected: 'Stepped Accelerated TPD Cover is 65', actual: e });
     expect(/Stepped.{0,5}Accelerated TPD Cover.{0,5}is 65/i.test(e), `AC37. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -300,7 +300,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 1), '40000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Acc TPD Stepped + ANB < 17', expected: 'Minimum ... Stepped Accelerated TPD Cover is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Acc TPD Stepped + ANB < 17', expected: 'Minimum ... Stepped Accelerated TPD Cover is 17', actual: e });
     expect(/Minimum Age Next Birthday for Stepped.{0,5}Accelerated TPD Cover.{0,5}is 17/i.test(e), `AC40. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -317,7 +317,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma (under Life) ANB < 17', expected: 'TPD on Trauma is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma (under Life) ANB < 17', expected: 'TPD on Trauma is 17', actual: e });
     expect(/Age Next Birthday for .?TPD on Trauma.? is 17/i.test(e), `AC43. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -334,7 +334,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await activateCover(quote, 'TPD on Trauma');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for TPD on Trauma (under Life) ANB > 60', expected: 'TPD on Trauma is 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for TPD on Trauma (under Life) ANB > 60', expected: 'TPD on Trauma is 60', actual: e });
     expect(/Age Next Birthday for .?TPD on Trauma.? is 60/i.test(e), `AC44. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -352,7 +352,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 2), '220000');
     await waitForSettle(quote, 1500);
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='Life'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+Life disabled after 3 covers', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Life disabled after 3 covers', expected: true, actual: disabled });
     expect(disabled, 'AC24: +Life disabled after 3').toBe(true);
   });
 
@@ -366,7 +366,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 0), '1000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Business Life premium < $240', expected: 'minimum premium is $240.00 per year per Life insured', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Business Life premium < $240', expected: 'minimum premium is $240.00 per year per Life insured', actual: e });
     expect(/minimum premium is \$?240\.?00? per year per Life insured/i.test(e), `AC19. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -383,7 +383,7 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await waitForSettle(quote, 1200);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'We Pay at ANB > 65 raises the max-age error', expected: 'maximum Age Next Birthday for We Pay Your Premiums is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'We Pay at ANB > 65 raises the max-age error', expected: 'maximum Age Next Birthday for We Pay Your Premiums is 65', actual: e });
     expect(/maximum Age Next Birthday for We Pay Your Premiums is 65/i.test(e), `AC20. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -400,9 +400,9 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Life discount-bands tooltip present', expected: 'contains bands for Life Cover', actual: /discount bands for Life Cover/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Life discount-bands tooltip present', expected: 'contains bands for Life Cover', actual: /discount bands for Life Cover/i.test(hay) });
     expect(hay, 'AC34: Life discount-bands tooltip').toMatch(/discount bands for Life Cover/i);
-    recordCheck(testInfo, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Business Security tooltip present', expected: 'contains "future increases without medical underwriting"', actual: /future increases without medical underwriting/i.test(hay) });
     expect(hay, 'AC06/AC34: Business Security tooltip').toMatch(/future increases without medical underwriting/i);
   });
 
@@ -416,12 +416,12 @@ test.describe('Business Policy Lump Sum Life Cover and Additional Covers (ACB-26
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Life Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'Life Sum Insured field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC07/AC31: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'Life Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'Life Sum Insured field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC07/AC31: removed').toBe(0);
   });
 

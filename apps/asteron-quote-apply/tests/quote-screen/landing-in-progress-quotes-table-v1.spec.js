@@ -13,7 +13,7 @@
 // (delete checkbox/confirm, status-routing row-open, multi-life expand/collapse, three-dots menu, row
 // ordering, return-to-landing popup) — never silently omitted. The reachable STRUCTURE ACs are asserted.
 const { test, expect } = require('@playwright/test');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function gotoLanding(page) {
   await page.goto('/QuoteAndApply/', { waitUntil: 'domcontentloaded' });
@@ -50,12 +50,12 @@ test.describe('Landing Page: In Progress Quotes Table (ACB-3570)', () => {
     ].join('\n') });
     await gotoLanding(page);
     const l = await readLanding(page);
-    recordCheck(testInfo, { label: 'Search box present', expected: true, actual: l.hasSearch });
-    recordCheck(testInfo, { label: 'Search box placeholder', expected: 'Search Quotes And Applications', actual: l.searchPh });
-    recordCheck(testInfo, { label: 'Status filter present', expected: true, actual: l.hasStatusFilter });
-    recordCheck(testInfo, { label: 'New Quote action present', expected: true, actual: l.hasNewQuote });
-    recordCheck(testInfo, { label: 'Entries selector options', expected: '10/20/50/100', actual: (l.entriesOpts || []).join('/') });
-    recordCheck(testInfo, { label: 'Table header columns', expected: 'Adviser No. / Adviser / Client name / Last Modified / Status / Reference', actual: l.tableHeader });
+    await recordStep(testInfo, page, { label: 'Search box present', expected: true, actual: l.hasSearch });
+    await recordStep(testInfo, page, { label: 'Search box placeholder', expected: 'Search Quotes And Applications', actual: l.searchPh });
+    await recordStep(testInfo, page, { label: 'Status filter present', expected: true, actual: l.hasStatusFilter });
+    await recordStep(testInfo, page, { label: 'New Quote action present', expected: true, actual: l.hasNewQuote });
+    await recordStep(testInfo, page, { label: 'Entries selector options', expected: '10/20/50/100', actual: (l.entriesOpts || []).join('/') });
+    await recordStep(testInfo, page, { label: 'Table header columns', expected: 'Adviser No. / Adviser / Client name / Last Modified / Status / Reference', actual: l.tableHeader });
     expect(l.hasSearch, 'AC01: search box').toBe(true);
     expect(l.searchPh, 'AC01: search placeholder').toMatch(/Search Quotes And Applications/i);
     expect(l.hasStatusFilter, 'AC01: status filter').toBe(true);
@@ -73,7 +73,7 @@ test.describe('Landing Page: In Progress Quotes Table (ACB-3570)', () => {
     await gotoLanding(page);
     const l = await readLanding(page);
     const opts = l.statusOpts.join(' | ');
-    recordCheck(testInfo, { label: 'Status filter options', expected: 'Quote, Pre application, Submitted, Application in progress, Application in progress - with Teleinterview, Expired', actual: opts });
+    await recordStep(testInfo, page, { label: 'Status filter options', expected: 'Quote, Pre application, Submitted, Application in progress, Application in progress - with Teleinterview, Expired', actual: opts });
     for (const s of ['Quote', 'Pre application', 'Submitted', 'Application in progress', 'Application in progress - with Teleinterview', 'Expired']) {
       expect(l.statusOpts.some((o) => o.toLowerCase() === s.toLowerCase()), `AC02: status "${s}" available`).toBe(true);
     }
@@ -87,7 +87,7 @@ test.describe('Landing Page: In Progress Quotes Table (ACB-3570)', () => {
     ].join('\n') });
     await gotoLanding(page);
     const l = await readLanding(page);
-    recordCheck(testInfo, { label: 'Refresh content control present', expected: true, actual: l.hasRefresh });
+    await recordStep(testInfo, page, { label: 'Refresh content control present', expected: true, actual: l.hasRefresh });
     expect(l.hasRefresh, 'AC04: Refresh content control').toBe(true);
   });
 
@@ -99,14 +99,14 @@ test.describe('Landing Page: In Progress Quotes Table (ACB-3570)', () => {
     ].join('\n') });
     await gotoLanding(page);
     const l = await readLanding(page);
-    recordCheck(testInfo, { label: 'Entries selector options', expected: '10/20/50/100', actual: (l.entriesOpts || []).join('/') });
+    await recordStep(testInfo, page, { label: 'Entries selector options', expected: '10/20/50/100', actual: (l.entriesOpts || []).join('/') });
     expect(l.entriesOpts, 'AC09: entries options').toEqual(['10', '20', '50', '100']);
     const set = await page.evaluate(() => {
       var s = [].slice.call(document.querySelectorAll('select')).filter(function (x) { var o = [].slice.call(x.options).map(function (o) { return o.text.trim(); }); return o.indexOf('100') >= 0 && o.indexOf('10') >= 0; })[0];
       if (!s) return null; var opt = [].slice.call(s.options).filter(function (o) { return o.text.trim() === '100'; })[0]; s.value = opt.value; s.dispatchEvent(new Event('change', { bubbles: true }));
       return s.options[s.selectedIndex].text.trim();
     });
-    recordCheck(testInfo, { label: 'Entries selector accepts 100', expected: '100', actual: set });
+    await recordStep(testInfo, page, { label: 'Entries selector accepts 100', expected: '100', actual: set });
     expect(set, 'AC09: set to 100').toBe('100');
   });
 

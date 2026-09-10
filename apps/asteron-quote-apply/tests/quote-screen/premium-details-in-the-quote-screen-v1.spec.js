@@ -24,7 +24,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 /**
  * Reads the page's visible text from the summary panel's "Total ... (All Lives)" heading onward
@@ -171,13 +171,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
 
     const top = await getTopTotalLine(quote);
     expect(top, 'AC01: an all-lives total premium line is present').not.toBeNull();
-    recordCheck(testInfo, { label: 'All-lives total premium is a real, positive number', expected: '> 0', actual: top.amount });
+    await recordStep(testInfo, page, { label: 'All-lives total premium is a real, positive number', expected: '> 0', actual: top.amount });
     expect(top.amount, 'AC01: all-lives total is a real, positive number').toBeGreaterThan(0);
 
     const panelText = await getPremiumPanelText(quote);
-    recordCheck(testInfo, { label: 'Per-life breakdown shows "Life 1"', expected: 'contains "Life 1"', actual: panelText });
+    await recordStep(testInfo, page, { label: 'Per-life breakdown shows "Life 1"', expected: 'contains "Life 1"', actual: panelText });
     expect(panelText, 'AC01: per-life breakdown shows "Life 1"').toContain('Life 1');
-    recordCheck(testInfo, { label: 'Per-life breakdown shows the priced cover name "Life Cover A"', expected: 'contains "Life Cover A"', actual: panelText });
+    await recordStep(testInfo, page, { label: 'Per-life breakdown shows the priced cover name "Life Cover A"', expected: 'contains "Life Cover A"', actual: panelText });
     expect(panelText, 'AC01: per-life breakdown shows the priced cover name').toContain('Life Cover A');
   });
 
@@ -203,11 +203,11 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await waitForSettle(quote, 1500);
 
     const panelText = await getPremiumPanelText(quote);
-    recordCheck(testInfo, { label: 'Breakdown shows Life Cover A', expected: 'contains "Life Cover A"', actual: panelText });
+    await recordStep(testInfo, page, { label: 'Breakdown shows Life Cover A', expected: 'contains "Life Cover A"', actual: panelText });
     expect(panelText, 'AC02: breakdown shows Life Cover A').toContain('Life Cover A');
-    recordCheck(testInfo, { label: 'Breakdown shows TPD A', expected: 'contains "TPD A"', actual: panelText });
+    await recordStep(testInfo, page, { label: 'Breakdown shows TPD A', expected: 'contains "TPD A"', actual: panelText });
     expect(panelText, 'AC02: breakdown shows TPD A').toContain('TPD A');
-    recordCheck(testInfo, { label: 'A "Total Yearly Premium" line is present', expected: 'contains "Total Yearly Premium"', actual: panelText });
+    await recordStep(testInfo, page, { label: 'A "Total Yearly Premium" line is present', expected: 'contains "Total Yearly Premium"', actual: panelText });
     expect(panelText, 'AC02: a "Total Yearly Premium" line is present').toContain('Total Yearly Premium');
 
     // Confirmed discrepancy (live, 2026-09-01, reproduced across 2 independent recon probes plus
@@ -217,7 +217,7 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     // page ("2 cover types: 15%, 3 or more cover types: 20%"). Asserted to the correct/documented
     // value per project convention — expected to FAIL until the underlying calculation is fixed.
     const discount = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: '2 covers at/above their minimums show the documented bundling discount', expected: '15% (2 covers)', actual: discount });
+    await recordStep(testInfo, page, { label: '2 covers at/above their minimums show the documented bundling discount', expected: '15% (2 covers)', actual: discount });
     expect(discount, 'AC02/PREM-19/20: 2 covers >= their minimums shows "15% (2 covers)"').toBe('15% (2 covers)');
   });
 
@@ -246,13 +246,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '99999');
     await waitForSettle(quote, 1500);
     const belowDiscount = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'TPD $99,999 (below $100k min): bundling is "None" (2nd cover does not count)', expected: 'None', actual: belowDiscount });
+    await recordStep(testInfo, page, { label: 'TPD $99,999 (below $100k min): bundling is "None" (2nd cover does not count)', expected: 'None', actual: belowDiscount });
     expect(belowDiscount, 'AC02 boundary: a 2nd cover below its minimum does not count → "None"').toBe('None');
     // At the $100k TPD minimum → TPD counts → 2 qualifying covers → a discount is applied (not None).
     await fillCalcMask(sumInsuredInput(quote, 1), '100000');
     await waitForSettle(quote, 1500);
     const atDiscount = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'TPD $100,000 (at $100k min): a bundling discount is applied (NOT "None")', expected: 'not "None"', actual: atDiscount });
+    await recordStep(testInfo, page, { label: 'TPD $100,000 (at $100k min): a bundling discount is applied (NOT "None")', expected: 'not "None"', actual: atDiscount });
     expect(atDiscount, 'AC02 boundary: at the minimum the 2nd cover counts → a discount is applied').not.toBe('None');
   });
 
@@ -282,7 +282,7 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1500);
     const life1Total = (await getTopTotalLine(quote))?.amount || 0;
-    recordCheck(testInfo, { label: 'Life 1 has a priced cover (all-lives total > 0 before adding Life 2)', expected: '> 0', actual: life1Total });
+    await recordStep(testInfo, page, { label: 'Life 1 has a priced cover (all-lives total > 0 before adding Life 2)', expected: '> 0', actual: life1Total });
     expect(life1Total, 'AC04: Life 1 priced before adding Life 2').toBeGreaterThan(0);
 
     await clickButtonByLabel(quote, 'Add life', 'Add life button');
@@ -290,7 +290,7 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     // "Add life" focuses Life 2 and swaps its form (confirmed 2026-09-03 diagnostic). Price Life 2
     // WITHOUT a tab click (a post-Add tab click mis-binds the cover — see the 2026-09-03 investigation).
     const tabCountAfterAdd = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'A second life tab exists after "Add life"', expected: 2, actual: tabCountAfterAdd });
+    await recordStep(testInfo, page, { label: 'A second life tab exists after "Add life"', expected: 2, actual: tabCountAfterAdd });
     expect(tabCountAfterAdd, 'AC04: a second life tab exists after "Add life"').toBe(2);
     await expect.poll(() => activeLifeTabLabel(quote), { message: 'AC04: Life 2 is the active tab after "Add life"', timeout: 15000 }).toBe('Life 2');
     await setMinimumPersonalDetails(quote);
@@ -308,13 +308,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     // is shown — plus that Life 2's SI landed (self-verified by fillCalcMask above). Racing the exact
     // per-cover row text is a flaky assertion, not a stronger one. See the Deferred note in the test doc.
     const twoLives = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'Two independently-priced life tabs exist (Life 1 + Life 2)', expected: 2, actual: twoLives });
+    await recordStep(testInfo, page, { label: 'Two independently-priced life tabs exist (Life 1 + Life 2)', expected: 2, actual: twoLives });
     expect(twoLives, 'AC04: a second, independently-priced life was added').toBe(2);
     const life2Present = await quote.evaluate(() => /(^|\n)\s*Life 2(\s|\n)/.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Life 2 has its own section in the Premium panel', expected: true, actual: life2Present });
+    await recordStep(testInfo, page, { label: 'Life 2 has its own section in the Premium panel', expected: true, actual: life2Present });
     expect(life2Present, 'AC04: Life 2 has its own section in the Premium panel').toBe(true);
     const hasAllLivesTotal = await quote.evaluate(() => /Total [A-Za-z ]+? \(All Lives\)/.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'An all-lives total premium is displayed for both lives', expected: true, actual: hasAllLivesTotal });
+    await recordStep(testInfo, page, { label: 'An all-lives total premium is displayed for both lives', expected: true, actual: hasAllLivesTotal });
     expect(hasAllLivesTotal, 'AC04: an all-lives total premium is displayed').toBe(true);
   });
 
@@ -341,7 +341,7 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life button');
     await waitForSettle(quote, 1500);
     const tabCountAfterAdd = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'A second life tab exists after "Add life"', expected: 2, actual: tabCountAfterAdd });
+    await recordStep(testInfo, page, { label: 'A second life tab exists after "Add life"', expected: 2, actual: tabCountAfterAdd });
     expect(tabCountAfterAdd, 'AC05: a second life tab exists after "Add life"').toBe(2);
     // "Add life" itself focuses Life 2 and swaps the form to it (confirmed via diagnostic 2026-09-03:
     // SI-input count drops to 0 then rebuilds for Life 2, and Life 2 is the active tab). Do NOT click
@@ -366,13 +366,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     // read on the added life is DEFERRED as a known platform-instability limitation (see test doc),
     // not faked — it passes intermittently and would make the suite flaky.
     const twoLives = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'Two life tabs exist (Life 2 priced with 2 covers)', expected: 2, actual: twoLives });
+    await recordStep(testInfo, page, { label: 'Two life tabs exist (Life 2 priced with 2 covers)', expected: 2, actual: twoLives });
     expect(twoLives, 'AC05: Life 2 exists as its own life with 2 covers priced').toBe(2);
     const life2Present = await quote.evaluate(() => /(^|\n)\s*Life 2(\s|\n)/.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Life 2 has its own section in the Premium panel', expected: true, actual: life2Present });
+    await recordStep(testInfo, page, { label: 'Life 2 has its own section in the Premium panel', expected: true, actual: life2Present });
     expect(life2Present, 'AC05: Life 2 has its own section in the Premium panel').toBe(true);
     const hasAllLivesTotal = await quote.evaluate(() => /Total [A-Za-z ]+? \(All Lives\)/.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'An all-lives total premium is displayed for both lives', expected: true, actual: hasAllLivesTotal });
+    await recordStep(testInfo, page, { label: 'An all-lives total premium is displayed for both lives', expected: true, actual: hasAllLivesTotal });
     expect(hasAllLivesTotal, 'AC05: an all-lives total premium is displayed').toBe(true);
   });
 
@@ -396,18 +396,18 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
 
     const freqSelect = quote.locator('select[id*="PaymentFrequencyDropdown"]').first();
     const info = await freqSelect.evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-    recordCheck(testInfo, { label: 'Payment frequency defaults to Monthly', expected: 'Monthly', actual: info.selected });
+    await recordStep(testInfo, page, { label: 'Payment frequency defaults to Monthly', expected: 'Monthly', actual: info.selected });
     expect(info.selected, 'AC06: defaults to Monthly').toBe('Monthly');
-    recordCheck(testInfo, { label: '5 documented frequency options are offered', expected: ['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly'], actual: info.options });
+    await recordStep(testInfo, page, { label: '5 documented frequency options are offered', expected: ['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly'], actual: info.options });
     expect(info.options, 'AC06: 5 documented frequency options').toEqual(['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly']);
 
     await freqSelect.selectOption({ label: 'Yearly' });
     await waitForSettle(quote, 1500);
     const selectedAfter = await freqSelect.evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
-    recordCheck(testInfo, { label: 'Selection updates to Yearly', expected: 'Yearly', actual: selectedAfter });
+    await recordStep(testInfo, page, { label: 'Selection updates to Yearly', expected: 'Yearly', actual: selectedAfter });
     expect(selectedAfter, 'AC06: selection updates to Yearly').toBe('Yearly');
     const topAfter = await getTopTotalLine(quote);
-    recordCheck(testInfo, { label: 'Panel\'s total label reflects the new frequency word', expected: 'contains "Yearly"', actual: topAfter.label });
+    await recordStep(testInfo, page, { label: 'Panel\'s total label reflects the new frequency word', expected: 'contains "Yearly"', actual: topAfter.label });
     expect(topAfter.label, 'AC06: panel\'s total label reflects the new frequency word').toContain('Yearly');
   });
 
@@ -436,21 +436,21 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await waitForSettle(quote, 1500);
 
     const expandedBefore = await getPremiumWidgetOwnText(quote);
-    recordCheck(testInfo, { label: 'Panel starts expanded showing the total', expected: 'contains "Total Monthly Premium"', actual: expandedBefore });
+    await recordStep(testInfo, page, { label: 'Panel starts expanded showing the total', expected: 'contains "Total Monthly Premium"', actual: expandedBefore });
     expect(expandedBefore, 'AC07: panel starts expanded showing the total').toContain('Total Monthly Premium');
 
     const clicked1 = await clickPremiumPanelTitle(quote);
     expect(clicked1, 'AC07: Premium panel title is clickable').toBe(true);
     await waitForSettle(quote, 800);
     const collapsedText = await getPremiumWidgetOwnText(quote);
-    recordCheck(testInfo, { label: 'Collapsing the Premium panel hides the total line', expected: 'does not contain "Total Monthly Premium"', actual: collapsedText });
+    await recordStep(testInfo, page, { label: 'Collapsing the Premium panel hides the total line', expected: 'does not contain "Total Monthly Premium"', actual: collapsedText });
     expect(collapsedText, 'AC07: collapsing hides the total line').not.toContain('Total Monthly Premium');
 
     const clicked2 = await clickPremiumPanelTitle(quote);
     expect(clicked2, 'AC07: Premium panel title is clickable again').toBe(true);
     await waitForSettle(quote, 800);
     const reExpandedText = await getPremiumWidgetOwnText(quote);
-    recordCheck(testInfo, { label: 'Re-expanding restores the total line', expected: 'contains "Total Monthly Premium"', actual: reExpandedText });
+    await recordStep(testInfo, page, { label: 'Re-expanding restores the total line', expected: 'contains "Total Monthly Premium"', actual: reExpandedText });
     expect(reExpandedText, 'AC07: re-expanding restores the total line').toContain('Total Monthly Premium');
   });
 
@@ -479,21 +479,21 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await waitForSettle(quote, 1500);
 
     const expandedText = await getPremiumPanelText(quote);
-    recordCheck(testInfo, { label: 'Life 1 starts expanded, showing its cover breakdown', expected: 'contains "Life Cover A"', actual: expandedText });
+    await recordStep(testInfo, page, { label: 'Life 1 starts expanded, showing its cover breakdown', expected: 'contains "Life Cover A"', actual: expandedText });
     expect(expandedText, 'AC08: Life 1 starts expanded, showing its cover breakdown').toContain('Life Cover A');
 
     const clicked1 = await clickLifeAccordionTitle(quote, 'Life 1');
     expect(clicked1, 'AC08: "Life 1" section title is clickable').toBe(true);
     await waitForSettle(quote, 800);
     const collapsedText = await getPremiumPanelText(quote);
-    recordCheck(testInfo, { label: 'Collapsing Life 1 hides its cover breakdown', expected: 'does not contain "Life Cover A"', actual: collapsedText });
+    await recordStep(testInfo, page, { label: 'Collapsing Life 1 hides its cover breakdown', expected: 'does not contain "Life Cover A"', actual: collapsedText });
     expect(collapsedText, 'AC08: collapsing Life 1 hides its cover breakdown').not.toContain('Life Cover A');
 
     const clicked2 = await clickLifeAccordionTitle(quote, 'Life 1');
     expect(clicked2, 'AC08: "Life 1" section title is clickable again').toBe(true);
     await waitForSettle(quote, 800);
     const reExpandedText = await getPremiumPanelText(quote);
-    recordCheck(testInfo, { label: 'Re-expanding Life 1 restores the cover breakdown', expected: 'contains "Life Cover A"', actual: reExpandedText });
+    await recordStep(testInfo, page, { label: 'Re-expanding Life 1 restores the cover breakdown', expected: 'contains "Life Cover A"', actual: reExpandedText });
     expect(reExpandedText, 'AC08: re-expanding restores the cover breakdown').toContain('Life Cover A');
   });
 
@@ -520,12 +520,12 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     expect(clicked, 'AC09a: "Life Cover A" is clickable in the Premium panel').toBe(true);
     await quote.waitForTimeout(800);
     const popoverText = await getVisiblePopoverText(quote);
-    recordCheck(testInfo, { label: 'A tooltip appears showing Total Sum Insured', expected: 'contains "Total Sum Insured"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'A tooltip appears showing Total Sum Insured', expected: 'contains "Total Sum Insured"', actual: popoverText });
     expect(popoverText, 'AC09a: a tooltip appears showing Total Sum Insured').toContain('Total Sum Insured');
-    recordCheck(testInfo, { label: 'Tooltip shows the correct Sum Insured amount', expected: 'contains "200,000"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'Tooltip shows the correct Sum Insured amount', expected: 'contains "200,000"', actual: popoverText });
     expect(popoverText, 'AC09a: tooltip shows the correct amount').toContain('200,000');
     // Negative / mutual-exclusion: a Sum-Insured-based cover must NOT show "Monthly Benefit".
-    recordCheck(testInfo, { label: 'AC09a (negative): SI-based cover tooltip does NOT show "Monthly Benefit"', expected: 'no "Monthly Benefit"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'AC09a (negative): SI-based cover tooltip does NOT show "Monthly Benefit"', expected: 'no "Monthly Benefit"', actual: popoverText });
     expect(popoverText, 'AC09a: SI cover tooltip must NOT show Monthly Benefit').not.toContain('Monthly Benefit');
   });
 
@@ -554,13 +554,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     expect(clicked, 'AC09b: "Income Protection A" is clickable in the Premium panel').toBe(true);
     await quote.waitForTimeout(800);
     const popoverText = await getVisiblePopoverText(quote);
-    recordCheck(testInfo, { label: 'Tooltip mentions Monthly Benefit, not Total Sum Insured', expected: 'contains "Monthly Benefit"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'Tooltip mentions Monthly Benefit, not Total Sum Insured', expected: 'contains "Monthly Benefit"', actual: popoverText });
     expect(popoverText, 'AC09b: tooltip mentions Monthly Benefit, not Total Sum Insured').toContain('Monthly Benefit');
     // Negative / mutual-exclusion: a Monthly-Benefit cover must NOT show "Total Sum Insured".
-    recordCheck(testInfo, { label: 'AC09b (negative): Monthly-Benefit cover tooltip does NOT show "Total Sum Insured"', expected: 'no "Total Sum Insured"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'AC09b (negative): Monthly-Benefit cover tooltip does NOT show "Total Sum Insured"', expected: 'no "Total Sum Insured"', actual: popoverText });
     expect(popoverText, 'AC09b: Monthly-Benefit cover tooltip must NOT show Total Sum Insured').not.toContain('Total Sum Insured');
     // Value-level: the tooltip shows the entered $2,000 monthly benefit.
-    recordCheck(testInfo, { label: 'AC09b: tooltip shows the entered monthly benefit amount', expected: 'contains "2,000"', actual: popoverText });
+    await recordStep(testInfo, page, { label: 'AC09b: tooltip shows the entered monthly benefit amount', expected: 'contains "2,000"', actual: popoverText });
     expect(popoverText, 'AC09b: tooltip shows the entered $2,000 monthly benefit').toContain('2,000');
   });
 
@@ -590,11 +590,11 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await waitForSettle(quote, 1500);
 
     const totalAfter = (await getTopTotalLine(quote))?.amount || 0;
-    recordCheck(testInfo, { label: 'Combined total increases once the 2nd policy has a priced cover', expected: `> ${totalBefore}`, actual: totalAfter });
+    await recordStep(testInfo, page, { label: 'Combined total increases once the 2nd policy has a priced cover', expected: `> ${totalBefore}`, actual: totalAfter });
     expect(totalAfter, 'AC10: combined total increases once the 2nd policy has a priced cover').toBeGreaterThan(totalBefore);
     const panelText = await getPremiumPanelText(quote);
     const insuranceSectionCount = (panelText.match(/Insurance \d/g) || []).length;
-    recordCheck(testInfo, { label: '2 independent per-policy sections appear under Life 1', expected: '>= 2', actual: insuranceSectionCount });
+    await recordStep(testInfo, page, { label: '2 independent per-policy sections appear under Life 1', expected: '>= 2', actual: insuranceSectionCount });
     expect(insuranceSectionCount, 'AC10: 2 independent per-policy sections appear under Life 1').toBeGreaterThanOrEqual(2);
   });
 
@@ -630,13 +630,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
 
     const freqSelects = quote.locator('select[id*="PaymentFrequencyDropdown"]');
     const freqSelectCount = await freqSelects.count();
-    recordCheck(testInfo, { label: '2 independent frequency selects exist, both starting Monthly (uniform)', expected: 2, actual: freqSelectCount });
+    await recordStep(testInfo, page, { label: '2 independent frequency selects exist, both starting Monthly (uniform)', expected: 2, actual: freqSelectCount });
     expect(freqSelectCount, 'AC11/13 setup: 2 independent frequency selects, both starting Monthly (uniform)').toBe(2);
 
     await freqSelects.nth(1).selectOption({ label: 'Yearly' });
     await waitForSettle(quote, 1500);
     const topLabel = await getTopTotalLine(quote);
-    recordCheck(testInfo, { label: 'Total label switches to "Total Annualised Premium (All Lives)" once frequencies differ', expected: 'Total Annualised Premium (All Lives)', actual: topLabel?.label });
+    await recordStep(testInfo, page, { label: 'Total label switches to "Total Annualised Premium (All Lives)" once frequencies differ', expected: 'Total Annualised Premium (All Lives)', actual: topLabel?.label });
     expect(topLabel?.label, 'AC11/AC13: label switches to "Total Annualised Premium (All Lives)" once frequencies differ').toBe('Total Annualised Premium (All Lives)');
   });
 
@@ -666,13 +666,13 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
     await freqSelects.nth(1).selectOption({ label: 'Yearly' });
     await waitForSettle(quote, 1500);
     const divergedLabel = (await getTopTotalLine(quote))?.label;
-    recordCheck(testInfo, { label: 'Diverged state shows the Annualised label first', expected: 'Total Annualised Premium (All Lives)', actual: divergedLabel });
+    await recordStep(testInfo, page, { label: 'Diverged state shows the Annualised label first', expected: 'Total Annualised Premium (All Lives)', actual: divergedLabel });
     expect(divergedLabel, 'AC12 setup: confirm diverged state shows Annualised label first').toBe('Total Annualised Premium (All Lives)');
 
     await freqSelects.nth(1).selectOption({ label: 'Monthly' });
     await waitForSettle(quote, 1500);
     const unifiedLabel = (await getTopTotalLine(quote))?.label;
-    recordCheck(testInfo, { label: 'Total label reverts once frequencies are unified again', expected: 'Total Monthly Premium (All Lives)', actual: unifiedLabel });
+    await recordStep(testInfo, page, { label: 'Total label reverts once frequencies are unified again', expected: 'Total Monthly Premium (All Lives)', actual: unifiedLabel });
     expect(unifiedLabel, 'AC12: label reverts once frequencies are unified again').toBe('Total Monthly Premium (All Lives)');
   });
 
@@ -711,7 +711,7 @@ test.describe('Premium Details in the Quote Screen (ACB-2286)', () => {
         .find((b) => b.innerText.includes('monthly premium x 12'));
       return balloon ? balloon.innerText.trim() : null;
     });
-    recordCheck(testInfo, { label: 'The annualised-premium tooltip shows the documented explanation text', expected: 'contains "This is the total premium the clients will pay for the year"', actual: found });
+    await recordStep(testInfo, page, { label: 'The annualised-premium tooltip shows the documented explanation text', expected: 'contains "This is the total premium the clients will pay for the year"', actual: found });
     expect(found, 'AC14: the annualised-premium tooltip text is present in the DOM once frequencies differ').toContain('This is the total premium the clients will pay for the year');
   });
 });

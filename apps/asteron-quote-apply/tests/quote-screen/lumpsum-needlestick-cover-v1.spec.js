@@ -24,7 +24,7 @@ const {
   clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Needlestick Sum Insured SELECT — fingerprint by its $0..$500,000 option set.
 async function getNeedlestickSi(page) {
@@ -76,7 +76,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await setMinimumPersonalDetails(quote);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Lump sum cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Lump sum cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" cover present`).toBe(true);
     }
   });
@@ -93,12 +93,12 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await waitForSettle(quote, 1500);
     const si = await getNeedlestickSi(quote);
     const expectedOptions = ['$0', '$50,000', '$100,000', '$150,000', '$200,000', '$250,000', '$300,000', '$350,000', '$400,000', '$450,000', '$500,000'];
-    recordCheck(testInfo, { label: 'Needlestick Sum Insured dropdown options', expected: expectedOptions.join(', '), actual: (si?.options || []).join(', ') });
+    await recordStep(testInfo, page, { label: 'Needlestick Sum Insured dropdown options', expected: expectedOptions.join(', '), actual: (si?.options || []).join(', ') });
     expect(si?.options, 'AC03: SI dropdown $0-$500,000 in $50k steps').toEqual(expectedOptions);
     const struct = await getNeedlestickStructure(quote);
-    recordCheck(testInfo, { label: 'Needlestick Premium Structure value', expected: 'Stepped', actual: struct?.selected });
+    await recordStep(testInfo, page, { label: 'Needlestick Premium Structure value', expected: 'Stepped', actual: struct?.selected });
     expect(struct?.selected, 'AC03: Premium Structure = Stepped').toBe('Stepped');
-    recordCheck(testInfo, { label: 'Needlestick Premium Structure greyed out (disabled)', expected: true, actual: struct?.disabled });
+    await recordStep(testInfo, page, { label: 'Needlestick Premium Structure greyed out (disabled)', expected: true, actual: struct?.disabled });
     expect(struct?.disabled, 'AC03: Premium Structure greyed out / disabled').toBe(true);
   });
 
@@ -115,7 +115,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await setNeedlestickSi(quote, '$50,000').catch(() => {});
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Needlestick alone raises the companion-required error', expected: 'requires one of the following covers ... Life, Trauma Recovery, Cancer, TPD or Income Protection', actual: e });
+    await recordStep(testInfo, page, { label: 'Needlestick alone raises the companion-required error', expected: 'requires one of the following covers ... Life, Trauma Recovery, Cancer, TPD or Income Protection', actual: e });
     expect(/Needlestick Cover requires one of the following covers to also be selected/i.test(e), `AC04. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -131,7 +131,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasCompanionErr = /Needlestick Cover requires one of the following covers/i.test(e);
-    recordCheck(testInfo, { label: 'Needlestick with a Life companion accepted (no companion-required error)', expected: false, actual: hasCompanionErr });
+    await recordStep(testInfo, page, { label: 'Needlestick with a Life companion accepted (no companion-required error)', expected: false, actual: hasCompanionErr });
     expect(hasCompanionErr, `AC10. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -163,7 +163,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await waitForSettle(quote, 1000);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Needlestick at an ineligible occupation raises the not-available error', expected: 'Needlestick not available for the selected occupation', actual: e });
+    await recordStep(testInfo, page, { label: 'Needlestick at an ineligible occupation raises the not-available error', expected: 'Needlestick not available for the selected occupation', actual: e });
     expect(/Needlestick not available for the selected occupation/i.test(e), `AC05. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -178,7 +178,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await setNeedlestickSi(quote, '$50,000').catch(() => {});
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Needlestick ANB < 17', expected: 'minimum age next birthday for Needlestick cover is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Needlestick ANB < 17', expected: 'minimum age next birthday for Needlestick cover is 17', actual: e });
     expect(/minimum age next birthday for Needlestick cover is 17/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -194,7 +194,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum age next birthday for Needlestick cover is 17/i.test(e);
-    recordCheck(testInfo, { label: 'Needlestick min age at ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Needlestick min age at ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC06 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -209,7 +209,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await setNeedlestickSi(quote, '$50,000').catch(() => {});
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Needlestick ANB > 65', expected: 'maximum age next birthday for Needlestick cover is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Needlestick ANB > 65', expected: 'maximum age next birthday for Needlestick cover is 65', actual: e });
     expect(/maximum age next birthday for Needlestick cover is 65/i.test(e), `AC07. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -225,7 +225,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum age next birthday for Needlestick cover is 65/i.test(e);
-    recordCheck(testInfo, { label: 'Needlestick max age at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Needlestick max age at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC07 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -245,7 +245,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
       return b ? (b.disabled || /disabled|is-disabled/.test(b.className)) : null;
     });
     const disabledAfter1 = await isNeedleDisabled();
-    recordCheck(testInfo, { label: '+Needlestick disabled after 1 Needlestick cover', expected: true, actual: disabledAfter1 });
+    await recordStep(testInfo, page, { label: '+Needlestick disabled after 1 Needlestick cover', expected: true, actual: disabledAfter1 });
     expect(disabledAfter1, 'AC08: +Needlestick disabled after 1').toBe(true);
     // Remove the Needlestick cover (its card's Remove link — the last Remove, Needlestick added last).
     await quote.evaluate(() => {
@@ -254,7 +254,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
     });
     await waitForSettle(quote, 1500);
     const disabledAfterRemove = await isNeedleDisabled();
-    recordCheck(testInfo, { label: '+Needlestick re-enabled after removing it', expected: false, actual: disabledAfterRemove });
+    await recordStep(testInfo, page, { label: '+Needlestick re-enabled after removing it', expected: false, actual: disabledAfterRemove });
     expect(disabledAfterRemove, 'AC09: +Needlestick re-enabled after remove').toBe(false);
   });
 
@@ -276,7 +276,7 @@ test.describe('Lumpsum Needlestick Cover (ACB-2931)', () => {
       const m = hay.match(/[^\n]*hepatitis[^\n]*/i);
       return m ? m[0].trim() : hay.slice(0, 0) || null;
     });
-    recordCheck(testInfo, { label: 'Needlestick tooltip mentions hepatitis B/C or HIV protection', expected: 'contains "hepatitis B or C or HIV"', actual: tip });
+    await recordStep(testInfo, page, { label: 'Needlestick tooltip mentions hepatitis B/C or HIV protection', expected: 'contains "hepatitis B or C or HIV"', actual: tip });
     expect(tip, 'AC11: Needlestick tooltip text present').toMatch(/hepatitis B or C or HIV/i);
   });
 });

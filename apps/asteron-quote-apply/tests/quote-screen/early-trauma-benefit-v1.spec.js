@@ -13,7 +13,7 @@ const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput,
   getCheckboxStateByLabel, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 test.describe('Early Trauma Benefit (ACB-10105)', () => {
   test.describe.configure({ mode: 'parallel' });
@@ -30,7 +30,7 @@ test.describe('Early Trauma Benefit (ACB-10105)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '30000');
     await waitForSettle(quote, 1200);
     const before = await getCheckboxStateByLabel(quote, 'Early Trauma');
-    recordCheck(testInfo, { label: 'Early Trauma Benefit checkbox present + default unticked', expected: 'present, unticked', actual: JSON.stringify(before) });
+    await recordStep(testInfo, page, { label: 'Early Trauma Benefit checkbox present + default unticked', expected: 'present, unticked', actual: JSON.stringify(before) });
     expect(before, 'AC00: Early Trauma Benefit control present').not.toBeNull();
     expect(before?.checked, 'AC00: default unticked').toBe(false);
     // Tick it and confirm it registers as ticked (the toggle is reachable, even though the resulting SI is backend).
@@ -41,7 +41,7 @@ test.describe('Early Trauma Benefit (ACB-10105)', () => {
     });
     await waitForSettle(quote, 1200);
     const after = await getCheckboxStateByLabel(quote, 'Early Trauma');
-    recordCheck(testInfo, { label: 'Early Trauma Benefit can be ticked', expected: true, actual: after?.checked });
+    await recordStep(testInfo, page, { label: 'Early Trauma Benefit can be ticked', expected: true, actual: after?.checked });
     expect(after?.checked, 'AC00: Early Trauma Benefit togglable').toBe(true);
   });
 

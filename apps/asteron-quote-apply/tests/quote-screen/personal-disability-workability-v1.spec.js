@@ -27,7 +27,7 @@ const {
   clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function getSelectByOptions(page, mustInclude, mustExclude) {
   return page.evaluate(({ inc, exc }) => {
@@ -61,13 +61,13 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed', income: 150000 });
     for (const cover of ['Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Disability cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Workability');
     await waitForSettle(quote, 1000);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Workability is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Workability is selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: Workability selectable').toBe(true);
   });
 
@@ -79,20 +79,20 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     ].join('\n') });
     const quote = await freshWkQuote(page);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Workability Monthly Benefit field present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Workability Monthly Benefit field present', expected: true, actual: siVisible });
     expect(siVisible, 'AC03: Monthly Benefit field present').toBe(true);
     const struct = await getSelectByOptions(quote, ['Stepped', 'Level to Expiry']);
-    recordCheck(testInfo, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Premium Structure options + default', expected: 'Stepped(default), Level to Expiry', actual: `${(struct?.options||[]).join(', ')} [def=${struct?.selected}]` });
     expect(struct?.options, 'AC03: Structure options').toEqual(['Stepped', 'Level to Expiry']);
     expect(struct?.selected, 'AC03: Structure default Stepped').toBe('Stepped');
     // Benefit Period has ONLY To Age 65 / To Age 70 (exclude 2 Years to avoid matching M&L/IP's select).
     const benefit = await getSelectByOptions(quote, ['To Age 65', 'To Age 70'], ['2 Years']);
-    recordCheck(testInfo, { label: 'Benefit Period options + default', expected: 'To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Benefit Period options + default', expected: 'To Age 65(default), To Age 70', actual: `${(benefit?.options||[]).join(', ')} [def=${benefit?.selected}]` });
     expect(benefit?.options, 'AC03: Benefit Period options').toEqual(['To Age 65', 'To Age 70']);
     expect(benefit?.selected, 'AC03: Benefit Period default To Age 65').toBe('To Age 65');
     // Waiting has 45/75 Days (distinct from M&L/IP which have 14/180/365/730).
     const waiting = await getSelectByOptions(quote, ['30 Days', '45 Days', '75 Days']);
-    recordCheck(testInfo, { label: 'Waiting Period options + default', expected: '30(default)/45/60/75/90 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
+    await recordStep(testInfo, page, { label: 'Waiting Period options + default', expected: '30(default)/45/60/75/90 Days', actual: `${(waiting?.options||[]).join(', ')} [def=${waiting?.selected}]` });
     expect(waiting?.options, 'AC03: Waiting Period options').toEqual(['30 Days', '45 Days', '60 Days', '75 Days', '90 Days']);
     expect(waiting?.selected, 'AC03: Waiting Period default 30 Days').toBe('30 Days');
   });
@@ -109,7 +109,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     ].join('\n') });
     const quote = await freshWkQuote(page);
     const inc = await getCheckboxStateByLabel(quote, 'Increasing Claim');
-    recordCheck(testInfo, { label: 'Workability Increasing Claim default (story: ticked)', expected: true, actual: inc?.checked });
+    await recordStep(testInfo, page, { label: 'Workability Increasing Claim default (story: ticked)', expected: true, actual: inc?.checked });
     expect(inc?.checked, 'AC03: Increasing Claim default-ticked (per story)').toBe(true);
   });
 
@@ -123,12 +123,12 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Workability Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'Workability Monthly Benefit field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC04: added').toBe(true);
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'Workability Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'Workability Monthly Benefit field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC04: removed').toBe(0);
   });
 
@@ -140,7 +140,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     ].join('\n') });
     const quote = await freshWkQuote(page);
     const disabled = await quote.evaluate(() => { const b=[...document.querySelectorAll('button')].find((x)=>(x.innerText||'').trim().split('\n')[0]==='Workability'); return b?(b.disabled||/disabled|is-disabled/.test(b.className)):null; });
-    recordCheck(testInfo, { label: '+Workability disabled after 1', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Workability disabled after 1', expected: true, actual: disabled });
     expect(disabled, 'AC05: +Workability disabled after 1').toBe(true);
   });
 
@@ -158,7 +158,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '9376'); // $9,375 cap + $1
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Workability Monthly Benefit > $9,375', expected: 'Workability based on annual income $150,000 is $9,375', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Workability Monthly Benefit > $9,375', expected: 'Workability based on annual income $150,000 is $9,375', actual: e });
     expect(/maximum allowable monthly benefit for Workability based on annual income \$?150,?000 is \$?9,?375/i.test(e), `AC06/AC11. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -173,7 +173,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum allowable monthly benefit for Workability based on annual income \$?150,?000 is \$?9,?375/i.test(e);
-    recordCheck(testInfo, { label: 'Workability Monthly Benefit exactly $9,375 accepted', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Workability Monthly Benefit exactly $9,375 accepted', expected: false, actual: hasErr });
     expect(hasErr, `AC06/AC11 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -187,7 +187,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Workability ANB > 61', expected: 'maximum Age Next Birthday for Workability ... 61', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Workability ANB > 61', expected: 'maximum Age Next Birthday for Workability ... 61', actual: e });
     expect(/maximum Age Next Birthday for Workability.*61/i.test(e), `AC07. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -202,7 +202,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Workability.*61/i.test(e);
-    recordCheck(testInfo, { label: 'Workability max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Workability max age at ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC07 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -219,7 +219,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await waitForSettle(quote, 1000);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Workability ANB < 17', expected: 'minimum Age Next Birthday for Workability ... 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Workability ANB < 17', expected: 'minimum Age Next Birthday for Workability ... 17', actual: e });
     expect(/minimum Age Next Birthday for Workability.*17/i.test(e), `AC13. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -234,7 +234,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Age Next Birthday for Workability.*17/i.test(e);
-    recordCheck(testInfo, { label: 'Workability min age at ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Workability min age at ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC13 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -253,7 +253,7 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     await commitWithoutTyping(sumInsuredInput(quote, 1));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Workability + Income Protection raises the conjunction error', expected: 'not available to be taken in conjunction with', actual: e });
+    await recordStep(testInfo, page, { label: 'Workability + Income Protection raises the conjunction error', expected: 'not available to be taken in conjunction with', actual: e });
     expect(/not available to be taken in conjunction with/i.test(e), `AC08. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -276,12 +276,12 @@ test.describe('Personal Disability Cover — Workability (ACB-2648)', () => {
     });
     await waitForSettle(quote, 1200);
     const inflBefore = await getInflationAdjustmentChecked(quote);
-    recordCheck(testInfo, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment ticked by default (precondition)', expected: true, actual: inflBefore });
     await quote.evaluate(() => { const cb=document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]'); if(cb&&cb.checked){cb.scrollIntoView({block:'center'}); cb.click();} });
     await waitForSettle(quote, 1500);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
+    await recordStep(testInfo, page, { label: 'Unselecting Inflation with Increasing Claim raises the coupling error', expected: 'If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken', actual: e });
     expect(/If Increasing Claim is selected, then Inflation Adjustment Benefit must also be taken/i.test(e), `AC12. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 

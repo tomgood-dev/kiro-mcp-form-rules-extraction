@@ -37,7 +37,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel, selectFromTypeahead } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 /** Reads the Occupation type-ahead's current displayed text (closed-state trigger label). */
 async function getOccupationTypeaheadText(page) {
@@ -98,12 +98,12 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     const quote = await openNewQuote(page);
     await setMinimumPersonalDetails(quote);
     const policiesTextBefore = await quote.evaluate(() => document.body.innerText.includes('Personal 1'));
-    recordCheck(testInfo, { label: 'Personal policy exists by default on a new quote', expected: true, actual: policiesTextBefore });
+    await recordStep(testInfo, page, { label: 'Personal policy exists by default on a new quote', expected: true, actual: policiesTextBefore });
     expect(policiesTextBefore, 'AC02: Personal policy exists by default on a new quote').toBe(true);
     await clickButtonByLabel(quote, 'Business', 'Policy type button');
     await waitForSettle(quote, 1000);
     const hasBoth = await quote.evaluate(() => document.body.innerText.includes('Personal 1') && document.body.innerText.includes('Business 1'));
-    recordCheck(testInfo, { label: 'Both Personal and Business policies coexist', expected: true, actual: hasBoth });
+    await recordStep(testInfo, page, { label: 'Both Personal and Business policies coexist', expected: true, actual: hasBoth });
     expect(hasBoth, 'AC02/BR-005: both Personal and Business policies coexist').toBe(true);
   });
 
@@ -140,7 +140,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
       };
     });
     for (const [field, present] of Object.entries(fields)) {
-      recordCheck(testInfo, { label: `Personal Details field "${field}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Personal Details field "${field}" present`, expected: true, actual: present });
       expect(present, `AC04: Personal Details field "${field}" present`).toBe(true);
     }
   });
@@ -160,7 +160,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await setMinimumPersonalDetails(quote);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Top-level cover "${cover}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Top-level cover "${cover}" present`, expected: true, actual: present });
       expect(present, `AC04: top-level cover "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Life');
@@ -171,11 +171,11 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
       const cb = document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]');
       return cb ? cb.checked : null;
     });
-    recordCheck(testInfo, { label: 'Inflation Adjustment is auto-ticked by default (Life active)', expected: true, actual: inflationTicked });
+    await recordStep(testInfo, page, { label: 'Inflation Adjustment is auto-ticked by default (Life active)', expected: true, actual: inflationTicked });
     expect(inflationTicked, 'AC04: Inflation Adjustment auto-ticked by default').toBe(true);
     for (const subcover of ['TI Support', 'Acc. TPD', 'Acc. Trauma', 'Acc. Cancer']) {
       const present = await coverButtonExists(quote, subcover);
-      recordCheck(testInfo, { label: `Life sub-cover "${subcover}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Life sub-cover "${subcover}" present`, expected: true, actual: present });
       expect(present, `AC04: Life sub-cover "${subcover}" present`).toBe(true);
     }
     await activateCover(quote, 'Trauma');
@@ -184,10 +184,10 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     expect(await getCheckboxStateByLabel(quote, 'Trauma Reinstatement'), 'AC04: "Trauma Reinstatement" checkbox present').not.toBeNull();
     expect(await getCheckboxStateByLabel(quote, 'Continuous Trauma'), 'AC04: "Continuous Trauma" checkbox present').not.toBeNull();
     const majorTraumaPresent = await coverButtonExists(quote, 'Major Trauma');
-    recordCheck(testInfo, { label: 'Major Trauma sub-cover present', expected: true, actual: majorTraumaPresent });
+    await recordStep(testInfo, page, { label: 'Major Trauma sub-cover present', expected: true, actual: majorTraumaPresent });
     expect(majorTraumaPresent, 'AC04: "Major Trauma" sub-cover present').toBe(true);
     const tpdOnTraumaPresent = await coverButtonExists(quote, 'TPD on Trauma');
-    recordCheck(testInfo, { label: 'TPD on Trauma sub-cover present', expected: true, actual: tpdOnTraumaPresent });
+    await recordStep(testInfo, page, { label: 'TPD on Trauma sub-cover present', expected: true, actual: tpdOnTraumaPresent });
     expect(tpdOnTraumaPresent, 'AC04: "TPD on Trauma" sub-cover present').toBe(true);
   });
 
@@ -206,7 +206,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await setMinimumPersonalDetails(quote, { employmentStatus: 'Employed' });
     for (const cover of ['Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Disability cover "${cover}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Disability cover "${cover}" present`, expected: true, actual: present });
       expect(present, `AC04: Disability cover "${cover}" present`).toBe(true);
     }
     const numKidsPresent = await quote.evaluate(() => {
@@ -216,7 +216,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
       });
       return !!sel;
     });
-    recordCheck(testInfo, { label: 'Kids Cover "Number of Kids" (0-9) control present', expected: true, actual: numKidsPresent });
+    await recordStep(testInfo, page, { label: 'Kids Cover "Number of Kids" (0-9) control present', expected: true, actual: numKidsPresent });
     expect(numKidsPresent, 'AC04: Kids Cover "Number of Kids" (0-9) control present').toBe(true);
   });
 
@@ -243,7 +243,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     });
     await waitForSettle(quote);
     const ageValue = await ageField.inputValue();
-    recordCheck(testInfo, { label: 'Age Next Birthday populated after DOB set (1990-06-15)', expected: 'non-blank', actual: ageValue });
+    await recordStep(testInfo, page, { label: 'Age Next Birthday populated after DOB set (1990-06-15)', expected: 'non-blank', actual: ageValue });
     await expect(ageField, 'AC05: Age Next Birthday populated after DOB set').not.toHaveValue('');
   });
 
@@ -265,9 +265,9 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await waitForSettle(quote, 1500);
     const code = await getOccupationCode(quote);
     expect(code, 'AC06: Occupation Code select present').not.toBeNull();
-    recordCheck(testInfo, { label: 'Occupation Code auto-populated after choosing "Civil Engineer"', expected: 'not blank/-1', actual: code.value });
+    await recordStep(testInfo, page, { label: 'Occupation Code auto-populated after choosing "Civil Engineer"', expected: 'not blank/-1', actual: code.value });
     expect(code.value, 'AC06: Occupation Code auto-populated (not blank/-1)').not.toBe('-1');
-    recordCheck(testInfo, { label: 'Occupation Code locked once Occupation chosen via search', expected: true, actual: code.disabled });
+    await recordStep(testInfo, page, { label: 'Occupation Code locked once Occupation chosen via search', expected: true, actual: code.disabled });
     expect(code.disabled, 'AC06: Occupation Code locked once Occupation is chosen via search').toBe(true);
   });
 
@@ -293,7 +293,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await quote.getByRole('combobox', { name: 'Occupation code' }).selectOption({ label: 'AA' });
     await waitForSettle(quote, 1500);
     const occupationText = await getOccupationTypeaheadText(quote);
-    recordCheck(testInfo, { label: 'Occupation field text after selecting Occupation Code = AA', expected: 'a value corresponding to AA (not "Select...")', actual: occupationText });
+    await recordStep(testInfo, page, { label: 'Occupation field text after selecting Occupation Code = AA', expected: 'a value corresponding to AA (not "Select...")', actual: occupationText });
     expect(occupationText, 'AC07: Occupation field prepopulated after selecting Occupation Code').not.toContain('Select...');
   });
 
@@ -310,7 +310,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     const quote = await openNewQuote(page);
     const options = await quote.getByRole('combobox', { name: 'Employment status' }).locator('option').allInnerTexts();
     for (const label of ['Employed', 'Self-Employed', 'Employed by own company', 'Other']) {
-      recordCheck(testInfo, { label: `Employment status options include "${label}"`, expected: label, actual: options });
+      await recordStep(testInfo, page, { label: `Employment status options include "${label}"`, expected: label, actual: options });
       expect(options, `AC08: Employment status includes "${label}"`).toContain(label);
     }
   });
@@ -330,7 +330,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await clickApply(quote);
     const ac09aErrors = (await getVisibleErrors(quote)).join(' | ');
-    recordCheck(testInfo, { label: 'AC09a: missing Age/Gender/Occupation blocks Apply with the combined "must complete the following fields" message', expected: 'contains "must complete the following fields"', actual: ac09aErrors });
+    await recordStep(testInfo, page, { label: 'AC09a: missing Age/Gender/Occupation blocks Apply with the combined "must complete the following fields" message', expected: 'contains "must complete the following fields"', actual: ac09aErrors });
     await expectErrorContaining(quote, 'must complete the following fields');
   });
 
@@ -387,7 +387,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
       return btns.map((b) => ({ text: b.innerText.trim(), selected: b.className.includes('selected') }));
     });
     const hasASelectedOption = smoking.some((b) => b.selected);
-    recordCheck(testInfo, { label: 'Smoking status always has a real default value selected', expected: true, actual: hasASelectedOption });
+    await recordStep(testInfo, page, { label: 'Smoking status always has a real default value selected', expected: true, actual: hasASelectedOption });
     expect(hasASelectedOption, 'AC09c: Smoking status always has a real default value selected').toBe(true);
   });
 
@@ -405,24 +405,24 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     const quote = await openNewQuote(page);
     const flexiRate = quote.locator('select[id*="FlexiRate"]').first();
     const info = await flexiRate.evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-    recordCheck(testInfo, { label: 'Flexi Rate default value', expected: 'N/A', actual: info.selected });
+    await recordStep(testInfo, page, { label: 'Flexi Rate default value', expected: 'N/A', actual: info.selected });
     expect(info.selected, 'AC10: Flexi Rate defaults to N/A').toBe('N/A');
-    recordCheck(testInfo, { label: 'Flexi Rate option count (N/A + 2.5%-30.0% in 2.5% steps)', expected: 13, actual: info.options.length });
+    await recordStep(testInfo, page, { label: 'Flexi Rate option count (N/A + 2.5%-30.0% in 2.5% steps)', expected: 13, actual: info.options.length });
     expect(info.options, 'AC10: Flexi Rate spans N/A + 2.5%-30.0% in 2.5% steps (13 options)').toHaveLength(13);
     // Value-level (not just count): assert the EXACT option ladder so a wrong-but-same-length list
     // is caught — first non-N/A = 2.5%, last = 30.0%, and each step is 2.5% (audit gap: previously
     // only the length was checked).
     const expectedLadder = ['N/A', '2.5%', '5.0%', '7.5%', '10.0%', '12.5%', '15.0%', '17.5%', '20.0%', '22.5%', '25.0%', '27.5%', '30.0%'];
-    recordCheck(testInfo, { label: 'Flexi Rate first selectable rate is 2.5%', expected: '2.5%', actual: info.options[1] });
+    await recordStep(testInfo, page, { label: 'Flexi Rate first selectable rate is 2.5%', expected: '2.5%', actual: info.options[1] });
     expect(info.options[1], 'AC10: first selectable Flexi Rate is 2.5%').toBe('2.5%');
-    recordCheck(testInfo, { label: 'Flexi Rate last rate is 30.0%', expected: '30.0%', actual: info.options.at(-1) });
+    await recordStep(testInfo, page, { label: 'Flexi Rate last rate is 30.0%', expected: '30.0%', actual: info.options.at(-1) });
     expect(info.options.at(-1), 'AC10: last Flexi Rate is 30.0%').toBe('30.0%');
-    recordCheck(testInfo, { label: 'Flexi Rate full ladder (N/A + 2.5% steps to 30.0%)', expected: expectedLadder, actual: info.options });
+    await recordStep(testInfo, page, { label: 'Flexi Rate full ladder (N/A + 2.5% steps to 30.0%)', expected: expectedLadder, actual: info.options });
     expect(info.options, 'AC10: exact Flexi Rate ladder (2.5% steps N/A->30.0%)').toEqual(expectedLadder);
     await flexiRate.selectOption({ label: '15.0%' });
     await waitForSettle(quote, 1000);
     const selectedAfter = await flexiRate.evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
-    recordCheck(testInfo, { label: 'Flexi Rate selection persists after choosing 15.0%', expected: '15.0%', actual: selectedAfter });
+    await recordStep(testInfo, page, { label: 'Flexi Rate selection persists after choosing 15.0%', expected: '15.0%', actual: selectedAfter });
     expect(selectedAfter, 'AC10: selection is retained after choosing 15.0%').toBe('15.0%');
   });
 
@@ -442,9 +442,9 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await setMinimumPersonalDetails(quote);
     const wePayDropdown = quote.locator('select').filter({ has: quote.locator('option', { hasText: '30 days' }) }).first();
     const info = await wePayDropdown.evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-    recordCheck(testInfo, { label: 'We Pay Your Premiums default value', expected: 'None', actual: info.selected });
+    await recordStep(testInfo, page, { label: 'We Pay Your Premiums default value', expected: 'None', actual: info.selected });
     expect(info.selected, 'AC11: We Pay Your Premiums defaults to None').toBe('None');
-    recordCheck(testInfo, { label: 'We Pay Your Premiums option list', expected: ['None', '30 days', '60 days', '90 days'], actual: info.options });
+    await recordStep(testInfo, page, { label: 'We Pay Your Premiums option list', expected: ['None', '30 days', '60 days', '90 days'], actual: info.options });
     expect(info.options, 'AC11: options are None/30/60/90 days').toEqual(['None', '30 days', '60 days', '90 days']);
     await wePayDropdown.selectOption({ label: '30 days' });
     await waitForSettle(quote, 1500);
@@ -467,7 +467,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await activateCover(quote, 'Life');
     expect(await sumInsuredInput(quote, 0).isVisible(), 'AC12: Sum Insured field present after activating a cover').toBe(true);
     const premiumStructure = await getPremiumStructure(quote);
-    recordCheck(testInfo, { label: 'Premium Structure default value', expected: 'Stepped', actual: premiumStructure });
+    await recordStep(testInfo, page, { label: 'Premium Structure default value', expected: 'Stepped', actual: premiumStructure });
     expect(premiumStructure, 'AC12: Premium Structure defaults to Stepped').toBe('Stepped');
   });
 
@@ -485,18 +485,18 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     const quote = await openNewQuote(page);
     await setMinimumPersonalDetails(quote);
     const before = (await getTotalYearlyPremium(quote)) || 0;
-    recordCheck(testInfo, { label: 'Starting premium before any cover', expected: 0, actual: before });
+    await recordStep(testInfo, page, { label: 'Starting premium before any cover', expected: 0, actual: before });
     expect(before, 'AC13: starting premium is 0 before any cover').toBe(0);
     await activateCover(quote, 'Life');
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1000);
     const afterAdd = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Premium after adding a cover', expected: '> 0', actual: afterAdd });
+    await recordStep(testInfo, page, { label: 'Premium after adding a cover', expected: '> 0', actual: afterAdd });
     expect(afterAdd, 'AC13: premium reflects the added cover').toBeGreaterThan(0);
     await removeAllCoverCards(quote);
     await waitForSettle(quote, 1000);
     const afterRemove = (await getTotalYearlyPremium(quote)) || 0;
-    recordCheck(testInfo, { label: 'Premium after removing the cover', expected: 0, actual: afterRemove });
+    await recordStep(testInfo, page, { label: 'Premium after removing the cover', expected: 0, actual: afterRemove });
     expect(afterRemove, 'AC13: premium reflects the removed cover').toBe(0);
   });
 
@@ -519,28 +519,28 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await numKids.selectOption('1');
     await waitForSettle(quote, 1500);
     const dateInputCount = await quote.locator('input[type="date"]').count();
-    recordCheck(testInfo, { label: 'A per-kid Date of birth field appears (count of date inputs)', expected: '> 1', actual: dateInputCount });
+    await recordStep(testInfo, page, { label: 'A per-kid Date of birth field appears (count of date inputs)', expected: '> 1', actual: dateInputCount });
     expect(dateInputCount, 'AC14: a per-kid Date of birth field appears').toBeGreaterThan(1); // the adult DOB + at least one kid DOB
     const tierInfo = await quote.evaluate(() => {
       const sel = [...document.querySelectorAll('select')].find((s) => [...s.options].some((o) => o.text.includes('$50,000')));
       return sel ? { selected: sel.options[sel.selectedIndex].text, options: [...sel.options].map((o) => o.text) } : null;
     });
     expect(tierInfo, 'AC14: Kid SI tier select present').not.toBeNull();
-    recordCheck(testInfo, { label: 'Kid SI tier default value', expected: '$50,000 (Free)', actual: tierInfo.selected });
+    await recordStep(testInfo, page, { label: 'Kid SI tier default value', expected: '$50,000 (Free)', actual: tierInfo.selected });
     expect(tierInfo.selected, 'AC14: default is $50,000 (Free)').toBe('$50,000 (Free)');
-    recordCheck(testInfo, { label: 'Kid SI tier option count (16 tiers, $50k-$200k in $10k steps)', expected: 16, actual: tierInfo.options.length });
+    await recordStep(testInfo, page, { label: 'Kid SI tier option count (16 tiers, $50k-$200k in $10k steps)', expected: 16, actual: tierInfo.options.length });
     expect(tierInfo.options, 'AC14: 16 tiers, $50k-$200k in $10k steps').toHaveLength(16);
-    recordCheck(testInfo, { label: 'Kid SI tier max tier value', expected: '$200,000', actual: tierInfo.options.at(-1) });
+    await recordStep(testInfo, page, { label: 'Kid SI tier max tier value', expected: '$200,000', actual: tierInfo.options.at(-1) });
     expect(tierInfo.options.at(-1), 'AC14: max tier is $200,000').toBe('$200,000');
     // Value-level boundary (audit gap: only count + max were checked). Assert the MIN tier is the
     // free $50,000, and that the numeric tiers step by exactly $10,000 (so a wrong ladder of the
     // right length is caught).
-    recordCheck(testInfo, { label: 'Kid SI tier min tier value is the free $50,000', expected: 'starts "$50,000"', actual: tierInfo.options[0] });
+    await recordStep(testInfo, page, { label: 'Kid SI tier min tier value is the free $50,000', expected: 'starts "$50,000"', actual: tierInfo.options[0] });
     expect(tierInfo.options[0], 'AC14: min tier is $50,000 (Free)').toContain('$50,000');
     const tierNums = tierInfo.options.map((o) => Number((o.match(/\$([\d,]+)/) || [])[1]?.replace(/,/g, '')));
     const steps = tierNums.slice(1).map((n, i) => n - tierNums[i]);
     const allTenK = steps.every((s) => s === 10000);
-    recordCheck(testInfo, { label: 'Kid SI tiers step by exactly $10,000', expected: 'all steps = 10000', actual: [...new Set(steps)] });
+    await recordStep(testInfo, page, { label: 'Kid SI tiers step by exactly $10,000', expected: 'all steps = 10000', actual: [...new Set(steps)] });
     expect(allTenK, 'AC14: kid SI tiers increment by $10,000').toBe(true);
     // Per-kid fields (audit gap: only DOB was checked). Confirm First Name / Surname / Gender per kid.
     const kidFields = await quote.evaluate(() => ({
@@ -548,11 +548,11 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
       surname: [...document.querySelectorAll('input[id*="LastName"], input[id*="Surname"]')].length > 1,
       gender: [...document.querySelectorAll('.button-group-item, .button-group-selected-item')].filter((b) => ['Male', 'Female'].includes(b.innerText.trim())).length > 2,
     }));
-    recordCheck(testInfo, { label: 'Per-kid First Name field appears', expected: true, actual: kidFields.firstName });
+    await recordStep(testInfo, page, { label: 'Per-kid First Name field appears', expected: true, actual: kidFields.firstName });
     expect(kidFields.firstName, 'AC14: per-kid First Name field present').toBe(true);
-    recordCheck(testInfo, { label: 'Per-kid Surname field appears', expected: true, actual: kidFields.surname });
+    await recordStep(testInfo, page, { label: 'Per-kid Surname field appears', expected: true, actual: kidFields.surname });
     expect(kidFields.surname, 'AC14: per-kid Surname field present').toBe(true);
-    recordCheck(testInfo, { label: 'Per-kid Gender control appears', expected: true, actual: kidFields.gender });
+    await recordStep(testInfo, page, { label: 'Per-kid Gender control appears', expected: true, actual: kidFields.gender });
     expect(kidFields.gender, 'AC14: per-kid Gender control present').toBe(true);
   });
 
@@ -582,22 +582,22 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
 
     const freqSelects = quote.locator('select[id*="PaymentFrequencyDropdown"]');
     const freqSelectCount = await freqSelects.count();
-    recordCheck(testInfo, { label: 'Independent Payment Frequency selects (Personal + Business)', expected: 2, actual: freqSelectCount });
+    await recordStep(testInfo, page, { label: 'Independent Payment Frequency selects (Personal + Business)', expected: 2, actual: freqSelectCount });
     expect(freqSelectCount, 'AC15/BR-006: 2 independent Payment Frequency selects (Personal + Business)').toBe(2);
     for (let i = 0; i < 2; i++) {
       const info = await freqSelects.nth(i).evaluate((sel) => ({ selected: sel.options[sel.selectedIndex].text.trim(), options: [...sel.options].map((o) => o.text.trim()) }));
-      recordCheck(testInfo, { label: `Policy ${i} Payment Frequency default value`, expected: 'Monthly', actual: info.selected });
+      await recordStep(testInfo, page, { label: `Policy ${i} Payment Frequency default value`, expected: 'Monthly', actual: info.selected });
       expect(info.selected, `AC15: policy ${i} defaults to Monthly`).toBe('Monthly');
-      recordCheck(testInfo, { label: `Policy ${i} Payment Frequency option list`, expected: ['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly'], actual: info.options });
+      await recordStep(testInfo, page, { label: `Policy ${i} Payment Frequency option list`, expected: ['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly'], actual: info.options });
       expect(info.options, `AC15: policy ${i} has the 5 documented options`).toEqual(['Fortnightly', 'Monthly', 'Quarterly', 'Half Yearly', 'Yearly']);
     }
     await freqSelects.nth(0).selectOption({ label: 'Fortnightly' });
     await waitForSettle(quote, 1000);
     const firstAfter = await freqSelects.nth(0).evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
     const secondAfter = await freqSelects.nth(1).evaluate((sel) => sel.options[sel.selectedIndex].text.trim());
-    recordCheck(testInfo, { label: 'Changed policy reflects Fortnightly', expected: 'Fortnightly', actual: firstAfter });
+    await recordStep(testInfo, page, { label: 'Changed policy reflects Fortnightly', expected: 'Fortnightly', actual: firstAfter });
     expect(firstAfter, 'AC15/BR-006: changed policy reflects Fortnightly').toBe('Fortnightly');
-    recordCheck(testInfo, { label: 'Other policy remains unaffected (stays Monthly)', expected: 'Monthly', actual: secondAfter });
+    await recordStep(testInfo, page, { label: 'Other policy remains unaffected (stays Monthly)', expected: 'Monthly', actual: secondAfter });
     expect(secondAfter, 'AC15/BR-006: other policy is unaffected, stays Monthly').toBe('Monthly');
   });
 
@@ -620,7 +620,7 @@ test.describe('Create a New Business Quote (ACB-2240)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life button');
     await waitForSettle(quote, 1500);
     const hasLife2 = await quote.evaluate(() => document.body.innerText.includes('Life 2'));
-    recordCheck(testInfo, { label: '"Add life" creates a Life 2', expected: true, actual: hasLife2 });
+    await recordStep(testInfo, page, { label: '"Add life" creates a Life 2', expected: true, actual: hasLife2 });
     expect(hasLife2, 'BR-004: "Add life" creates a Life 2').toBe(true);
   });
 });

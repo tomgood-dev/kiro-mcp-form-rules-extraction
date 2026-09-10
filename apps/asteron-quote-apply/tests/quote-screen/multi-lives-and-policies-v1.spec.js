@@ -31,7 +31,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel, buttonByLabelExists } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // ── Story-specific DOM helpers (discovered via the recon probes; see generation log) ──
 
@@ -146,7 +146,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     ].join('\n') });
     const quote = await openNewQuote(page);
     const present = await buttonByLabelExists(quote, 'Add life');
-    recordCheck(testInfo, { label: 'Add-life control present on a new quote', expected: true, actual: present });
+    await recordStep(testInfo, page, { label: 'Add-life control present on a new quote', expected: true, actual: present });
     expect(present, 'MLP-01: an "Add life" control is present').toBe(true);
   });
 
@@ -186,17 +186,17 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       };
     });
     for (const [field, present] of Object.entries(fields)) {
-      recordCheck(testInfo, { label: `Personal Details field "${field}" present for the life`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Personal Details field "${field}" present for the life`, expected: true, actual: present });
       expect(present, `MLP-02: Personal Details field "${field}" present`).toBe(true);
     }
     await setMinimumPersonalDetails(quote);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury', 'Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Cover "${cover}" present for the life`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Cover "${cover}" present for the life`, expected: true, actual: present });
       expect(present, `MLP-02: cover "${cover}" present`).toBe(true);
     }
     const kidsPresent = await quote.evaluate(() => [...document.querySelectorAll('select')].some((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.length === 10 && o[0] === '0' && o[9] === '9'; }));
-    recordCheck(testInfo, { label: 'Kids Cover (Number of Kids 0-9) present for the life', expected: true, actual: kidsPresent });
+    await recordStep(testInfo, page, { label: 'Kids Cover (Number of Kids 0-9) present for the life', expected: true, actual: kidsPresent });
     expect(kidsPresent, 'MLP-02: Kids Cover control present').toBe(true);
   });
 
@@ -239,7 +239,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       await clickApply(quote);
       const errs = await getVisibleErrors(quote);
       const hasRangeErr = errs.some((e) => e.includes('between 11 and 75'));
-      recordCheck(testInfo, {
+      await recordStep(testInfo, page, {
         label: `Added life ANB=${age} → ${shouldReject ? 'REJECTED (out of 11-75)' : 'ACCEPTED (within 11-75)'}`,
         expected: shouldReject, actual: hasRangeErr,
       });
@@ -267,7 +267,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life').catch(() => {});
     await waitForSettle(quote, 1500);
     const modal = await captureModal(quote);
-    recordCheck(testInfo, { label: 'Add-life-without-details modal message (verbatim story text)', expected: 'Please enter the minimum requirements for a quote before proceeding to another life.', actual: modal.text });
+    await recordStep(testInfo, page, { label: 'Add-life-without-details modal message (verbatim story text)', expected: 'Please enter the minimum requirements for a quote before proceeding to another life.', actual: modal.text });
     expect(modal.text, 'MLP-03: exact story message shown when adding a life without minimum details')
       .toContain('Please enter the minimum requirements for a quote before proceeding to another life.');
   });
@@ -293,7 +293,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life');
     await waitForSettle(quote, 1500);
     const count = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'Life tab count after adding a life with min details', expected: 2, actual: count });
+    await recordStep(testInfo, page, { label: 'Life tab count after adding a life with min details', expected: 2, actual: count });
     expect(count, 'MLP-04: a second life is created once minimum details are present').toBe(2);
   });
 
@@ -318,7 +318,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1000);
     const life1Premium = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Life 1 premium shown while Life 1 is active', expected: '> 0', actual: life1Premium });
+    await recordStep(testInfo, page, { label: 'Life 1 premium shown while Life 1 is active', expected: '> 0', actual: life1Premium });
     expect(life1Premium, 'MLP-05: Life 1 shows a positive premium').toBeGreaterThan(0);
     await clickButtonByLabel(quote, 'Add life', 'Add life');
     await waitForSettle(quote, 1500);
@@ -331,10 +331,10 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     // exist, and an all-lives total is shown. Life 1's premium (read while active, above) already
     // proves per-life premium is displayed; fillCalcMask above already confirmed Life 2's SI landed.
     const twoLives = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'Two life tabs exist (Life 1 + Life 2), each with a priced cover', expected: 2, actual: twoLives });
+    await recordStep(testInfo, page, { label: 'Two life tabs exist (Life 1 + Life 2), each with a priced cover', expected: 2, actual: twoLives });
     expect(twoLives, 'MLP-05: a second, independently-priced life was added').toBe(2);
     const hasAllLivesTotal = await quote.evaluate(() => /Total Monthly Premium \(All Lives\)|Total Yearly Premium/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'An all-lives total premium is shown in the panel', expected: true, actual: hasAllLivesTotal });
+    await recordStep(testInfo, page, { label: 'An all-lives total premium is shown in the panel', expected: true, actual: hasAllLivesTotal });
     expect(hasAllLivesTotal, 'MLP-05: an all-lives total premium is shown').toBe(true);
   });
 
@@ -368,9 +368,9 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     expect(clicked, 'MLP-06: the life-tab X (fa-times) control exists and was clicked').toBe(true);
     await waitForSettle(quote, 1200);
     const modal = await captureModal(quote);
-    recordCheck(testInfo, { label: 'Life-tab X confirmation modal message', expected: 'Are you sure you want to delete this life?', actual: modal.text });
+    await recordStep(testInfo, page, { label: 'Life-tab X confirmation modal message', expected: 'Are you sure you want to delete this life?', actual: modal.text });
     expect(modal.text, 'MLP-06: delete-confirmation message shown').toContain('Are you sure you want to delete this life?');
-    recordCheck(testInfo, { label: 'Life-tab X confirmation modal offers Cancel + Delete', expected: ['Cancel', 'Delete'], actual: modal.buttons });
+    await recordStep(testInfo, page, { label: 'Life-tab X confirmation modal offers Cancel + Delete', expected: ['Cancel', 'Delete'], actual: modal.buttons });
     expect(modal.buttons, 'MLP-06: modal offers a Cancel option').toContain('Cancel');
     expect(modal.buttons, 'MLP-06: modal offers a Delete option').toContain('Delete');
   });
@@ -402,7 +402,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickApply(quote);
     let errors = await getVisibleErrors(quote);
     const belowMatched = errors.find((e) => e.includes('The minimum premium is $240.00 per year per Life insured'));
-    recordCheck(testInfo, { label: 'Below floor ($50k SI, ~$80/yr): exact $240 min-premium message shown', expected: 'The minimum premium is $240.00 per year per Life insured.', actual: belowMatched || errors });
+    await recordStep(testInfo, page, { label: 'Below floor ($50k SI, ~$80/yr): exact $240 min-premium message shown', expected: 'The minimum premium is $240.00 per year per Life insured.', actual: belowMatched || errors });
     expect(belowMatched, 'MLP-09: below-floor premium is rejected with the exact $240 message').toBeTruthy();
     // ── Above the floor: min-premium error MUST NOT fire ──
     quote = await openNewQuote(page);
@@ -413,7 +413,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickApply(quote);
     errors = await getVisibleErrors(quote);
     const aboveHasMinErr = errors.some((e) => e.includes('The minimum premium is $240.00 per year per Life insured'));
-    recordCheck(testInfo, { label: 'Above floor ($500k SI, ~$800/yr): $240 min-premium message is ABSENT', expected: false, actual: aboveHasMinErr });
+    await recordStep(testInfo, page, { label: 'Above floor ($500k SI, ~$800/yr): $240 min-premium message is ABSENT', expected: false, actual: aboveHasMinErr });
     expect(aboveHasMinErr, 'MLP-09: above-floor premium is accepted (no $240 min-premium error)').toBe(false);
   });
 
@@ -467,7 +467,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await setMinimumPersonalDetails(quote);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury', 'Mortgage & Living', 'Income Protection', 'Workability']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Personal policy cover "${cover}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Personal policy cover "${cover}" present`, expected: true, actual: present });
       expect(present, `MLP-14: personal policy cover "${cover}" present`).toBe(true);
     }
     const fields = await quote.evaluate(() => ({
@@ -475,11 +475,11 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       inflation: !!document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]'),
       kidsCover: [...document.querySelectorAll('select')].some((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.length === 10 && o[0] === '0' && o[9] === '9'; }),
     }));
-    recordCheck(testInfo, { label: 'Personal policy has Premium Freeze', expected: true, actual: fields.premiumFreeze });
+    await recordStep(testInfo, page, { label: 'Personal policy has Premium Freeze', expected: true, actual: fields.premiumFreeze });
     expect(fields.premiumFreeze, 'MLP-14: personal policy has Premium Freeze').toBe(true);
-    recordCheck(testInfo, { label: 'Personal policy has Inflation Adjustment', expected: true, actual: fields.inflation });
+    await recordStep(testInfo, page, { label: 'Personal policy has Inflation Adjustment', expected: true, actual: fields.inflation });
     expect(fields.inflation, 'MLP-14: personal policy has Inflation Adjustment').toBe(true);
-    recordCheck(testInfo, { label: 'Personal policy has Kids Cover', expected: true, actual: fields.kidsCover });
+    await recordStep(testInfo, page, { label: 'Personal policy has Kids Cover', expected: true, actual: fields.kidsCover });
     expect(fields.kidsCover, 'MLP-14: personal policy has Kids Cover').toBe(true);
   });
 
@@ -507,12 +507,12 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     const expectedAbsent = ['Cancer', 'Acd. Death', 'Needlestick', 'Mortgage & Living', 'Income Protection', 'Workability'];
     for (const cover of expectedPresent) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business policy cover "${cover}" present`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business policy cover "${cover}" present`, expected: true, actual: present });
       expect(present, `MLP-15: business policy cover "${cover}" present`).toBe(true);
     }
     for (const cover of expectedAbsent) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business policy cover "${cover}" absent`, expected: false, actual: present });
+      await recordStep(testInfo, page, { label: `Business policy cover "${cover}" absent`, expected: false, actual: present });
       expect(present, `MLP-15: business policy cover "${cover}" absent`).toBe(false);
     }
     const fields = await quote.evaluate(() => ({
@@ -520,11 +520,11 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       kidsCover: [...document.querySelectorAll('select')].some((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.length === 10 && o[0] === '0' && o[9] === '9'; }),
       inflation: !!document.querySelector('input[id*="Checkbox_InflationAdjustmentBenefit"]'),
     }));
-    recordCheck(testInfo, { label: 'Business policy has NO Premium Freeze', expected: false, actual: fields.premiumFreeze });
+    await recordStep(testInfo, page, { label: 'Business policy has NO Premium Freeze', expected: false, actual: fields.premiumFreeze });
     expect(fields.premiumFreeze, 'MLP-15: business policy has no Premium Freeze').toBe(false);
-    recordCheck(testInfo, { label: 'Business policy has NO Kids Cover', expected: false, actual: fields.kidsCover });
+    await recordStep(testInfo, page, { label: 'Business policy has NO Kids Cover', expected: false, actual: fields.kidsCover });
     expect(fields.kidsCover, 'MLP-15: business policy has no Kids Cover').toBe(false);
-    recordCheck(testInfo, { label: 'Business policy has Inflation Adjustment', expected: true, actual: fields.inflation });
+    await recordStep(testInfo, page, { label: 'Business policy has Inflation Adjustment', expected: true, actual: fields.inflation });
     expect(fields.inflation, 'MLP-15: business policy has Inflation Adjustment').toBe(true);
   });
 
@@ -545,16 +545,16 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Business', 'Business policy');
     await waitForSettle(quote, 1500);
     const before = await policyTabLabels(quote);
-    recordCheck(testInfo, { label: 'Policy tabs before deleting Business 1', expected: 'includes Business 1', actual: before });
+    await recordStep(testInfo, page, { label: 'Policy tabs before deleting Business 1', expected: 'includes Business 1', actual: before });
     expect(before, 'MLP-16: Business 1 policy tab exists before delete').toContain('Business 1');
     const clicked = await clickPolicyTabClose(quote, 'Business 1');
     expect(clicked, 'MLP-16: the policy-tab X control exists and was clicked').toBe(true);
     await waitForSettle(quote, 1500);
     const after = await policyTabLabels(quote);
-    recordCheck(testInfo, { label: 'Policy tabs after clicking X on Business 1', expected: 'excludes Business 1', actual: after });
+    await recordStep(testInfo, page, { label: 'Policy tabs after clicking X on Business 1', expected: 'excludes Business 1', actual: after });
     expect(after, 'MLP-16: Business 1 policy tab is removed after clicking its X').not.toContain('Business 1');
     // Negative/absence: deleting Business 1 must remove ONLY Business 1 — Personal 1 remains.
-    recordCheck(testInfo, { label: 'Deleting Business 1 leaves Personal 1 intact (only the targeted tab is removed)', expected: 'includes Personal 1', actual: after });
+    await recordStep(testInfo, page, { label: 'Deleting Business 1 leaves Personal 1 intact (only the targeted tab is removed)', expected: 'includes Personal 1', actual: after });
     expect(after, 'MLP-16: Personal 1 is NOT removed when Business 1 is deleted').toContain('Personal 1');
   });
 
@@ -587,11 +587,11 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote, 1200);
     const life1PolicyTabs = await policyTabLabels(quote);
-    recordCheck(testInfo, { label: 'Life 1 has both Personal 1 and Business 1 policy tabs', expected: ['Personal 1', 'Business 1'], actual: life1PolicyTabs });
+    await recordStep(testInfo, page, { label: 'Life 1 has both Personal 1 and Business 1 policy tabs', expected: ['Personal 1', 'Business 1'], actual: life1PolicyTabs });
     expect(life1PolicyTabs, 'MLP-17: Personal 1 policy present on Life 1').toContain('Personal 1');
     expect(life1PolicyTabs, 'MLP-17: Business 1 policy present on Life 1').toContain('Business 1');
     const life1Premium = await getTotalYearlyPremium(quote);
-    recordCheck(testInfo, { label: 'Life 1 premium (2 policies) is positive', expected: '> 0', actual: life1Premium });
+    await recordStep(testInfo, page, { label: 'Life 1 premium (2 policies) is positive', expected: '> 0', actual: life1Premium });
     expect(life1Premium, 'MLP-17: Life 1 shows a positive premium across its policies').toBeGreaterThan(0);
     await clickButtonByLabel(quote, 'Add life', 'Add life');
     await waitForSettle(quote, 1500);
@@ -603,10 +603,10 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     // the per-life premium recalculation, which reads 0/blank transiently under load. fillCalcMask
     // above already confirmed Life 2's SI landed; Life 1's multi-policy premium (above) is positive.
     const twoLives = await lifeTabCount(quote);
-    recordCheck(testInfo, { label: 'Two life tabs exist after adding Life 2, each priced', expected: 2, actual: twoLives });
+    await recordStep(testInfo, page, { label: 'Two life tabs exist after adding Life 2, each priced', expected: 2, actual: twoLives });
     expect(twoLives, 'MLP-17: a second, independently-priced life was added').toBe(2);
     const hasAllLivesTotal = await quote.evaluate(() => /Total Monthly Premium \(All Lives\)|Total Yearly Premium/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'An all-lives total premium is shown', expected: true, actual: hasAllLivesTotal });
+    await recordStep(testInfo, page, { label: 'An all-lives total premium is shown', expected: true, actual: hasAllLivesTotal });
     expect(hasAllLivesTotal, 'MLP-17: an all-lives total premium is shown').toBe(true);
   });
 
@@ -653,12 +653,12 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
         policyTotal: amountAfter(/^Total$/i),
       };
     });
-    recordCheck(testInfo, { label: 'Per-cover line: Life Cover amount ($)', expected: '> 0', actual: panel.lifeCover });
+    await recordStep(testInfo, page, { label: 'Per-cover line: Life Cover amount ($)', expected: '> 0', actual: panel.lifeCover });
     expect(panel.lifeCover, 'MLP-17b: a per-cover Life amount is shown and > 0').toBeGreaterThan(0);
-    recordCheck(testInfo, { label: 'Per-cover line: TPD amount ($)', expected: '> 0', actual: panel.tpdCover });
+    await recordStep(testInfo, page, { label: 'Per-cover line: TPD amount ($)', expected: '> 0', actual: panel.tpdCover });
     expect(panel.tpdCover, 'MLP-17b: a per-cover TPD amount is shown and > 0').toBeGreaterThan(0);
     const sumOfCovers = Number(((panel.lifeCover || 0) + (panel.tpdCover || 0)).toFixed(2));
-    recordCheck(testInfo, { label: 'Per-cover breakdown reconciles: Life + TPD == policy Total', expected: panel.policyTotal, actual: sumOfCovers });
+    await recordStep(testInfo, page, { label: 'Per-cover breakdown reconciles: Life + TPD == policy Total', expected: panel.policyTotal, actual: sumOfCovers });
     expect(sumOfCovers, 'MLP-17b: sum of per-cover amounts equals the policy total').toBe(panel.policyTotal);
   });
 
@@ -691,7 +691,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     });
     await waitForSettle(quote, 1200);
     const activeLife = await activeLifeTabLabel(quote);
-    recordCheck(testInfo, { label: 'Active life tab after clicking Life 1', expected: 'Life 1', actual: activeLife });
+    await recordStep(testInfo, page, { label: 'Active life tab after clicking Life 1', expected: 'Life 1', actual: activeLife });
     expect(activeLife, 'MLP-18: clicking the Life 1 tab activates it').toBe('Life 1');
     // navigate to Business 1 policy
     await quote.evaluate(() => {
@@ -700,7 +700,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     });
     await waitForSettle(quote, 1200);
     const activePolicy = await activePolicyTabLabel(quote);
-    recordCheck(testInfo, { label: 'Active policy tab after clicking Business 1', expected: 'Business 1', actual: activePolicy });
+    await recordStep(testInfo, page, { label: 'Active policy tab after clicking Business 1', expected: 'Business 1', actual: activePolicy });
     expect(activePolicy, 'MLP-18: clicking the Business 1 policy tab activates it').toBe('Business 1');
     // navigate to Personal 1 (the OTHER policy) — confirms "any policy", not just the last-added one
     await quote.evaluate(() => {
@@ -709,7 +709,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     });
     await waitForSettle(quote, 1200);
     const activePolicy2 = await activePolicyTabLabel(quote);
-    recordCheck(testInfo, { label: 'Active policy tab after clicking Personal 1', expected: 'Personal 1', actual: activePolicy2 });
+    await recordStep(testInfo, page, { label: 'Active policy tab after clicking Personal 1', expected: 'Personal 1', actual: activePolicy2 });
     expect(activePolicy2, 'MLP-18: clicking the Personal 1 policy tab activates it (any policy navigable)').toBe('Personal 1');
   });
 
@@ -733,7 +733,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life');
     await waitForSettle(quote, 1500);
     const active = await activeLifeTabLabel(quote);
-    recordCheck(testInfo, { label: 'Active life tab after Add life', expected: 'Life 2', actual: active });
+    await recordStep(testInfo, page, { label: 'Active life tab after Add life', expected: 'Life 2', actual: active });
     expect(active, 'MLP-27: control moves to the newly added Life 2').toBe('Life 2');
   });
 
@@ -754,7 +754,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Business', 'Business policy');
     await waitForSettle(quote, 1500);
     const active = await activePolicyTabLabel(quote);
-    recordCheck(testInfo, { label: 'Active policy tab after adding Business policy', expected: 'Business 1', actual: active });
+    await recordStep(testInfo, page, { label: 'Active policy tab after adding Business policy', expected: 'Business 1', actual: active });
     expect(active, 'MLP-28: control moves to the newly added Business 1 policy').toBe('Business 1');
   });
 
@@ -809,7 +809,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     await clickButtonByLabel(quote, 'Add life', 'Add life').catch(() => {});
     await waitForSettle(quote, 1500);
     const modal = await captureModal(quote);
-    recordCheck(testInfo, { label: 'Add-life-with-policy-error modal message', expected: 'Please correct the errors before proceeding to another life', actual: modal.text });
+    await recordStep(testInfo, page, { label: 'Add-life-with-policy-error modal message', expected: 'Please correct the errors before proceeding to another life', actual: modal.text });
     expect(modal.text, 'MLP-26: exact "correct the errors" message shown when adding a life with an errored policy')
       .toContain('Please correct the errors before proceeding to another life');
   });
@@ -928,13 +928,13 @@ test.describe('Multi Lives and Policies — Policy limit (ACB-4394)', () => {
       await waitForSettle(quote, 1200);
     }
     const at5 = await policyTabLabels(quote);
-    recordCheck(testInfo, { label: 'Policy tab count after adding up to the limit', expected: 5, actual: at5.length });
+    await recordStep(testInfo, page, { label: 'Policy tab count after adding up to the limit', expected: 5, actual: at5.length });
     expect(at5.length, 'BR-B: exactly 5 policies can exist for a life').toBe(5);
     // Attempt a 6th: both Personal and Business add buttons should be disabled (or not add a tab).
     const personalDisabled = await quote.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').trim().split('\n')[0] === 'Personal'); return b ? b.disabled : true; });
     const businessDisabled = await quote.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').trim().split('\n')[0] === 'Business'); return b ? b.disabled : true; });
     const sixthBlocked = personalDisabled && businessDisabled;
-    recordCheck(testInfo, { label: 'A 6th policy is blocked (both add buttons disabled) at 5 policies', expected: true, actual: sixthBlocked });
+    await recordStep(testInfo, page, { label: 'A 6th policy is blocked (both add buttons disabled) at 5 policies', expected: true, actual: sixthBlocked });
     expect(sixthBlocked, 'BR-B: a 6th policy is blocked once 5 policies exist').toBe(true);
   });
 });

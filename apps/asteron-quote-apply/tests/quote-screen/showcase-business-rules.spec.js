@@ -28,7 +28,7 @@
  */
 
 const { test, expect } = require('@playwright/test');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 const {
   openNewQuote,
   waitForSettle,
@@ -109,9 +109,9 @@ test('LSC-20: Major Trauma at/above $25k TRC — no percentage cap, only $2M glo
   const has300Error = errors.some(e => e.includes('maximum Sum Insured for Major Trauma Benefit based on'));
   const hasGlobalCap = errors.some(e => e.includes('maximum total Sum Insured per life for Trauma Recovery Cover'));
   
-  recordCheck(testInfo, { label: 'No 300% percentage-cap error at $25k+ TRC', expected: false, actual: has300Error });
+  await recordStep(testInfo, page, { label: 'No 300% percentage-cap error at $25k+ TRC', expected: false, actual: has300Error });
   expect(has300Error).toBe(false); // No percentage cap at $25k+
-  recordCheck(testInfo, { label: 'Only the $2M global cap error applies at $25k+ TRC', expected: true, actual: hasGlobalCap });
+  await recordStep(testInfo, page, { label: 'Only the $2M global cap error applies at $25k+ TRC', expected: true, actual: hasGlobalCap });
   expect(hasGlobalCap).toBe(true); // Only the $2M global cap applies
 });
 
@@ -172,11 +172,11 @@ test('LSC-32: Specific Injury requires a companion cover — blocked standalone'
   // Verify the error lists valid companions
   const errors = await getVisibleErrors(quote);
   const companionError = errors.find(e => e.includes('Specific Injury Lump Sum requires'));
-  recordCheck(testInfo, { label: 'Companion-cover error lists Life as a valid companion cover', expected: 'Life', actual: companionError });
+  await recordStep(testInfo, page, { label: 'Companion-cover error lists Life as a valid companion cover', expected: 'Life', actual: companionError });
   expect(companionError).toContain('Life');
-  recordCheck(testInfo, { label: 'Companion-cover error lists TPD as a valid companion cover', expected: 'TPD', actual: companionError });
+  await recordStep(testInfo, page, { label: 'Companion-cover error lists TPD as a valid companion cover', expected: 'TPD', actual: companionError });
   expect(companionError).toContain('TPD');
-  recordCheck(testInfo, { label: 'Companion-cover error lists Income Protection as a valid companion cover', expected: 'Income Protection', actual: companionError });
+  await recordStep(testInfo, page, { label: 'Companion-cover error lists Income Protection as a valid companion cover', expected: 'Income Protection', actual: companionError });
   expect(companionError).toContain('Income Protection');
 });
 
@@ -223,7 +223,7 @@ test('PREM-23/24: Bundling discount requires Life/TPD minimum $100,000 each', as
 
   // Assert: NO bundling discount (Life below $100k threshold)
   const discountBelow = await getBundlingDiscount(quote);
-  recordCheck(testInfo, { label: 'No bundling discount when Life is below the $100k threshold', expected: 'None', actual: discountBelow });
+  await recordStep(testInfo, page, { label: 'No bundling discount when Life is below the $100k threshold', expected: 'None', actual: discountBelow });
   expect(discountBelow).toBe('None');
 
   // Now raise Life to exactly $100,000
@@ -231,6 +231,6 @@ test('PREM-23/24: Bundling discount requires Life/TPD minimum $100,000 each', as
 
   // Assert: bundling discount activates
   const discountAtThreshold = await getBundlingDiscount(quote);
-  recordCheck(testInfo, { label: 'Bundling discount activates at exactly $100,000 Life Sum Insured', expected: '15%', actual: discountAtThreshold });
+  await recordStep(testInfo, page, { label: 'Bundling discount activates at exactly $100,000 Life Sum Insured', expected: '15%', actual: discountAtThreshold });
   expect(discountAtThreshold).toContain('15%');
 });

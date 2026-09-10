@@ -10,7 +10,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -25,7 +25,7 @@ test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '200000');
     await waitForSettle(quote);
     const discount1Cover = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling Discount with 1 committed cover', expected: 'None', actual: discount1Cover });
+    await recordStep(testInfo, page, { label: 'Bundling Discount with 1 committed cover', expected: 'None', actual: discount1Cover });
     expect(discount1Cover).toBe('None');
   });
 
@@ -36,7 +36,7 @@ test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote);
     const discount2Covers = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling Discount with 2 committed covers', expected: '15% (2 covers)', actual: discount2Covers });
+    await recordStep(testInfo, page, { label: 'Bundling Discount with 2 committed covers', expected: '15% (2 covers)', actual: discount2Covers });
     expect(discount2Covers).toContain('15%');
   });
 
@@ -49,7 +49,7 @@ test.describe('PREM-19/PREM-20 — Bundling Discount thresholds', () => {
     await fillCalcMask(sumInsuredInput(quote, 2), '100000');
     await waitForSettle(quote);
     const discount3Covers = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling Discount with 3 committed covers', expected: '20% (3 covers or more)', actual: discount3Covers });
+    await recordStep(testInfo, page, { label: 'Bundling Discount with 3 committed covers', expected: '20% (3 covers or more)', actual: discount3Covers });
     expect(discount3Covers).toContain('20%');
   });
 });
@@ -74,13 +74,13 @@ test('PREM-26: Mortgage & Living counts toward bundling only once Monthly Benefi
   await fillCalcMask(sumInsuredInput(quote, 1), '999');
   await waitForSettle(quote);
   const discountBelow = await getBundlingDiscount(quote);
-  recordCheck(testInfo, { label: 'Bundling Discount with M&L Monthly Benefit at $999 (below the $1,000 threshold)', expected: 'None', actual: discountBelow });
+  await recordStep(testInfo, page, { label: 'Bundling Discount with M&L Monthly Benefit at $999 (below the $1,000 threshold)', expected: 'None', actual: discountBelow });
   expect(discountBelow).toBe('None');
 
   await fillCalcMask(sumInsuredInput(quote, 1), '1000');
   await waitForSettle(quote);
   const discountAt = await getBundlingDiscount(quote);
-  recordCheck(testInfo, { label: 'Bundling Discount with M&L Monthly Benefit at exactly $1,000 (now qualifies as a 2nd committed cover)', expected: 'not "None"', actual: discountAt });
+  await recordStep(testInfo, page, { label: 'Bundling Discount with M&L Monthly Benefit at exactly $1,000 (now qualifies as a 2nd committed cover)', expected: 'not "None"', actual: discountAt });
   expect(discountAt).not.toBe('None');
 });
 
@@ -113,14 +113,14 @@ test('PREM-18: Fortnightly premium = Yearly ÷ 26, independently rounded per per
   // formula error - the app likely derives this via its own per-period rounding chain
   // rather than a single yearly/26 division, matching this test's own comment below
   // about the Fortnightly-view "Total Yearly Premium" figure legitimately differing too.
-  recordCheck(testInfo, { label: 'Fortnightly Total premium = Yearly premium ÷ 26 (rounded)', expected: expectedFortnightly, actual: fortnightlyAmount });
+  await recordStep(testInfo, page, { label: 'Fortnightly Total premium = Yearly premium ÷ 26 (rounded)', expected: expectedFortnightly, actual: fortnightlyAmount });
   expect(fortnightlyAmount).toBeCloseTo(expectedFortnightly, 1);
 
   // The "Total Yearly Premium" figure shown while in Fortnightly mode is its
   // OWN rounded-per-period-derived total, and can legitimately differ slightly
   // from the Monthly-derived figure — assert they're close, not identical.
   const fortnightlyDerivedYearly = Number(fortnightlyYearlyMatch[1].replace(/,/g, ''));
-  recordCheck(testInfo, { label: 'Fortnightly-view Total Yearly Premium matches Monthly-view Total Yearly Premium (within $1)', expected: yearlyFromMonthlyView, actual: fortnightlyDerivedYearly });
+  await recordStep(testInfo, page, { label: 'Fortnightly-view Total Yearly Premium matches Monthly-view Total Yearly Premium (within $1)', expected: yearlyFromMonthlyView, actual: fortnightlyDerivedYearly });
   expect(Math.abs(fortnightlyDerivedYearly - yearlyFromMonthlyView)).toBeLessThan(1);
 });
 

@@ -15,7 +15,7 @@ const {
   sumInsuredInput,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 let quote;
 
@@ -46,11 +46,11 @@ async function checkboxByLabel(page, labelText) {
 
 test('POL-01/POL-02: Inflation Adjustment defaults ON, Premium Freeze defaults OFF', async ({}, testInfo) => {
   const inflationCheckbox = await checkboxByLabel(quote, 'Inflation Adjustment Benefit');
-  recordCheck(testInfo, { label: 'POL-01: Inflation Adjustment Benefit defaults ON', expected: true, actual: await inflationCheckbox.isChecked() });
+  await recordStep(testInfo, page, { label: 'POL-01: Inflation Adjustment Benefit defaults ON', expected: true, actual: await inflationCheckbox.isChecked() });
   await expect(inflationCheckbox).toBeChecked();
 
   const freezeCheckbox = await checkboxByLabel(quote, 'Premium Freeze');
-  recordCheck(testInfo, { label: 'POL-02: Premium Freeze defaults OFF', expected: false, actual: await freezeCheckbox.isChecked() });
+  await recordStep(testInfo, page, { label: 'POL-02: Premium Freeze defaults OFF', expected: false, actual: await freezeCheckbox.isChecked() });
   await expect(freezeCheckbox).not.toBeChecked();
 });
 
@@ -58,14 +58,14 @@ test('POL-05: Inflation Adjustment and Premium Freeze are mutually exclusive (si
   const inflation = await checkboxByLabel(quote, 'Inflation Adjustment Benefit');
   const freeze = await checkboxByLabel(quote, 'Premium Freeze');
 
-  recordCheck(testInfo, { label: 'Inflation Adjustment Benefit is checked before Premium Freeze is toggled', expected: true, actual: await inflation.isChecked() });
+  await recordStep(testInfo, page, { label: 'Inflation Adjustment Benefit is checked before Premium Freeze is toggled', expected: true, actual: await inflation.isChecked() });
   await expect(inflation).toBeChecked();
   await freeze.check();
   await waitForSettle(quote);
 
-  recordCheck(testInfo, { label: 'Premium Freeze becomes checked after user checks it', expected: true, actual: await freeze.isChecked() });
+  await recordStep(testInfo, page, { label: 'Premium Freeze becomes checked after user checks it', expected: true, actual: await freeze.isChecked() });
   await expect(freeze).toBeChecked();
-  recordCheck(testInfo, { label: 'Inflation Adjustment Benefit is silently unchecked when Premium Freeze is checked (mutual exclusivity)', expected: false, actual: await inflation.isChecked() });
+  await recordStep(testInfo, page, { label: 'Inflation Adjustment Benefit is silently unchecked when Premium Freeze is checked (mutual exclusivity)', expected: false, actual: await inflation.isChecked() });
   await expect(inflation).not.toBeChecked(); // should have been silently unchecked, no error expected
 });
 
@@ -130,7 +130,7 @@ test.describe('POL-11/POL-12 — Add Life', () => {
 
     const age = quote.getByRole('spinbutton', { name: /Age next birthday/ });
     const ageValue = await age.inputValue();
-    recordCheck(testInfo, { label: 'Age next birthday on new Life 2 is blank (independent of Life 1)', expected: '', actual: ageValue });
+    await recordStep(testInfo, page, { label: 'Age next birthday on new Life 2 is blank (independent of Life 1)', expected: '', actual: ageValue });
     await expect(age).toHaveValue('');
   });
 
@@ -164,7 +164,7 @@ test('POL-13: the Premium panel aggregates a combined total across all lives', a
   await waitForSettle(quote);
 
   const life1Premium = await getTotalYearlyPremium(quote);
-  recordCheck(testInfo, { label: 'Life 1 yearly premium is calculated as a positive amount', expected: '> 0', actual: life1Premium });
+  await recordStep(testInfo, page, { label: 'Life 1 yearly premium is calculated as a positive amount', expected: '> 0', actual: life1Premium });
   expect(life1Premium).toBeGreaterThan(0);
 
   await quote.getByRole('button', { name: 'Add life' }).click();
@@ -173,6 +173,6 @@ test('POL-13: the Premium panel aggregates a combined total across all lives', a
   const allLivesLabelExists = await quote.evaluate(() =>
     document.body.innerText.includes('All Lives')
   );
-  recordCheck(testInfo, { label: 'Premium panel shows "All Lives" aggregated total after adding a second life', expected: true, actual: allLivesLabelExists });
+  await recordStep(testInfo, page, { label: 'Premium panel shows "All Lives" aggregated total after adding a second life', expected: true, actual: allLivesLabelExists });
   expect(allLivesLabelExists).toBe(true);
 });

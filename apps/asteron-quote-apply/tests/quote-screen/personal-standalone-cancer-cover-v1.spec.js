@@ -25,7 +25,7 @@ const {
   clickApply,
   waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // Nth Premium Structure select (fingerprint {Stepped, Level to 65, Level to 70}); safe because a
 // standalone-Cancer quote only has Cancer covers active. Index = cover order (probe-confirmed).
@@ -74,12 +74,12 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await setMinimumPersonalDetails(quote);
     for (const cover of ['Life', 'TPD', 'Trauma', 'Cancer', 'Acd. Death', 'Needlestick', 'Specific Injury']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Lump sum cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Lump sum cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" cover present`).toBe(true);
     }
     await activateCover(quote, 'Cancer');
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Cancer is selectable (its Sum Insured field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Cancer is selectable (its Sum Insured field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: at least one cover (Cancer) is selectable').toBe(true);
   });
 
@@ -95,12 +95,12 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     const quote = await freshCancerQuote(page);
     await waitForSettle(quote, 1000);
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Cancer Sum Insured field is present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Cancer Sum Insured field is present', expected: true, actual: siVisible });
     expect(siVisible, 'AC03: Sum Insured field present').toBe(true);
     const struct = await getStructure(quote);
-    recordCheck(testInfo, { label: 'Cancer Premium Structure default', expected: 'Stepped', actual: struct?.selected });
+    await recordStep(testInfo, page, { label: 'Cancer Premium Structure default', expected: 'Stepped', actual: struct?.selected });
     expect(struct?.selected, 'AC03: Premium Structure default is Stepped').toBe('Stepped');
-    recordCheck(testInfo, { label: 'Cancer Premium Structure options', expected: 'Stepped, Level to 65, Level to 70', actual: (struct?.options || []).join(', ') });
+    await recordStep(testInfo, page, { label: 'Cancer Premium Structure options', expected: 'Stepped, Level to 65, Level to 70', actual: (struct?.options || []).join(', ') });
     expect(struct?.options, 'AC03: Premium Structure options').toEqual(['Stepped', 'Level to 65', 'Level to 70']);
   });
 
@@ -114,7 +114,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer Stepped + ANB > 65', expected: 'stepped ... Cancer Cover is 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer Stepped + ANB > 65', expected: 'stepped ... Cancer Cover is 65', actual: e });
     expect(/stepped.*Cancer Cover is 65/i.test(e), `AC04. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -129,7 +129,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /stepped.*Cancer Cover is 65/i.test(e);
-    recordCheck(testInfo, { label: 'Cancer Stepped max at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Cancer Stepped max at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC04 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -144,7 +144,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await setStructure(quote, 'Level to 65');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer Level to 65 + ANB > 60', expected: 'Level to 65 ... 60', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer Level to 65 + ANB > 60', expected: 'Level to 65 ... 60', actual: e });
     expect(/Level to 65.*Cancer Cover is 60/i.test(e), `AC05. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -160,7 +160,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /Level to 65.*Cancer Cover is 60/i.test(e);
-    recordCheck(testInfo, { label: 'Cancer Level to 65 max at ANB 60 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Cancer Level to 65 max at ANB 60 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC05 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -175,7 +175,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await setStructure(quote, 'Level to 70');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer Level to 70 + ANB > 65', expected: 'Level to 70 ... 65', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer Level to 70 + ANB > 65', expected: 'Level to 70 ... 65', actual: e });
     expect(/Level to 70.*Cancer Cover is 65/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -191,7 +191,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /Level to 70.*Cancer Cover is 65/i.test(e);
-    recordCheck(testInfo, { label: 'Cancer Level to 70 max at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Cancer Level to 70 max at ANB 65 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC06 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -205,7 +205,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '250001'); // $250,000 cap + $1
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer ANB 17-21 + SI > $250k', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer ANB 17-21 + SI > $250k', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
     expect(RX_YOUNG_CAP.test(e), `AC07. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -220,7 +220,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = RX_YOUNG_CAP.test(e);
-    recordCheck(testInfo, { label: 'Cancer ANB 17-21 SI exactly $250,000 accepted (no young-cap error)', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Cancer ANB 17-21 SI exactly $250,000 accepted (no young-cap error)', expected: false, actual: hasCap });
     expect(hasCap, `AC07 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -241,7 +241,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '100000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Trauma+Cancer combined > $250k (ANB 17-21)', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma+Cancer combined > $250k (ANB 17-21)', expected: '17 - 21 is $250,000 (incl Cancer)', actual: e });
     expect(RX_YOUNG_CAP.test(e), `AC08. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -255,7 +255,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '2000001'); // $2,000,000 cap + $1
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer ANB 22-65 + SI > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer ANB 22-65 + SI > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
     expect(RX_2M_CAP.test(e), `AC09. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -270,7 +270,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = RX_2M_CAP.test(e);
-    recordCheck(testInfo, { label: 'Cancer ANB 22-65 SI exactly $2,000,000 accepted (no cap error)', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Cancer ANB 22-65 SI exactly $2,000,000 accepted (no cap error)', expected: false, actual: hasCap });
     expect(hasCap, `AC09 boundary. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -284,7 +284,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '9000'); // below the $10,000 minimum
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Cancer SI < $10,000', expected: 'minimum Cancer Cover sum insured is $10,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Cancer SI < $10,000', expected: 'minimum Cancer Cover sum insured is $10,000', actual: e });
     expect(/minimum Cancer Cover sum insured is \$?10,?000/i.test(e), `AC10. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -299,7 +299,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Cancer Cover sum insured is \$?10,?000/i.test(e);
-    recordCheck(testInfo, { label: 'Cancer SI exactly $10,000 accepted (no min-SI error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Cancer SI exactly $10,000 accepted (no min-SI error)', expected: false, actual: hasErr });
     expect(hasErr, `AC10 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -320,7 +320,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '600000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Trauma+Cancer combined > $2M (ANB 22-65)', expected: 'including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma+Cancer combined > $2M (ANB 22-65)', expected: 'including Cancer Cover, is $2,000,000', actual: e });
     expect(RX_2M_CAP.test(e), `AC11. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -344,7 +344,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 2), '600000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Error shown for Trauma+MajorTrauma+Cancer combined > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Error shown for Trauma+MajorTrauma+Cancer combined > $2M', expected: 'including Cancer Cover, is $2,000,000', actual: e });
     expect(RX_2M_CAP.test(e), `AC12. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -369,7 +369,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
       return b ? (b.disabled || /disabled|is-disabled/.test(b.className)) : null;
     });
     const disabledAt3 = await isCancerDisabled();
-    recordCheck(testInfo, { label: '+Cancer disabled after 3 Cancer covers', expected: true, actual: disabledAt3 });
+    await recordStep(testInfo, page, { label: '+Cancer disabled after 3 Cancer covers', expected: true, actual: disabledAt3 });
     expect(disabledAt3, 'AC13: +Cancer disabled after 3').toBe(true);
     // Remove one Cancer cover.
     await quote.evaluate(() => {
@@ -378,7 +378,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     });
     await waitForSettle(quote, 1500);
     const disabledAfterRemove = await isCancerDisabled();
-    recordCheck(testInfo, { label: '+Cancer re-enabled after removing one (now 2 covers)', expected: false, actual: disabledAfterRemove });
+    await recordStep(testInfo, page, { label: '+Cancer re-enabled after removing one (now 2 covers)', expected: false, actual: disabledAfterRemove });
     expect(disabledAfterRemove, 'AC13: +Cancer re-enabled after remove').toBe(false);
   });
 
@@ -395,24 +395,24 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
     await fillCalcMask(sumInsuredInput(quote, 0), '100000');
     await waitForSettle(quote, 1000);
     const d1 = (await getStructure(quote, 0))?.selected;
-    recordCheck(testInfo, { label: '1st Cancer cover default Premium Structure', expected: 'Stepped', actual: d1 });
+    await recordStep(testInfo, page, { label: '1st Cancer cover default Premium Structure', expected: 'Stepped', actual: d1 });
     expect(d1, 'AC14: 1st Cancer default = Stepped').toBe('Stepped');
     await activateCover(quote, 'Cancer');
     await fillCalcMask(sumInsuredInput(quote, 1), '110000');
     await waitForSettle(quote, 1500);
     const d2 = (await getStructure(quote, 1))?.selected;
-    recordCheck(testInfo, { label: '2nd Cancer cover default Premium Structure', expected: 'Level to 65', actual: d2 });
+    await recordStep(testInfo, page, { label: '2nd Cancer cover default Premium Structure', expected: 'Level to 65', actual: d2 });
     expect(d2, 'AC14: 2nd Cancer default = Level to 65').toBe('Level to 65');
     await activateCover(quote, 'Cancer');
     await fillCalcMask(sumInsuredInput(quote, 2), '120000');
     await waitForSettle(quote, 1500);
     const d3 = (await getStructure(quote, 2))?.selected;
-    recordCheck(testInfo, { label: '3rd Cancer cover default Premium Structure', expected: 'Level to 70', actual: d3 });
+    await recordStep(testInfo, page, { label: '3rd Cancer cover default Premium Structure', expected: 'Level to 70', actual: d3 });
     expect(d3, 'AC14: 3rd Cancer default = Level to 70').toBe('Level to 70');
     // ...and it's still changeable (change #2 back to Stepped).
     await setStructure(quote, 'Stepped', 2);
     const changed = (await getStructure(quote, 2))?.selected;
-    recordCheck(testInfo, { label: '3rd Cancer Premium Structure is still changeable', expected: 'Stepped', actual: changed });
+    await recordStep(testInfo, page, { label: '3rd Cancer Premium Structure is still changeable', expected: 'Stepped', actual: changed });
     expect(changed, 'AC14: structure remains user-changeable').toBe('Stepped');
   });
 
@@ -436,7 +436,7 @@ test.describe('Personal Lumpsum Standalone Cancer Cover (ACB-2928)', () => {
       const el = [...document.querySelectorAll('*')].find((e) => /large sum insured discount bands for Cancer/i.test(e.innerText || ''));
       return el ? el.innerText.trim() : (document.body.innerText.match(/discount bands for Cancer[\s\S]{0,140}/i)?.[0] || null);
     });
-    recordCheck(testInfo, { label: 'Cancer Sum Insured tooltip lists the discount bands', expected: 'contains $100,000-$249,999 / $250,000+', actual: bandText });
+    await recordStep(testInfo, page, { label: 'Cancer Sum Insured tooltip lists the discount bands', expected: 'contains $100,000-$249,999 / $250,000+', actual: bandText });
     expect(bandText, 'AC15: Cancer discount-bands tooltip present').toMatch(/\$100,?000\s*-\s*\$?249,?999/i);
   });
 });

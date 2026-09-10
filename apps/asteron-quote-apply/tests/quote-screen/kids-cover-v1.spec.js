@@ -10,7 +10,7 @@ const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput,
   getVisibleErrors, clickApply, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 const errText = (page) => getVisibleErrors(page).then((x) => x.join(' | '));
 // The "number of kids" select: fingerprint by options 0..9.
@@ -49,7 +49,7 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     const dateBefore = await quote.locator('input[type="date"]').count();
     await setNumKids(quote, 1);
     const dateAfter = await quote.locator('input[type="date"]').count();
-    recordCheck(testInfo, { label: 'Selecting 1 kid reveals a per-kid Date of Birth field', expected: '> before', actual: `${dateBefore} -> ${dateAfter}` });
+    await recordStep(testInfo, page, { label: 'Selecting 1 kid reveals a per-kid Date of Birth field', expected: '> before', actual: `${dateBefore} -> ${dateAfter}` });
     expect(dateAfter, 'AC07: per-kid DOB field appears').toBeGreaterThan(dateBefore);
     const kidFields = await quote.evaluate(() => ({
       firstName: [...document.querySelectorAll('input[id*="FirstName"]')].length > 1,
@@ -57,7 +57,7 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
       gender: [...document.querySelectorAll('.button-group-item, .button-group-selected-item')].filter((b) => ['Male', 'Female'].includes(b.innerText.trim())).length > 2,
     }));
     for (const [k, v] of Object.entries(kidFields)) {
-      recordCheck(testInfo, { label: `Per-kid ${k} field present`, expected: true, actual: v });
+      await recordStep(testInfo, page, { label: `Per-kid ${k} field present`, expected: true, actual: v });
       expect(v, `AC02: per-kid ${k} present`).toBe(true);
     }
   });
@@ -71,18 +71,18 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     const quote = await freshQuoteWithLife(page);
     await setNumKids(quote, 1);
     const tier = await getKidTier(quote);
-    recordCheck(testInfo, { label: 'Kids SI dropdown default', expected: '$50,000 (Free)', actual: tier?.selected });
+    await recordStep(testInfo, page, { label: 'Kids SI dropdown default', expected: '$50,000 (Free)', actual: tier?.selected });
     expect(tier?.selected, 'AC03: default $50,000 (Free)').toBe('$50,000 (Free)');
-    recordCheck(testInfo, { label: 'Kids SI tier count (16: $50k-$200k in $10k steps)', expected: 16, actual: tier?.options?.length });
+    await recordStep(testInfo, page, { label: 'Kids SI tier count (16: $50k-$200k in $10k steps)', expected: 16, actual: tier?.options?.length });
     expect(tier?.options, 'AC04: 16 tiers').toHaveLength(16);
-    recordCheck(testInfo, { label: 'Kids SI first tier', expected: 'starts $50,000', actual: tier?.options?.[0] });
+    await recordStep(testInfo, page, { label: 'Kids SI first tier', expected: 'starts $50,000', actual: tier?.options?.[0] });
     expect(tier?.options?.[0], 'AC04: first tier $50,000 (Free)').toContain('$50,000');
-    recordCheck(testInfo, { label: 'Kids SI last tier', expected: '$200,000', actual: tier?.options?.at(-1) });
+    await recordStep(testInfo, page, { label: 'Kids SI last tier', expected: '$200,000', actual: tier?.options?.at(-1) });
     expect(tier?.options?.at(-1), 'AC04: last tier $200,000').toBe('$200,000');
     // $10k-step check.
     const nums = (tier?.options || []).map((o) => Number((o.match(/\$([\d,]+)/) || [])[1]?.replace(/,/g, '')));
     const steps = nums.slice(1).map((n, i) => n - nums[i]);
-    recordCheck(testInfo, { label: 'Kids SI tiers step by exactly $10,000', expected: 'all 10000', actual: [...new Set(steps)] });
+    await recordStep(testInfo, page, { label: 'Kids SI tiers step by exactly $10,000', expected: 'all 10000', actual: [...new Set(steps)] });
     expect(steps.every((s) => s === 10000), 'AC04: $10k steps').toBe(true);
   });
 
@@ -97,7 +97,7 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     await setNumKids(quote, 1).catch(() => {});
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Kids with no personal cover raises the companion-required error', expected: 'add at least one Personal Insurance Cover before adding Kids Cover', actual: e });
+    await recordStep(testInfo, page, { label: 'Kids with no personal cover raises the companion-required error', expected: 'add at least one Personal Insurance Cover before adding Kids Cover', actual: e });
     expect(/at least one Personal Insurance Cover before adding Kids Cover/i.test(e), `AC06. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -125,11 +125,11 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     await waitForSettle(quote, 1500);
     // SELF-VERIFY the value landed on the kid DOB input (fill confirmed in probe to update the reactive value).
     const landed = await quote.evaluate((id) => { var el = document.getElementById(id); return el ? el.value : null; }, kidDobId);
-    recordCheck(testInfo, { label: 'Kid DOB value landed (self-verify)', expected: dob, actual: landed });
+    await recordStep(testInfo, page, { label: 'Kid DOB value landed (self-verify)', expected: dob, actual: landed });
     expect(landed, 'AC05 self-verify: kid DOB value landed').toBe(dob);
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Kid ANB > 21 raises the max-age error', expected: 'The maximum Age Next Birthday kids cover is 21', actual: e });
+    await recordStep(testInfo, page, { label: 'Kid ANB > 21 raises the max-age error', expected: 'The maximum Age Next Birthday kids cover is 21', actual: e });
     expect(/maximum Age Next Birthday kids cover is 21/i.test(e), `AC05. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -144,7 +144,7 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
       const sel = [...document.querySelectorAll('select')].find((s) => { const o = [...s.options].map((x) => x.text.trim()); return o.includes('0') && o.includes('9'); });
       return sel ? Math.max(...[...sel.options].map((o) => Number(o.text.trim())).filter((n) => !isNaN(n))) : null;
     });
-    recordCheck(testInfo, { label: 'Maximum selectable number of kids', expected: 9, actual: maxKids });
+    await recordStep(testInfo, page, { label: 'Maximum selectable number of kids', expected: 9, actual: maxKids });
     expect(maxKids, 'BR: max 9 kids').toBe(9);
   });
 
@@ -164,7 +164,7 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     await waitForSettle(quote, 2000);
     const kidsLineCount = await quote.evaluate(() => (document.body.innerText.match(/\bKids\b/g) || []).length);
     const hasKidsPremium = await quote.evaluate(() => /Kids/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'A "Kids" premium line appears in the panel', expected: 'present (single total line)', actual: `Kids mentions=${kidsLineCount}` });
+    await recordStep(testInfo, page, { label: 'A "Kids" premium line appears in the panel', expected: 'present (single total line)', actual: `Kids mentions=${kidsLineCount}` });
     expect(hasKidsPremium, 'AC08/AC09: Kids premium line present').toBe(true);
   });
 });

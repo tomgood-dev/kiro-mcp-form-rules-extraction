@@ -43,7 +43,7 @@ const {
   getCoverCategoryInfo,
   setIcRc,
 } = require('../../helpers/adviser-use-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // ─── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -133,31 +133,31 @@ test.describe('Select Default Commission Category', () => {
 
     await test.step('AC01/AC02/AC03: agency label and default category', async () => {
       const labelText = await getDefaultAgencyLabelText(quote);
-      recordCheck(testInfo, { label: 'AC01: "Default for Agency (" label visible', expected: 'Default for Agency (', actual: labelText });
+      await recordStep(testInfo, page, { label: 'AC01: "Default for Agency (" label visible', expected: 'Default for Agency (', actual: labelText });
       expect(labelText, 'AC01: "Default for Agency (" label visible').toContain('Default for Agency (');
-      recordCheck(testInfo, { label: 'AC01: a real agency number follows', expected: 'matches /Default for Agency \\(\\d/', actual: labelText });
+      await recordStep(testInfo, page, { label: 'AC01: a real agency number follows', expected: 'matches /Default for Agency \\(\\d/', actual: labelText });
       expect(labelText, 'AC01: a real agency number follows').toMatch(/Default for Agency \(\d/);
 
       const defaultAgency = await getDefaultAgencySelectInfo(quote);
       expect(defaultAgency, 'AC02: Default-for-Agency dropdown must exist').not.toBeNull();
-      recordCheck(testInfo, { label: 'AC02: available commission categories', expected: ['Upfront', 'Level 30', 'Spread 20'], actual: defaultAgency.options });
+      await recordStep(testInfo, page, { label: 'AC02: available commission categories', expected: ['Upfront', 'Level 30', 'Spread 20'], actual: defaultAgency.options });
       expect(defaultAgency.options, 'AC02: available commission categories').toEqual(['Upfront', 'Level 30', 'Spread 20']);
       // AC02 negative (story "Nil Commission Option": NOT to be a selectable default). Assert
       // absence explicitly — the happy-path equality above would also catch an extra option, but
       // this makes the "must NOT appear" requirement visible in "What Each Passing Test Checked".
       const hasNil = defaultAgency.options.some((o) => /nil/i.test(o));
-      recordCheck(testInfo, { label: 'AC02 (negative): Nil Commission is NOT a selectable agency default', expected: false, actual: hasNil });
+      await recordStep(testInfo, page, { label: 'AC02 (negative): Nil Commission is NOT a selectable agency default', expected: false, actual: hasNil });
       expect(hasNil, 'AC02: Nil Commission must NOT be a selectable default option').toBe(false);
-      recordCheck(testInfo, { label: 'AC03: first-time default is Upfront', expected: 0, actual: defaultAgency.selectedIndex });
+      await recordStep(testInfo, page, { label: 'AC03: first-time default is Upfront', expected: 0, actual: defaultAgency.selectedIndex });
       expect(defaultAgency.selectedIndex, 'AC03: first-time default is Upfront').toBe(0);
     });
 
     await test.step('AC14: Flexi Rate N/A has a single real IC/RC option, auto-selected', async () => {
       const icRc = await getIcRcSelectInfo(quote);
       expect(icRc, 'AC14: Select IC/RC dropdown must exist at Flexi Rate N/A').not.toBeNull();
-      recordCheck(testInfo, { label: 'AC14: IC/RC options at Flexi Rate N/A', expected: ['Please Select', 'IC-100%, RC-100%'], actual: icRc.options });
+      await recordStep(testInfo, page, { label: 'AC14: IC/RC options at Flexi Rate N/A', expected: ['Please Select', 'IC-100%, RC-100%'], actual: icRc.options });
       expect(icRc.options, 'AC14').toEqual(['Please Select', 'IC-100%, RC-100%']);
-      recordCheck(testInfo, { label: 'AC14: single valid option must auto-select, not stay on "Please Select"', expected: 'not 0', actual: icRc.selectedIndex });
+      await recordStep(testInfo, page, { label: 'AC14: single valid option must auto-select, not stay on "Please Select"', expected: 'not 0', actual: icRc.selectedIndex });
       expect(icRc.selectedIndex, 'AC14: single valid option must auto-select, not stay on "Please Select"').not.toBe(0);
     });
 
@@ -172,11 +172,11 @@ test.describe('Select Default Commission Category', () => {
 
     await test.step('assert exact Nil Commission message and no per-cover rows', async () => {
       const bodyText = await quote.evaluate(() => document.body.innerText);
-      recordCheck(testInfo, { label: 'AC11: exact Nil Comm message', expected: 'Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected', actual: bodyText });
+      await recordStep(testInfo, page, { label: 'AC11: exact Nil Comm message', expected: 'Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected', actual: bodyText });
       expect(bodyText, 'AC11: exact Nil Comm message').toContain('Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected');
 
       const errors = await getVisibleErrors(quote);
-      recordCheck(testInfo, { label: 'AC11: no validation should block at 30% Flexi Rate', expected: false, actual: errors.some((e) => e.includes('Please select IC/RC')) });
+      await recordStep(testInfo, page, { label: 'AC11: no validation should block at 30% Flexi Rate', expected: false, actual: errors.some((e) => e.includes('Please select IC/RC')) });
       expect(errors.some((e) => e.includes('Please select IC/RC')), 'AC11: no validation should block at 30% Flexi Rate').toBe(false);
 
       const defaultAgencyAt30 = await getDefaultAgencySelectInfo(quote);
@@ -210,10 +210,10 @@ test.describe('Select Default Commission Category', () => {
     await test.step('set Flexi Rate = 27.5%', () => setFlexiRate(quote, '27.5%'));
     await openAdviserUse(quote);
     const nilAt275 = await quote.evaluate(() => document.body.innerText.includes('Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected'));
-    recordCheck(testInfo, { label: 'Below boundary (27.5%): Nil-Comm message is ABSENT', expected: false, actual: nilAt275 });
+    await recordStep(testInfo, page, { label: 'Below boundary (27.5%): Nil-Comm message is ABSENT', expected: false, actual: nilAt275 });
     expect(nilAt275, 'AC11 boundary: 27.5% must NOT force Nil Commission').toBe(false);
     const icRcAt275 = await getIcRcSelectInfo(quote);
-    recordCheck(testInfo, { label: 'Below boundary (27.5%): a Select IC/RC row is present (commission kept)', expected: 'present', actual: icRcAt275 ? icRcAt275.options : null });
+    await recordStep(testInfo, page, { label: 'Below boundary (27.5%): a Select IC/RC row is present (commission kept)', expected: 'present', actual: icRcAt275 ? icRcAt275.options : null });
     expect(icRcAt275, 'AC11 boundary: 27.5% keeps a Select IC/RC row').not.toBeNull();
     await closeAdviserUse(quote);
 
@@ -222,10 +222,10 @@ test.describe('Select Default Commission Category', () => {
     await test.step('set Flexi Rate = 30.0%', () => setFlexiRate(quote, '30.0%'));
     await openAdviserUse(quote);
     const nilAt30 = await quote.evaluate(() => document.body.innerText.includes('Commission is Nil as Nil Comm - 30% Discount Flexirate has been selected'));
-    recordCheck(testInfo, { label: 'At boundary (30%): Nil-Comm message is SHOWN', expected: true, actual: nilAt30 });
+    await recordStep(testInfo, page, { label: 'At boundary (30%): Nil-Comm message is SHOWN', expected: true, actual: nilAt30 });
     expect(nilAt30, 'AC11 boundary: 30% forces Nil Commission with the exact message').toBe(true);
     const icRcAt30 = await getIcRcSelectInfo(quote);
-    recordCheck(testInfo, { label: 'At boundary (30%): no Select IC/RC row (Nil applies)', expected: null, actual: icRcAt30 });
+    await recordStep(testInfo, page, { label: 'At boundary (30%): no Select IC/RC row (Nil applies)', expected: null, actual: icRcAt30 });
     expect(icRcAt30, 'AC11 boundary: 30% shows no per-cover IC/RC row').toBeNull();
     await closeAdviserUse(quote);
   });
@@ -247,7 +247,7 @@ test.describe('Select Default Commission Category', () => {
     await openAdviserUse(quote);
     const icRc = await getIcRcSelectInfo(quote);
     expect(icRc, 'AC10: Select IC/RC dropdown present at 20%').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: 20% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-0%, RC-50%', 'IC-100%, RC-0%', 'IC-25%, RC-100%', 'IC-25%, RC-50%', 'IC-75%, RC-0%'], actual: icRc.options });
+    await recordStep(testInfo, page, { label: 'AC10: 20% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-0%, RC-50%', 'IC-100%, RC-0%', 'IC-25%, RC-100%', 'IC-25%, RC-50%', 'IC-75%, RC-0%'], actual: icRc.options });
     expect(icRc.options, 'AC10: 20% Flexi Rate IC/RC pick list').toEqual(['Please Select', 'IC-0%, RC-50%', 'IC-100%, RC-0%', 'IC-25%, RC-100%', 'IC-25%, RC-50%', 'IC-75%, RC-0%']);
     await closeAdviserUse(quote);
   });
@@ -259,7 +259,7 @@ test.describe('Select Default Commission Category', () => {
 
     const updateBefore = await getUpdateButtonInfo(quote);
     expect(updateBefore, 'AC04: Update button must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC04: disabled before any change', expected: true, actual: updateBefore.disabled });
+    await recordStep(testInfo, page, { label: 'AC04: disabled before any change', expected: true, actual: updateBefore.disabled });
     expect(updateBefore.disabled, 'AC04: disabled before any change').toBe(true);
 
     await test.step('change Default for Agency selection', async () => {
@@ -270,7 +270,7 @@ test.describe('Select Default Commission Category', () => {
     });
 
     const updateAfter = await getUpdateButtonInfo(quote);
-    recordCheck(testInfo, { label: 'AC05: enabled after a real change', expected: false, actual: updateAfter.disabled });
+    await recordStep(testInfo, page, { label: 'AC05: enabled after a real change', expected: false, actual: updateAfter.disabled });
     expect(updateAfter.disabled, 'AC05: enabled after a real change').toBe(false);
 
     await test.step('revert selection (never click Update — agency-wide shared setting)', async () => {
@@ -278,7 +278,7 @@ test.describe('Select Default Commission Category', () => {
       await quote.locator(`#${defaultAgency.id}`).selectOption({ label: 'Upfront' });
       await quote.waitForTimeout(500);
       const updateReverted = await getUpdateButtonInfo(quote);
-      recordCheck(testInfo, { label: 'AC04/AC05: disabled again after reverting to the saved value', expected: true, actual: updateReverted.disabled });
+      await recordStep(testInfo, page, { label: 'AC04/AC05: disabled again after reverting to the saved value', expected: true, actual: updateReverted.disabled });
       expect(updateReverted.disabled, 'AC04/AC05: disabled again after reverting to the saved value').toBe(true);
     });
 
@@ -293,14 +293,14 @@ test.describe('Select Default Commission Category', () => {
 
     const icRc = await getIcRcSelectInfo(quote);
     expect(icRc, 'AC10: Select IC/RC dropdown must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: 2.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%'], actual: icRc.options });
+    await recordStep(testInfo, page, { label: 'AC10: 2.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%'], actual: icRc.options });
     expect(icRc.options, 'AC10: 2.5% Flexi Rate IC/RC pick list').toEqual(['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%']);
-    recordCheck(testInfo, { label: 'AC14: default IC/RC for Upfront, single valid option', expected: 'IC-100%, RC-50%', actual: icRc.options[icRc.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC14: default IC/RC for Upfront, single valid option', expected: 'IC-100%, RC-50%', actual: icRc.options[icRc.selectedIndex] });
     expect(icRc.options[icRc.selectedIndex], 'AC14: default IC/RC for Upfront, single valid option').toBe('IC-100%, RC-50%');
 
     const lifeCover = await getLifeCoverCategoryInfo(quote);
     expect(lifeCover, 'AC10: Life Cover commission category row must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: Life Cover default category', expected: 'Upfront', actual: lifeCover.options[lifeCover.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC10: Life Cover default category', expected: 'Upfront', actual: lifeCover.options[lifeCover.selectedIndex] });
     expect(lifeCover.options[lifeCover.selectedIndex], 'AC10: Life Cover default category').toBe('Upfront');
 
     await closeAdviserUse(quote);
@@ -314,11 +314,11 @@ test.describe('Select Default Commission Category', () => {
 
     const icRc = await getIcRcSelectInfo(quote);
     expect(icRc, 'AC10: Select IC/RC dropdown must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: 7.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-100%'], actual: icRc.options });
+    await recordStep(testInfo, page, { label: 'AC10: 7.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-100%'], actual: icRc.options });
     expect(icRc.options, 'AC10: 7.5% Flexi Rate IC/RC pick list').toEqual([
       'Please Select', 'IC-100%, RC-50%', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-100%',
     ]);
-    recordCheck(testInfo, { label: 'AC14: default IC/RC for Upfront (single valid option)', expected: 'IC-75%, RC-100%', actual: icRc.options[icRc.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC14: default IC/RC for Upfront (single valid option)', expected: 'IC-75%, RC-100%', actual: icRc.options[icRc.selectedIndex] });
     expect(icRc.options[icRc.selectedIndex], 'AC14: default IC/RC for Upfront (single valid option)').toBe('IC-75%, RC-100%');
 
     await closeAdviserUse(quote);
@@ -332,16 +332,16 @@ test.describe('Select Default Commission Category', () => {
 
     const icRc = await getIcRcSelectInfo(quote);
     expect(icRc, 'AC10: Select IC/RC dropdown must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: 15% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-0%, RC-100%', 'IC-100%, RC-0%', 'IC-50%, RC-50%'], actual: icRc.options });
+    await recordStep(testInfo, page, { label: 'AC10: 15% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-0%, RC-100%', 'IC-100%, RC-0%', 'IC-50%, RC-50%'], actual: icRc.options });
     expect(icRc.options, 'AC10: 15% Flexi Rate IC/RC pick list').toEqual([
       'Please Select', 'IC-0%, RC-100%', 'IC-100%, RC-0%', 'IC-50%, RC-50%',
     ]);
-    recordCheck(testInfo, { label: 'AC14: default IC/RC for Upfront (single valid option)', expected: 'IC-50%, RC-50%', actual: icRc.options[icRc.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC14: default IC/RC for Upfront (single valid option)', expected: 'IC-50%, RC-50%', actual: icRc.options[icRc.selectedIndex] });
     expect(icRc.options[icRc.selectedIndex], 'AC14: default IC/RC for Upfront (single valid option)').toBe('IC-50%, RC-50%');
 
     const lifeCover = await getLifeCoverCategoryInfo(quote);
     expect(lifeCover, 'AC10: Life Cover commission category row must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: Life Cover default category', expected: 'Upfront', actual: lifeCover.options[lifeCover.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC10: Life Cover default category', expected: 'Upfront', actual: lifeCover.options[lifeCover.selectedIndex] });
     expect(lifeCover.options[lifeCover.selectedIndex], 'AC10: Life Cover default category').toBe('Upfront');
 
     await closeAdviserUse(quote);
@@ -355,11 +355,11 @@ test.describe('Select Default Commission Category', () => {
 
     const icRc = await getIcRcSelectInfo(quote);
     expect(icRc, 'AC10: Select IC/RC dropdown must exist').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC10: 12.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-0%', 'IC-75%, RC-50%'], actual: icRc.options });
+    await recordStep(testInfo, page, { label: 'AC10: 12.5% Flexi Rate IC/RC pick list', expected: ['Please Select', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-0%', 'IC-75%, RC-50%'], actual: icRc.options });
     expect(icRc.options, 'AC10: 12.5% Flexi Rate IC/RC pick list').toEqual([
       'Please Select', 'IC-25%, RC-100%', 'IC-50%, RC-100%', 'IC-75%, RC-0%', 'IC-75%, RC-50%',
     ]);
-    recordCheck(testInfo, { label: 'AC15: must stay on "Please Select" — more than one valid option exists, adviser must choose', expected: 0, actual: icRc.selectedIndex });
+    await recordStep(testInfo, page, { label: 'AC15: must stay on "Please Select" — more than one valid option exists, adviser must choose', expected: 0, actual: icRc.selectedIndex });
     expect(icRc.selectedIndex, 'AC15: must stay on "Please Select" — more than one valid option exists, adviser must choose').toBe(0);
 
     await closeAdviserUse(quote);
@@ -381,7 +381,7 @@ test.describe('Select Default Commission Category', () => {
     await test.step('open Adviser Use', () => openAdviserUse(quote));
     const info = await getUpdateButtonInfo(quote);
     expect(info, 'AC09: Update button present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC09: Update disabled with no change', expected: true, actual: info.disabled });
+    await recordStep(testInfo, page, { label: 'AC09: Update disabled with no change', expected: true, actual: info.disabled });
     expect(info.disabled, 'AC09: Update disabled with no change').toBe(true);
     await closeAdviserUse(quote);
   });
@@ -425,7 +425,7 @@ test.describe('Select Default Commission Category', () => {
     await quote.getByRole('button', { name: 'Apply', exact: true }).click();
     await quote.waitForTimeout(4000);
     const errors = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'AC16: IC/RC validation blocks Apply without a selection', expected: 'Please select IC/RC in Adviser Use for all policies.', actual: errors });
+    await recordStep(testInfo, page, { label: 'AC16: IC/RC validation blocks Apply without a selection', expected: 'Please select IC/RC in Adviser Use for all policies.', actual: errors });
     expect(/Please select IC\/RC in Adviser Use for all policies/i.test(errors), `AC16: expected IC/RC validation. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
@@ -450,7 +450,7 @@ test.describe('Select Default Commission Category', () => {
     const at15 = await getIcRcSelectInfo(quote);
     expect(at25, 'AC19: IC/RC list present at 2.5%').not.toBeNull();
     expect(at15, 'AC19: IC/RC list present at 15%').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC19: IC/RC options refreshed when Flexi Rate changed', expected: 'options at 15% differ from options at 2.5%', actual: { at25: at25.options, at15: at15.options } });
+    await recordStep(testInfo, page, { label: 'AC19: IC/RC options refreshed when Flexi Rate changed', expected: 'options at 15% differ from options at 2.5%', actual: { at25: at25.options, at15: at15.options } });
     expect(JSON.stringify(at25.options) !== JSON.stringify(at15.options), 'AC19: IC/RC options refreshed when Flexi Rate changed').toBe(true);
     await closeAdviserUse(quote);
   });
@@ -490,28 +490,28 @@ test.describe('Select Default Commission Category', () => {
     // BEFORE picking IC/RC
     const icrcBefore = await getIcRcSelectInfo(quote);
     expect(icrcBefore, 'AC13: Select IC/RC present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC13: IC/RC defaults to Please Select', expected: 'Please Select', actual: icrcBefore.options[icrcBefore.selectedIndex] });
+    await recordStep(testInfo, page, { label: 'AC13: IC/RC defaults to Please Select', expected: 'Please Select', actual: icrcBefore.options[icrcBefore.selectedIndex] });
     expect(icrcBefore.options[icrcBefore.selectedIndex], 'AC13: IC/RC defaults to Please Select').toBe('Please Select');
-    recordCheck(testInfo, { label: 'AC13: only Flexi-2.5%-valid IC/RC options shown', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%'], actual: icrcBefore.options });
+    await recordStep(testInfo, page, { label: 'AC13: only Flexi-2.5%-valid IC/RC options shown', expected: ['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%'], actual: icrcBefore.options });
     expect(icrcBefore.options, 'AC13: only Flexi-2.5%-valid IC/RC options shown').toEqual(['Please Select', 'IC-100%, RC-50%', 'IC-75%, RC-100%']);
     const selectAllBefore = await getSelectAllCategoryInfo(quote);
     const lifeBefore = await getCoverCategoryInfo(quote, 'Life Cover');
     expect(selectAllBefore, 'AC13: Select All present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC13: Select All disabled before IC/RC picked', expected: true, actual: selectAllBefore.disabled });
+    await recordStep(testInfo, page, { label: 'AC13: Select All disabled before IC/RC picked', expected: true, actual: selectAllBefore.disabled });
     expect(selectAllBefore.disabled, 'AC13: Select All disabled before IC/RC picked').toBe(true);
     expect(lifeBefore, 'AC13: Life Cover category present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC13: Life Cover category disabled before IC/RC picked', expected: true, actual: lifeBefore.disabled });
+    await recordStep(testInfo, page, { label: 'AC13: Life Cover category disabled before IC/RC picked', expected: true, actual: lifeBefore.disabled });
     expect(lifeBefore.disabled, 'AC13: Life Cover category disabled before IC/RC picked').toBe(true);
 
     // AFTER picking IC-100%, RC-50% → only Upfront becomes available
     await test.step('pick IC-100%, RC-50%', () => setIcRc(quote, 'IC-100%, RC-50%'));
     const selectAllAfter = await getSelectAllCategoryInfo(quote);
     const lifeAfter = await getCoverCategoryInfo(quote, 'Life Cover');
-    recordCheck(testInfo, { label: 'AC13: Select All enabled after IC/RC picked', expected: false, actual: selectAllAfter.disabled });
+    await recordStep(testInfo, page, { label: 'AC13: Select All enabled after IC/RC picked', expected: false, actual: selectAllAfter.disabled });
     expect(selectAllAfter.disabled, 'AC13: Select All enabled after IC/RC picked').toBe(false);
-    recordCheck(testInfo, { label: 'AC13: Life Cover category enabled after IC/RC picked', expected: false, actual: lifeAfter.disabled });
+    await recordStep(testInfo, page, { label: 'AC13: Life Cover category enabled after IC/RC picked', expected: false, actual: lifeAfter.disabled });
     expect(lifeAfter.disabled, 'AC13: Life Cover category enabled after IC/RC picked').toBe(false);
-    recordCheck(testInfo, { label: 'AC13: only the IC/RC-associated category (Upfront) available', expected: ['Please Select', 'Upfront'], actual: lifeAfter.options });
+    await recordStep(testInfo, page, { label: 'AC13: only the IC/RC-associated category (Upfront) available', expected: ['Please Select', 'Upfront'], actual: lifeAfter.options });
     expect(lifeAfter.options, 'AC13: only the IC/RC-associated category (Upfront) available').toEqual(['Please Select', 'Upfront']);
     await closeAdviserUse(quote);
   });
@@ -535,11 +535,11 @@ test.describe('Select Default Commission Category', () => {
     await test.step('pick IC-50%, RC-50% (multi-category split)', () => setIcRc(quote, 'IC-50%, RC-50%'));
     const life = await getCoverCategoryInfo(quote, 'Life Cover');
     expect(life, 'AC17: Life Cover category present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC17: per-benefit category enabled at 15% with IC-50% RC-50%', expected: false, actual: life.disabled });
+    await recordStep(testInfo, page, { label: 'AC17: per-benefit category enabled at 15% with IC-50% RC-50%', expected: false, actual: life.disabled });
     expect(life.disabled, 'AC17: per-benefit category enabled at 15% with IC-50% RC-50%').toBe(false);
     // All three categories must be selectable (order-independent).
     const cats = life.options.filter((o) => o !== 'Please Select').sort();
-    recordCheck(testInfo, { label: 'AC17: all three valid categories selectable per benefit', expected: ['Level 30', 'Spread 20', 'Upfront'], actual: cats });
+    await recordStep(testInfo, page, { label: 'AC17: all three valid categories selectable per benefit', expected: ['Level 30', 'Spread 20', 'Upfront'], actual: cats });
     expect(cats, 'AC17: all three valid categories selectable per benefit').toEqual(['Level 30', 'Spread 20', 'Upfront']);
     await closeAdviserUse(quote);
   });
@@ -581,7 +581,7 @@ test.describe('Select Default Commission Category', () => {
     await quote.getByRole('button', { name: 'Apply', exact: true }).click();
     await quote.waitForTimeout(4000);
     const errors = await getVisibleErrors(quote).then((x) => x.join(' | '));
-    recordCheck(testInfo, { label: 'AC12: IC/RC validation blocks Apply without a selection', expected: 'Please select IC/RC in Adviser Use for all policies.', actual: errors });
+    await recordStep(testInfo, page, { label: 'AC12: IC/RC validation blocks Apply without a selection', expected: 'Please select IC/RC in Adviser Use for all policies.', actual: errors });
     expect(/Please select IC\/RC in Adviser Use for all policies/i.test(errors), `AC12: expected IC/RC validation. Got: ${errors.slice(0, 200)}`).toBe(true);
   });
 
@@ -610,7 +610,7 @@ test.describe('Select Default Commission Category', () => {
       life = await getCoverCategoryInfo(quote, 'Life Cover');
     }
     expect(life, 'AC22: Life Cover category present').not.toBeNull();
-    recordCheck(testInfo, { label: 'AC22: new quote shows the agency default (Upfront) on the cover', expected: 'Upfront', actual: life.selected });
+    await recordStep(testInfo, page, { label: 'AC22: new quote shows the agency default (Upfront) on the cover', expected: 'Upfront', actual: life.selected });
     expect(life.selected, 'AC22: new quote shows the agency default (Upfront) on the cover').toBe('Upfront');
     await closeAdviserUse(quote);
   });
@@ -626,7 +626,7 @@ test.describe('Select Default Commission Category — Save & Persistence', () =>
         const quote = await freshPricedQuote(page);
         await openAdviserUse(quote);
         const before = await currentDefaultAgencyValue(quote);
-        recordCheck(testInfo, { label: 'AC03/ADV-03 baseline: agency default is Upfront', expected: 'Upfront', actual: before });
+        await recordStep(testInfo, page, { label: 'AC03/ADV-03 baseline: agency default is Upfront', expected: 'Upfront', actual: before });
         expect(before, 'AC03/ADV-03 baseline').toBe('Upfront');
       });
 
@@ -640,7 +640,7 @@ test.describe('Select Default Commission Category — Save & Persistence', () =>
           await page.waitForTimeout(500);
         }
       });
-      recordCheck(testInfo, { label: 'AC07: confirmation message appears after clicking Update', expected: 'Your default commission structure setting has been updated.', actual: sawConfirmation });
+      await recordStep(testInfo, page, { label: 'AC07: confirmation message appears after clicking Update', expected: 'Your default commission structure setting has been updated.', actual: sawConfirmation });
       expect(sawConfirmation, 'AC07: expected the confirmation message "Your default commission structure setting has been updated." to appear after clicking Update').toBe(true);
 
       await test.step('AC06/AC08: a brand-new quote in a brand-new login session should see the new default', async () => {
@@ -649,7 +649,7 @@ test.describe('Select Default Commission Category — Save & Persistence', () =>
         const quote = await freshPricedQuote(page);
         await openAdviserUse(quote);
         const afterFreshLogin = await currentDefaultAgencyValue(quote);
-        recordCheck(testInfo, { label: 'AC06/AC08: updated agency default visible from a brand-new login session', expected: 'Level 30', actual: afterFreshLogin });
+        await recordStep(testInfo, page, { label: 'AC06/AC08: updated agency default visible from a brand-new login session', expected: 'Level 30', actual: afterFreshLogin });
         expect(afterFreshLogin, 'AC06/AC08: the updated agency default should be visible from a brand-new login session').toBe('Level 30');
       });
 

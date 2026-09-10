@@ -13,7 +13,7 @@ const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput,
   getBundlingDiscount, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 async function freshQuote(page, personal) {
   const quote = await openNewQuote(page);
@@ -37,7 +37,7 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote, 1500);
     const d = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling Discounts shown with 2 eligible covers', expected: 'non-null discount', actual: d });
+    await recordStep(testInfo, page, { label: 'Bundling Discounts shown with 2 eligible covers', expected: 'non-null discount', actual: d });
     expect(d, 'AC01: Bundling Discounts displayed').not.toBeNull();
   });
 
@@ -54,7 +54,7 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote, 1500);
     const d = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: '2 eligible covers show 15% bundling discount', expected: '15% (2 covers)', actual: d });
+    await recordStep(testInfo, page, { label: '2 eligible covers show 15% bundling discount', expected: '15% (2 covers)', actual: d });
     expect(d, 'AC02: 2 covers -> 15%').toContain('15%');
   });
 
@@ -73,7 +73,7 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     await fillCalcMask(sumInsuredInput(quote, 2), '50000');
     await waitForSettle(quote, 1500);
     const d = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: '3 eligible covers show 20% bundling discount', expected: '20% (3 covers or more)', actual: d });
+    await recordStep(testInfo, page, { label: '3 eligible covers show 20% bundling discount', expected: '20% (3 covers or more)', actual: d });
     expect(d, 'AC03: 3 covers -> 20%').toContain('20%');
   });
 
@@ -92,7 +92,7 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     const d = await getBundlingDiscount(quote);
     // With only ONE eligible cover (Life), no 2-cover bundling discount should apply.
     const countsAsTwo = /2 cover|15%|12\.5%/i.test(d || '');
-    recordCheck(testInfo, { label: 'TPD below its $100k minimum does not count toward bundling', expected: 'no 2-cover discount (None)', actual: d });
+    await recordStep(testInfo, page, { label: 'TPD below its $100k minimum does not count toward bundling', expected: 'no 2-cover discount (None)', actual: d });
     expect(countsAsTwo, 'AC02 boundary: below-min TPD excluded from bundling').toBe(false);
   });
 
@@ -109,13 +109,13 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote, 1500);
     const before = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling discount present with 2 covers (before removal)', expected: 'a % discount', actual: before });
+    await recordStep(testInfo, page, { label: 'Bundling discount present with 2 covers (before removal)', expected: 'a % discount', actual: before });
     expect(/%|cover/i.test(before || ''), 'AC04: discount present with 2 covers').toBe(true);
     // Remove the TPD cover (last Remove link).
     await quote.evaluate(() => { const l=[...document.querySelectorAll('a')].filter((a)=>a.innerText.trim()==='Remove'); if(l.length) l[l.length-1].click(); });
     await waitForSettle(quote, 1500);
     const after = await getBundlingDiscount(quote);
-    recordCheck(testInfo, { label: 'Bundling discount recalculated to None after removing the 2nd cover', expected: 'None', actual: after });
+    await recordStep(testInfo, page, { label: 'Bundling discount recalculated to None after removing the 2nd cover', expected: 'None', actual: after });
     expect(/None/i.test(after || '') || after === null, 'AC04: discount removed/None after removal').toBe(true);
   });
 
@@ -132,14 +132,14 @@ test.describe('Discounts & Bundling Discounts (ACB-2296)', () => {
     await fillCalcMask(sumInsuredInput(quote, 1), '200000');
     await waitForSettle(quote, 1500);
     const inBanner = await quote.evaluate(() => /Bundling Discounts/i.test(document.body.innerText));
-    recordCheck(testInfo, { label: 'Bundling Discounts shown in the details banner', expected: true, actual: inBanner });
+    await recordStep(testInfo, page, { label: 'Bundling Discounts shown in the details banner', expected: true, actual: inBanner });
     expect(inBanner, 'AC05: Bundling Discounts in banner').toBe(true);
     const hay = await quote.evaluate(() => {
       const body = document.body.innerText || '';
       const titles = [...document.querySelectorAll('[title]')].map((e) => e.getAttribute('title') || '').join(' \n ');
       return body + ' \n ' + titles;
     });
-    recordCheck(testInfo, { label: 'Bundling tooltip explains multiple-cover-type discount', expected: 'contains "cover types" + 15%/20% (or the app 12.5%/17.5% variant)', actual: /taking out multiple cover types/i.test(hay) });
+    await recordStep(testInfo, page, { label: 'Bundling tooltip explains multiple-cover-type discount', expected: 'contains "cover types" + 15%/20% (or the app 12.5%/17.5% variant)', actual: /taking out multiple cover types/i.test(hay) });
     expect(hay, 'AC06: bundling tooltip present').toMatch(/multiple cover types/i);
   });
 });

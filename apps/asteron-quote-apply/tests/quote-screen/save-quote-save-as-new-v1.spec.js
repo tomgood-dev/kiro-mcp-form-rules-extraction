@@ -16,7 +16,7 @@ const {
   openNewQuote, setMinimumPersonalDetails, activateCover, fillCalcMask, sumInsuredInput,
   getVisibleErrors, waitForSettle,
 } = require('../../helpers/quote-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 const errText = (page) => getVisibleErrors(page).then((x) => x.join(' | '));
 // Click a quote-screen action button by its exact first-line label.
@@ -63,8 +63,8 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     const actions = await quote.evaluate(() => [].slice.call(document.querySelectorAll('button, a')).map(function (e) { return (e.innerText || '').trim().split('\n')[0]; }));
     const hasSave = actions.includes('Save');
     const hasSaveAsNew = actions.includes('Save as New');
-    recordCheck(testInfo, { label: '"Save" action present', expected: true, actual: hasSave });
-    recordCheck(testInfo, { label: '"Save as New" action present', expected: true, actual: hasSaveAsNew });
+    await recordStep(testInfo, page, { label: '"Save" action present', expected: true, actual: hasSave });
+    await recordStep(testInfo, page, { label: '"Save as New" action present', expected: true, actual: hasSaveAsNew });
     expect(hasSave, 'AC01: Save present').toBe(true);
     expect(hasSaveAsNew, 'AC01: Save as New present').toBe(true);
   });
@@ -79,11 +79,11 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     await clickAction(quote, 'Save');
     await waitForSettle(quote, 2000);
     const p = await readRefPopup(quote);
-    recordCheck(testInfo, { label: 'Reference field present', expected: true, actual: p.hasRef });
-    recordCheck(testInfo, { label: 'Reference field label', expected: 'Add Reference (Optional)', actual: p.refLabel });
-    recordCheck(testInfo, { label: 'Reference field max length', expected: 30, actual: p.maxLength });
-    recordCheck(testInfo, { label: 'Popup has Save button', expected: true, actual: p.hasSave });
-    recordCheck(testInfo, { label: 'Popup has Cancel button', expected: true, actual: p.hasCancel });
+    await recordStep(testInfo, page, { label: 'Reference field present', expected: true, actual: p.hasRef });
+    await recordStep(testInfo, page, { label: 'Reference field label', expected: 'Add Reference (Optional)', actual: p.refLabel });
+    await recordStep(testInfo, page, { label: 'Reference field max length', expected: 30, actual: p.maxLength });
+    await recordStep(testInfo, page, { label: 'Popup has Save button', expected: true, actual: p.hasSave });
+    await recordStep(testInfo, page, { label: 'Popup has Cancel button', expected: true, actual: p.hasCancel });
     expect(p.hasRef, 'AC02: reference field').toBe(true);
     expect(p.refLabel, 'AC02: reference label').toMatch(/Add Reference \(Optional\)/i);
     expect(p.maxLength, 'AC02: 30-char limit').toBe(30);
@@ -105,8 +105,8 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     await waitForSettle(quote, 1500);
     const stillPopup = (await readRefPopup(quote)).hasRef;
     const onQuote = await quote.evaluate(() => !!document.querySelector('input[id*="Input_AgeNextBirthday"]'));
-    recordCheck(testInfo, { label: 'Reference popup closed after Cancel', expected: false, actual: stillPopup });
-    recordCheck(testInfo, { label: 'Still on the quote screen after Cancel', expected: true, actual: onQuote });
+    await recordStep(testInfo, page, { label: 'Reference popup closed after Cancel', expected: false, actual: stillPopup });
+    await recordStep(testInfo, page, { label: 'Still on the quote screen after Cancel', expected: true, actual: onQuote });
     expect(stillPopup, 'AC04: popup closed').toBe(false);
     expect(onQuote, 'AC04: back on quote screen').toBe(true);
   });
@@ -121,9 +121,9 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     await clickAction(quote, 'Save as New');
     await waitForSettle(quote, 2000);
     const p = await readRefPopup(quote);
-    recordCheck(testInfo, { label: 'Save-as-New reference field present', expected: true, actual: p.hasRef });
-    recordCheck(testInfo, { label: 'Save-as-New reference max length', expected: 30, actual: p.maxLength });
-    recordCheck(testInfo, { label: 'Save-as-New popup has Save + Cancel', expected: 'Save & Cancel', actual: `${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
+    await recordStep(testInfo, page, { label: 'Save-as-New reference field present', expected: true, actual: p.hasRef });
+    await recordStep(testInfo, page, { label: 'Save-as-New reference max length', expected: 30, actual: p.maxLength });
+    await recordStep(testInfo, page, { label: 'Save-as-New popup has Save + Cancel', expected: 'Save & Cancel', actual: `${p.hasSave ? 'Save' : ''} ${p.hasCancel ? 'Cancel' : ''}`.trim() });
     expect(p.hasRef, 'AC05: reference field').toBe(true);
     expect(p.maxLength, 'AC05: 30-char limit').toBe(30);
     expect(p.hasSave && p.hasCancel, 'AC05: Save + Cancel').toBe(true);
@@ -149,8 +149,8 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
         hasDontSave: btns.some(function (t) { return /don'?t\s*save/i.test(t); }),
       };
     });
-    recordCheck(testInfo, { label: 'Close-confirm message shown', expected: 'Would you like to save the quote before exiting?', actual: confirm.msg ? 'shown' : 'absent' });
-    recordCheck(testInfo, { label: 'Confirm popup buttons', expected: 'Cancel / Save / Don\'t Save', actual: `${confirm.hasCancel ? 'Cancel ' : ''}${confirm.hasSave ? 'Save ' : ''}${confirm.hasDontSave ? "Don't Save" : ''}`.trim() });
+    await recordStep(testInfo, page, { label: 'Close-confirm message shown', expected: 'Would you like to save the quote before exiting?', actual: confirm.msg ? 'shown' : 'absent' });
+    await recordStep(testInfo, page, { label: 'Confirm popup buttons', expected: 'Cancel / Save / Don\'t Save', actual: `${confirm.hasCancel ? 'Cancel ' : ''}${confirm.hasSave ? 'Save ' : ''}${confirm.hasDontSave ? "Don't Save" : ''}`.trim() });
     expect(confirm.msg, 'AC09: confirm message').toBe(true);
     expect(confirm.hasCancel && confirm.hasSave && confirm.hasDontSave, 'AC09: three buttons').toBe(true);
   });
@@ -167,7 +167,7 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     await quote.evaluate(() => { var b = [].slice.call(document.querySelectorAll('button, a')).filter(function (x) { return x.offsetParent !== null && /^cancel$/i.test((x.innerText || '').trim().split('\n')[0]); })[0]; if (b) b.click(); });
     await waitForSettle(quote, 1800);
     const onQuote = await quote.evaluate(() => !!document.querySelector('input[id*="Input_AgeNextBirthday"]'));
-    recordCheck(testInfo, { label: 'Still on quote screen after Cancel on close-confirm', expected: true, actual: onQuote });
+    await recordStep(testInfo, page, { label: 'Still on quote screen after Cancel on close-confirm', expected: true, actual: onQuote });
     expect(onQuote, 'AC10: back on quote screen').toBe(true);
   });
 
@@ -192,7 +192,7 @@ test.describe('Save Quote / Save As New (ACB-2241)', () => {
     await waitForSettle(quote, 2500);
     const e = await errText(quote);
     const bodyHasMsg = await quote.evaluate(() => /Enter minimum details to save quote/i.test(document.body.innerText || ''));
-    recordCheck(testInfo, { label: 'Min-details save gate message (story: "Enter minimum details to save quote")', expected: 'Enter minimum details to save quote', actual: (bodyHasMsg ? 'shown' : 'NOT shown — app shows inline "Required field!" instead') + (e ? ` | errors: ${e.slice(0, 120)}` : '') });
+    await recordStep(testInfo, page, { label: 'Min-details save gate message (story: "Enter minimum details to save quote")', expected: 'Enter minimum details to save quote', actual: (bodyHasMsg ? 'shown' : 'NOT shown — app shows inline "Required field!" instead') + (e ? ` | errors: ${e.slice(0, 120)}` : '') });
     expect(bodyHasMsg || /Enter minimum details to save quote/i.test(e), `AC12. Got: ${(e || 'no message').slice(0, 200)}`).toBe(true);
   });
 

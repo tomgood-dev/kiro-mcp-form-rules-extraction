@@ -36,7 +36,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 // ── Business/Farmers Disability select readers (fingerprinted by option set) ──
 async function getClassification(page) {
@@ -165,12 +165,12 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     const quote = await freshBiz(page);
     for (const cover of ['Business Disability', 'Farmers Disability', 'Business Expenses']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business Disability cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business Disability cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Business Disability');
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Business Disability selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Business Disability selectable (Monthly Benefit field appears)', expected: true, actual: siVisible });
     expect(siVisible, 'AC02: Business Disability selectable').toBe(true);
   });
 
@@ -192,38 +192,38 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await waitForSettle(quote, 1500);
 
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Business Disability Monthly Benefit field present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Business Disability Monthly Benefit field present', expected: true, actual: siVisible });
     expect(siVisible, 'AC03: Monthly Benefit field').toBe(true);
 
     const cls = await getClassification(quote);
-    recordCheck(testInfo, { label: 'Classification default', expected: 'Employed', actual: cls && cls.selected });
+    await recordStep(testInfo, page, { label: 'Classification default', expected: 'Employed', actual: cls && cls.selected });
     expect(cls && cls.selected, 'AC03: Classification default Employed').toBe('Employed');
-    recordCheck(testInfo, { label: 'Classification options (as a set)', expected: 'Employed, Equity Owner (up to 75%), Equity Owner (>75%)', actual: cls && cls.options.join(', ') });
+    await recordStep(testInfo, page, { label: 'Classification options (as a set)', expected: 'Employed, Equity Owner (up to 75%), Equity Owner (>75%)', actual: cls && cls.options.join(', ') });
     expect(new Set(cls ? cls.options : []), 'AC03: Classification options').toEqual(new Set(['Employed', 'Equity Owner (up to 75%)', 'Equity Owner (>75%)']));
 
     const bp = await getBenefitPeriod(quote);
-    recordCheck(testInfo, { label: 'Benefit Period default', expected: '6 Months', actual: bp && bp.selected });
+    await recordStep(testInfo, page, { label: 'Benefit Period default', expected: '6 Months', actual: bp && bp.selected });
     expect(bp && bp.selected, 'AC03: Benefit Period default').toBe('6 Months');
-    recordCheck(testInfo, { label: 'Benefit Period options', expected: '6/9/12/18/24 Months', actual: bp && bp.options.join('/') });
+    await recordStep(testInfo, page, { label: 'Benefit Period options', expected: '6/9/12/18/24 Months', actual: bp && bp.options.join('/') });
     expect(bp && bp.options, 'AC03: Benefit Period options').toEqual(['6 Months', '9 Months', '12 Months', '18 Months', '24 Months']);
 
     const wp = await getWaitingPeriod(quote);
-    recordCheck(testInfo, { label: 'Waiting Period default', expected: '30 Days', actual: wp && wp.selected });
+    await recordStep(testInfo, page, { label: 'Waiting Period default', expected: '30 Days', actual: wp && wp.selected });
     expect(wp && wp.selected, 'AC03: Waiting Period default').toBe('30 Days');
-    recordCheck(testInfo, { label: 'Waiting Period options', expected: '30/60/90 Days', actual: wp && wp.options.join('/') });
+    await recordStep(testInfo, page, { label: 'Waiting Period options', expected: '30/60/90 Days', actual: wp && wp.options.join('/') });
     expect(wp && wp.options, 'AC03: Waiting Period options').toEqual(['30 Days', '60 Days', '90 Days']);
 
     const ps = await getPremiumStructure(quote);
-    recordCheck(testInfo, { label: 'Premium Structure pre-populated Stepped', expected: 'Stepped', actual: ps && ps.selected });
+    await recordStep(testInfo, page, { label: 'Premium Structure pre-populated Stepped', expected: 'Stepped', actual: ps && ps.selected });
     expect(ps && ps.selected, 'AC03: Premium Structure Stepped').toBe('Stepped');
 
     const bs = await getCheckbox(quote, /Business Security/);
-    recordCheck(testInfo, { label: 'Business Security present + default unticked', expected: 'present, unchecked', actual: JSON.stringify(bs) });
+    await recordStep(testInfo, page, { label: 'Business Security present + default unticked', expected: 'present, unchecked', actual: JSON.stringify(bs) });
     expect(bs, 'AC03: Business Security present').not.toBeNull();
     expect(bs && bs.checked, 'AC03: Business Security default unticked').toBe(false);
 
     const pd = await getCheckbox(quote, /Partial Disablement/);
-    recordCheck(testInfo, { label: 'Partial Disablement present + default ticked', expected: 'present, checked', actual: JSON.stringify(pd) });
+    await recordStep(testInfo, page, { label: 'Partial Disablement present + default ticked', expected: 'present, checked', actual: JSON.stringify(pd) });
     expect(pd, 'AC03: Partial Disablement present').not.toBeNull();
     expect(pd && pd.checked, 'AC03: Partial Disablement default ticked').toBe(true);
   });
@@ -243,33 +243,33 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await waitForSettle(quote, 1500);
 
     const siVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Farmers Disability Monthly Benefit field present', expected: true, actual: siVisible });
+    await recordStep(testInfo, page, { label: 'Farmers Disability Monthly Benefit field present', expected: true, actual: siVisible });
     expect(siVisible, 'AC04: Monthly Benefit field').toBe(true);
 
     const bp = await getBenefitPeriod(quote);
-    recordCheck(testInfo, { label: 'Farmers Benefit Period default', expected: '6 Months', actual: bp && bp.selected });
+    await recordStep(testInfo, page, { label: 'Farmers Benefit Period default', expected: '6 Months', actual: bp && bp.selected });
     expect(bp && bp.selected, 'AC04: Benefit Period default').toBe('6 Months');
-    recordCheck(testInfo, { label: 'Farmers Benefit Period options (adds 5 Years)', expected: '6/9/12/18/24 Months/5 Years', actual: bp && bp.options.join('/') });
+    await recordStep(testInfo, page, { label: 'Farmers Benefit Period options (adds 5 Years)', expected: '6/9/12/18/24 Months/5 Years', actual: bp && bp.options.join('/') });
     expect(bp && bp.options, 'AC04: Benefit Period options incl. 5 Years').toEqual(['6 Months', '9 Months', '12 Months', '18 Months', '24 Months', '5 Years']);
 
     const wp = await getWaitingPeriod(quote);
-    recordCheck(testInfo, { label: 'Farmers Waiting Period default + options', expected: '30 Days; 30/60/90 Days', actual: `${wp && wp.selected}; ${wp && wp.options.join('/')}` });
+    await recordStep(testInfo, page, { label: 'Farmers Waiting Period default + options', expected: '30 Days; 30/60/90 Days', actual: `${wp && wp.selected}; ${wp && wp.options.join('/')}` });
     expect(wp && wp.selected, 'AC04: Waiting default').toBe('30 Days');
     expect(wp && wp.options, 'AC04: Waiting options').toEqual(['30 Days', '60 Days', '90 Days']);
 
     const ps = await getPremiumStructure(quote);
-    recordCheck(testInfo, { label: 'Farmers Premium Structure Stepped', expected: 'Stepped', actual: ps && ps.selected });
+    await recordStep(testInfo, page, { label: 'Farmers Premium Structure Stepped', expected: 'Stepped', actual: ps && ps.selected });
     expect(ps && ps.selected, 'AC04: Premium Structure Stepped').toBe('Stepped');
 
     const bs = await getCheckbox(quote, /Business Security/);
     const pd = await getCheckbox(quote, /Partial Disablement/);
-    recordCheck(testInfo, { label: 'Farmers Business Security(unticked) + Partial Disablement(ticked)', expected: 'BS unchecked, PD checked', actual: `BS=${JSON.stringify(bs)} PD=${JSON.stringify(pd)}` });
+    await recordStep(testInfo, page, { label: 'Farmers Business Security(unticked) + Partial Disablement(ticked)', expected: 'BS unchecked, PD checked', actual: `BS=${JSON.stringify(bs)} PD=${JSON.stringify(pd)}` });
     expect(bs && bs.checked, 'AC04: Business Security default unticked').toBe(false);
     expect(pd && pd.checked, 'AC04: Partial Disablement default ticked').toBe(true);
 
     // AC05: NO classification dropdown present anywhere
     const cls = await getClassification(quote);
-    recordCheck(testInfo, { label: 'AC05: Classification dropdown ABSENT for Farmers', expected: null, actual: cls });
+    await recordStep(testInfo, page, { label: 'AC05: Classification dropdown ABSENT for Farmers', expected: null, actual: cls });
     expect(cls, 'AC05: no Classification for Farmers').toBeNull();
   });
 
@@ -285,7 +285,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote, 1500);
     const disabled = await quote.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim().split('\n')[0] === 'Business Disability'); return b ? b.disabled : null; });
-    recordCheck(testInfo, { label: '+Business Disability disabled after adding one', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Business Disability disabled after adding one', expected: true, actual: disabled });
     expect(disabled, 'AC09: +Business Disability disabled').toBe(true);
   });
 
@@ -301,7 +301,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await waitForSettle(quote, 1500);
     const disabled = await quote.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim().split('\n')[0] === 'Farmers Disability'); return b ? b.disabled : null; });
-    recordCheck(testInfo, { label: '+Farmers Disability disabled after adding one', expected: true, actual: disabled });
+    await recordStep(testInfo, page, { label: '+Farmers Disability disabled after adding one', expected: true, actual: disabled });
     expect(disabled, 'AC10: +Farmers Disability disabled').toBe(true);
   });
 
@@ -317,12 +317,12 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     await waitForSettle(quote, 1200);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Business Disability benefit field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'Business Disability benefit field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC11: added').toBe(true);
     await quote.evaluate(() => { const l = [...document.querySelectorAll('a')].filter((a) => a.innerText.trim() === 'Remove'); if (l.length) l[l.length - 1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'Business Disability benefit field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'Business Disability benefit field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC11: removed').toBe(0);
   });
 
@@ -344,7 +344,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
       return body + ' \n ' + titles;
     });
     const has = /future increases without medical underwriting\.\s*Financial justification for increases required\./i.test(hay);
-    recordCheck(testInfo, { label: 'Business Security tooltip text present', expected: true, actual: has });
+    await recordStep(testInfo, page, { label: 'Business Security tooltip text present', expected: true, actual: has });
     expect(has, 'AC12: Business Security tooltip present').toBe(true);
   });
 
@@ -359,7 +359,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Business Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business Disability ANB 62 max-age error', expected: 'The maximum Age Next Birthday for Business Disability is 61', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Disability ANB 62 max-age error', expected: 'The maximum Age Next Birthday for Business Disability is 61', actual: e });
     expect(/The maximum Age Next Birthday for Business Disability is 61/i.test(e), `AC13. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -374,7 +374,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
     const has = /The maximum Age Next Birthday for Business Disability is 61/i.test(e);
-    recordCheck(testInfo, { label: 'Business Disability at ANB 61 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Business Disability at ANB 61 accepted', expected: false, actual: has });
     expect(has, `AC13 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -389,7 +389,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers Disability ANB 62 max-age error', expected: 'The maximum Age Next Birthday for Farmers Disability is 61', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers Disability ANB 62 max-age error', expected: 'The maximum Age Next Birthday for Farmers Disability is 61', actual: e });
     expect(/The maximum Age Next Birthday for Farmers Disability is 61/i.test(e), `AC14. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -404,7 +404,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
     const has = /The maximum Age Next Birthday for Farmers Disability is 61/i.test(e);
-    recordCheck(testInfo, { label: 'Farmers Disability at ANB 61 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Farmers Disability at ANB 61 accepted', expected: false, actual: has });
     expect(has, `AC14 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -419,7 +419,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Business Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '50001'); // 50001 > 50000 cap
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business Disability > $50,000 cap error', expected: 'The maximum allowable monthly benefit for Business Disability Cover is $50,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Disability > $50,000 cap error', expected: 'The maximum allowable monthly benefit for Business Disability Cover is $50,000', actual: e });
     expect(/The maximum allowable monthly benefit for Business Disability Cover is \$50,000/i.test(e), `AC15. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -434,7 +434,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '50000'); // exactly at $50,000 cap
     const e = await applyAndErrors(quote);
     const has = /The maximum allowable monthly benefit for Business Disability Cover is \$50,000/i.test(e);
-    recordCheck(testInfo, { label: 'Business Disability exactly $50,000 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Business Disability exactly $50,000 accepted', expected: false, actual: has });
     expect(has, `AC15 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -450,7 +450,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '10001'); // 10001 > 10000 cap
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers Disability > $10,000 cap error', expected: 'The maximum allowable Farmers Disability monthly benefit for the selected occupation is $10,000', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers Disability > $10,000 cap error', expected: 'The maximum allowable Farmers Disability monthly benefit for the selected occupation is $10,000', actual: e });
     expect(/The maximum allowable Farmers Disability monthly benefit for the selected occupation is \$10,000/i.test(e), `AC16. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -465,7 +465,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '10000'); // exactly at $10,000 cap
     const e = await applyAndErrors(quote);
     const has = /The maximum allowable Farmers Disability monthly benefit for the selected occupation is \$10,000/i.test(e);
-    recordCheck(testInfo, { label: 'Farmers Disability exactly $10,000 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Farmers Disability exactly $10,000 accepted', expected: false, actual: has });
     expect(has, `AC16 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -480,7 +480,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers + Employed employment-status error', expected: "Eligibility for Farmers Disability Cover requires an Employment Status of either 'Self Employed' or 'Employed by own company'", actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers + Employed employment-status error', expected: "Eligibility for Farmers Disability Cover requires an Employment Status of either 'Self Employed' or 'Employed by own company'", actual: e });
     expect(/Eligibility for Farmers Disability Cover requires an Employment Status of either 'Self Employed' or 'Employed by own company'/i.test(e), `AC07. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -494,7 +494,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers + IC occupation → not-available error', expected: 'Farmers Disability Cover is not available for the selected occupation', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers + IC occupation → not-available error', expected: 'Farmers Disability Cover is not available for the selected occupation', actual: e });
     expect(/Farmers Disability Cover is not available for the selected occupation/i.test(e), `AC06. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -508,9 +508,9 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers + U occupation → not-eligible', expected: 'This occupation is not eligible', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers + U occupation → not-eligible', expected: 'This occupation is not eligible', actual: e });
     expect(/This occupation is not eligible/i.test(e), `AC08 (not eligible). Got: ${e.slice(0, 250)}`).toBe(true);
-    recordCheck(testInfo, { label: 'Farmers + U occupation → not available for occupation', expected: 'Farmers Disability Cover is not available for the selected occupation', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers + U occupation → not available for occupation', expected: 'Farmers Disability Cover is not available for the selected occupation', actual: e });
     expect(/Farmers Disability Cover is not available for the selected occupation/i.test(e), `AC08 (not available). Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -525,7 +525,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
     const hasOcc = /not available for the selected occupation/i.test(e) || /This occupation is not eligible/i.test(e);
-    recordCheck(testInfo, { label: 'Eligible occupation C → no occupation/eligibility error', expected: false, actual: hasOcc });
+    await recordStep(testInfo, page, { label: 'Eligible occupation C → no occupation/eligibility error', expected: false, actual: hasOcc });
     expect(hasOcc, `AC06/08 contrast. Got: ${e.slice(0, 250)}`).toBe(false);
   });
 
@@ -541,7 +541,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     const n = await quote.locator('input[id*="SumInsured"]').count();
     await fillCalcMask(sumInsuredInput(quote, n - 1), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers + Workability conjunction error', expected: 'Farmers Disability Cover is not available to be taken in conjunction with Workability Cover', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers + Workability conjunction error', expected: 'Farmers Disability Cover is not available to be taken in conjunction with Workability Cover', actual: e });
     expect(/Farmers Disability Cover is not available to be taken in conjunction with Workability Cover/i.test(e), `AC17. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -557,7 +557,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     const n = await quote.locator('input[id*="SumInsured"]').count();
     await fillCalcMask(sumInsuredInput(quote, n - 1), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business + Workability conjunction error', expected: 'Business Disability Cover is not available to be taken in conjunction with Workability Cover', actual: e });
+    await recordStep(testInfo, page, { label: 'Business + Workability conjunction error', expected: 'Business Disability Cover is not available to be taken in conjunction with Workability Cover', actual: e });
     expect(/Business Disability Cover is not available to be taken in conjunction with Workability Cover/i.test(e), `AC18. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -577,7 +577,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 1), '5000');
     await waitForSettle(quote, 1500);
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business + Farmers mutual-exclusivity error', expected: 'Business Disability Cover and Farmers Disability Cover are not available to be taken in conjunction with each other', actual: e });
+    await recordStep(testInfo, page, { label: 'Business + Farmers mutual-exclusivity error', expected: 'Business Disability Cover and Farmers Disability Cover are not available to be taken in conjunction with each other', actual: e });
     expect(/Business Disability Cover and Farmers Disability Cover are not available to be taken in conjunction with each other/i.test(e), `AC19/20. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 
@@ -593,7 +593,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     await tickBusinessSecurity(quote);
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business Security ANB 57 max-age error', expected: 'The maximum Age Next Birthday for Business Security is 56', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Security ANB 57 max-age error', expected: 'The maximum Age Next Birthday for Business Security is 56', actual: e });
     expect(/The maximum Age Next Birthday for Business Security is 56/i.test(e), `AC22. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -609,7 +609,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await tickBusinessSecurity(quote);
     const e = await applyAndErrors(quote);
     const has = /The maximum Age Next Birthday for Business Security is 56/i.test(e);
-    recordCheck(testInfo, { label: 'Business Security at ANB 56 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Business Security at ANB 56 accepted', expected: false, actual: has });
     expect(has, `AC22 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -624,7 +624,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Business Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Business Disability ANB 16 min-age error', expected: 'The minimum Age Next Birthday for Business Disability is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Business Disability ANB 16 min-age error', expected: 'The minimum Age Next Birthday for Business Disability is 17', actual: e });
     expect(/The minimum Age Next Birthday for Business Disability is 17/i.test(e), `AC23. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -639,7 +639,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
     const has = /The minimum Age Next Birthday for Business Disability is 17/i.test(e);
-    recordCheck(testInfo, { label: 'Business Disability at ANB 17 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Business Disability at ANB 17 accepted', expected: false, actual: has });
     expect(has, `AC23 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -654,7 +654,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await activateCover(quote, 'Farmers Disability');
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'Farmers Disability ANB 16 min-age error', expected: 'The minimum Age Next Birthday for Farmers Disability is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'Farmers Disability ANB 16 min-age error', expected: 'The minimum Age Next Birthday for Farmers Disability is 17', actual: e });
     expect(/The minimum Age Next Birthday for Farmers Disability is 17/i.test(e), `AC24. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -669,7 +669,7 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     const e = await applyAndErrors(quote);
     const has = /The minimum Age Next Birthday for Farmers Disability is 17/i.test(e);
-    recordCheck(testInfo, { label: 'Farmers Disability at ANB 17 accepted', expected: false, actual: has });
+    await recordStep(testInfo, page, { label: 'Farmers Disability at ANB 17 accepted', expected: false, actual: has });
     expect(has, `AC24 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -693,11 +693,11 @@ test.describe('Business Policy Disability Cover — Business/Farmers Disability 
       return { classification: cls ? cls.options[cls.selectedIndex].text.trim() : null, benefitPeriod: bp ? bp.options[bp.selectedIndex].text.trim() : null };
     });
     // Self-verify the interaction genuinely took effect before trusting the Apply result.
-    recordCheck(testInfo, { label: 'AC25 preconditions landed (Classification + Benefit Period)', expected: 'Equity Owner (>75%) + 18 Months', actual: `${state.classification} + ${state.benefitPeriod}` });
+    await recordStep(testInfo, page, { label: 'AC25 preconditions landed (Classification + Benefit Period)', expected: 'Equity Owner (>75%) + 18 Months', actual: `${state.classification} + ${state.benefitPeriod}` });
     expect(state.classification, 'AC25 precondition: classification set').toBe('Equity Owner (>75%)');
     expect(state.benefitPeriod, 'AC25 precondition: benefit period set').toBe('18 Months');
     const e = await applyAndErrors(quote);
-    recordCheck(testInfo, { label: 'AC25 invalid classification/benefit-period combo error', expected: 'The available benefit periods for Business Disability Cover with the selected classification are 6, 9 or 12 months', actual: e });
+    await recordStep(testInfo, page, { label: 'AC25 invalid classification/benefit-period combo error', expected: 'The available benefit periods for Business Disability Cover with the selected classification are 6, 9 or 12 months', actual: e });
     expect(/The available benefit periods for Business Disability Cover with the selected classification are 6, 9 or 12 months/i.test(e), `AC25. Got: ${e.slice(0, 250)}`).toBe(true);
   });
 

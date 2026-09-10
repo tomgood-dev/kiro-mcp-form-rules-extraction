@@ -36,7 +36,7 @@ const {
   waitForSettle,
 } = require('../../helpers/quote-helpers');
 const { clickButtonByLabel } = require('../../helpers/outsystems-generic-helpers');
-const { recordCheck } = require('../../../../tools/artifact-helpers');
+const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers');
 
 const errText = (page) => getVisibleErrors(page).then((x) => x.join(' | '));
 
@@ -90,13 +90,13 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     const quote = await freshBizQuote(page);
     for (const cover of ['Business Disability', 'Farmers Disability', 'Business Expenses']) {
       const present = await coverButtonExists(quote, cover);
-      recordCheck(testInfo, { label: `Business disability cover "${cover}" is available`, expected: true, actual: present });
+      await recordStep(testInfo, page, { label: `Business disability cover "${cover}" is available`, expected: true, actual: present });
       expect(present, `AC02: "${cover}" present`).toBe(true);
     }
     await activateCover(quote, 'Business Expenses');
     await waitForSettle(quote, 1200);
     const benefitVisible = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Business Expenses is selectable (Monthly Benefit field appears)', expected: true, actual: benefitVisible });
+    await recordStep(testInfo, page, { label: 'Business Expenses is selectable (Monthly Benefit field appears)', expected: true, actual: benefitVisible });
     expect(benefitVisible, 'AC02: Business Expenses selectable').toBe(true);
   });
 
@@ -115,27 +115,27 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await waitForSettle(quote, 1200);
 
     const benefitEditable = await sumInsuredInput(quote, 0).isEditable();
-    recordCheck(testInfo, { label: 'Monthly Benefit field allows entry (editable)', expected: true, actual: benefitEditable });
+    await recordStep(testInfo, page, { label: 'Monthly Benefit field allows entry (editable)', expected: true, actual: benefitEditable });
     expect(benefitEditable, 'AC03.1: Monthly Benefit editable').toBe(true);
 
     const struct = await readDisabilitySelect(quote, 'structure');
-    recordCheck(testInfo, { label: 'Premium Structure default is Stepped', expected: 'Stepped', actual: struct && struct.selected });
+    await recordStep(testInfo, page, { label: 'Premium Structure default is Stepped', expected: 'Stepped', actual: struct && struct.selected });
     expect(struct && struct.selected, 'AC03.2: Premium Structure default Stepped').toBe('Stepped');
-    recordCheck(testInfo, { label: 'Premium Structure is greyed out / disabled (non-editable)', expected: true, actual: struct && struct.disabled });
+    await recordStep(testInfo, page, { label: 'Premium Structure is greyed out / disabled (non-editable)', expected: true, actual: struct && struct.disabled });
     expect(struct && struct.disabled, 'AC03.2: Premium Structure disabled').toBe(true);
 
     const bp = await readDisabilitySelect(quote, 'benefitPeriod');
-    recordCheck(testInfo, { label: 'Benefit Period pre-populated "1 Year"', expected: '1 Year', actual: bp && bp.selected });
+    await recordStep(testInfo, page, { label: 'Benefit Period pre-populated "1 Year"', expected: '1 Year', actual: bp && bp.selected });
     expect(bp && bp.selected, 'AC03.3: Benefit Period 1 Year').toBe('1 Year');
-    recordCheck(testInfo, { label: 'Benefit Period is greyed out / disabled (non-editable)', expected: true, actual: bp && bp.disabled });
+    await recordStep(testInfo, page, { label: 'Benefit Period is greyed out / disabled (non-editable)', expected: true, actual: bp && bp.disabled });
     expect(bp && bp.disabled, 'AC03.3: Benefit Period disabled').toBe(true);
 
     const wp = await readDisabilitySelect(quote, 'waitingPeriod');
-    recordCheck(testInfo, { label: 'Waiting Period default is 14 Days', expected: '14 Days', actual: wp && wp.selected });
+    await recordStep(testInfo, page, { label: 'Waiting Period default is 14 Days', expected: '14 Days', actual: wp && wp.selected });
     expect(wp && wp.selected, 'AC03.4: Waiting Period default 14 Days').toBe('14 Days');
-    recordCheck(testInfo, { label: 'Waiting Period options', expected: '14 Days/30 Days/60 Days/90 Days', actual: wp && wp.options.join('/') });
+    await recordStep(testInfo, page, { label: 'Waiting Period options', expected: '14 Days/30 Days/60 Days/90 Days', actual: wp && wp.options.join('/') });
     expect(wp && wp.options, 'AC03.4: Waiting Period options').toEqual(['14 Days', '30 Days', '60 Days', '90 Days']);
-    recordCheck(testInfo, { label: 'Waiting Period is editable (not greyed out)', expected: false, actual: wp && wp.disabled });
+    await recordStep(testInfo, page, { label: 'Waiting Period is editable (not greyed out)', expected: false, actual: wp && wp.disabled });
     expect(wp && wp.disabled, 'AC03.4: Waiting Period editable').toBe(false);
   });
 
@@ -157,7 +157,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Unsuitable occupation (S) raises the not-available error', expected: 'Business Expenses Cover is not available for the selected occupation.', actual: e });
+    await recordStep(testInfo, page, { label: 'Unsuitable occupation (S) raises the not-available error', expected: 'Business Expenses Cover is not available for the selected occupation.', actual: e });
     expect(/Business Expenses Cover is not available for the selected occupation\./i.test(e), `AC04. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -177,7 +177,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /not available for the selected occupation/i.test(e);
-    recordCheck(testInfo, { label: 'Suitable occupation (AA) does NOT raise the occupation error', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'Suitable occupation (AA) does NOT raise the occupation error', expected: false, actual: hasErr });
     expect(hasErr, `AC04 contrast. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -195,7 +195,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await fillCalcMask(sumInsuredInput(quote, 0), '16667'); // 16666 cap + 1 = over
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Monthly benefit $16,667 (>cap) raises the $16,666 max error', expected: 'The maximum allowable Business Expenses monthly benefit for the selected occupation is $16,666', actual: e });
+    await recordStep(testInfo, page, { label: 'Monthly benefit $16,667 (>cap) raises the $16,666 max error', expected: 'The maximum allowable Business Expenses monthly benefit for the selected occupation is $16,666', actual: e });
     expect(/maximum allowable Business Expenses monthly benefit for the selected occupation is \$?16,?666/i.test(e), `AC05. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -214,7 +214,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await clickApply(quote);
     const e = await errText(quote);
     const hasCap = /maximum allowable Business Expenses monthly benefit for the selected occupation is \$?16,?666/i.test(e);
-    recordCheck(testInfo, { label: 'Monthly benefit exactly $16,666 accepted (no cap error)', expected: false, actual: hasCap });
+    await recordStep(testInfo, page, { label: 'Monthly benefit exactly $16,666 accepted (no cap error)', expected: false, actual: hasCap });
     expect(hasCap, `AC05 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -229,12 +229,12 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     ].join('\n') });
     const quote = await freshBizQuote(page);
     const before = await beButtonState(quote);
-    recordCheck(testInfo, { label: '+Business Expenses enabled before any activation', expected: false, actual: before && before.disabled });
+    await recordStep(testInfo, page, { label: '+Business Expenses enabled before any activation', expected: false, actual: before && before.disabled });
     expect(before && before.disabled, 'AC06: enabled before').toBe(false);
     await activateCover(quote, 'Business Expenses');
     await waitForSettle(quote, 1200);
     const after = await beButtonState(quote);
-    recordCheck(testInfo, { label: '+Business Expenses disabled after 1 activation (max 1)', expected: true, actual: after && after.disabled });
+    await recordStep(testInfo, page, { label: '+Business Expenses disabled after 1 activation (max 1)', expected: true, actual: after && after.disabled });
     expect(after && after.disabled, 'AC06: disabled after 1').toBe(true);
   });
 
@@ -252,12 +252,12 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await fillCalcMask(sumInsuredInput(quote, 0), '5000');
     await waitForSettle(quote, 1000);
     const presentAfterAdd = await sumInsuredInput(quote, 0).isVisible();
-    recordCheck(testInfo, { label: 'Business Expenses benefit field present after adding', expected: true, actual: presentAfterAdd });
+    await recordStep(testInfo, page, { label: 'Business Expenses benefit field present after adding', expected: true, actual: presentAfterAdd });
     expect(presentAfterAdd, 'AC07: added').toBe(true);
     await quote.evaluate(() => { const l = [...document.querySelectorAll('a')].filter((a) => a.innerText.trim() === 'Remove'); if (l.length) l[l.length - 1].click(); });
     await waitForSettle(quote, 1500);
     const countAfterRemove = await quote.locator('input[id*="SumInsured"]').count();
-    recordCheck(testInfo, { label: 'Business Expenses benefit field removed after removing', expected: 0, actual: countAfterRemove });
+    await recordStep(testInfo, page, { label: 'Business Expenses benefit field removed after removing', expected: 0, actual: countAfterRemove });
     expect(countAfterRemove, 'AC07: removed').toBe(0);
   });
 
@@ -275,7 +275,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'ANB 62 (>61) raises the max-age error', expected: 'The maximum Age Next Birthday for Business Expenses ... is 61', actual: e });
+    await recordStep(testInfo, page, { label: 'ANB 62 (>61) raises the max-age error', expected: 'The maximum Age Next Birthday for Business Expenses ... is 61', actual: e });
     expect(/maximum Age Next Birthday for Business Expenses.*is 61/i.test(e), `AC08. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -294,7 +294,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /maximum Age Next Birthday for Business Expenses.*is 61/i.test(e);
-    recordCheck(testInfo, { label: 'ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'ANB 61 accepted (no max-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC08 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -312,7 +312,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await commitWithoutTyping(sumInsuredInput(quote, 0));
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'ANB 16 (<17) raises the min-age error', expected: 'The minimum Age Next Birthday for Business Expenses ... is 17', actual: e });
+    await recordStep(testInfo, page, { label: 'ANB 16 (<17) raises the min-age error', expected: 'The minimum Age Next Birthday for Business Expenses ... is 17', actual: e });
     expect(/minimum Age Next Birthday for Business Expenses.*is 17/i.test(e), `AC09. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 
@@ -331,7 +331,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await clickApply(quote);
     const e = await errText(quote);
     const hasErr = /minimum Age Next Birthday for Business Expenses.*is 17/i.test(e);
-    recordCheck(testInfo, { label: 'ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
+    await recordStep(testInfo, page, { label: 'ANB 17 accepted (no min-age error)', expected: false, actual: hasErr });
     expect(hasErr, `AC09 boundary. Got: ${e.slice(0, 200)}`).toBe(false);
   });
 
@@ -358,7 +358,7 @@ test.describe('Business Policy Disability Cover — Business Expenses (ACB-2695)
     await fillCalcMask(sumInsuredInput(quote, count - 1), '5000');
     await clickApply(quote);
     const e = await errText(quote);
-    recordCheck(testInfo, { label: 'Workability + Business Expenses raises the conjunction error', expected: 'Business Expenses Cover is not available to be taken in conjunction with Workability Cover', actual: e });
+    await recordStep(testInfo, page, { label: 'Workability + Business Expenses raises the conjunction error', expected: 'Business Expenses Cover is not available to be taken in conjunction with Workability Cover', actual: e });
     expect(/Business Expenses Cover is not available to be taken in conjunction with Workability Cover/i.test(e), `AC10. Got: ${e.slice(0, 200)}`).toBe(true);
   });
 });
