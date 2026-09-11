@@ -38,3 +38,6 @@ reference/**/*.csv
 
 # Excel lock/temp files
 ~$*.xlsx
+
+# Local-only daily working checklist — never commit/upload.
+TODAY-TODO.md
