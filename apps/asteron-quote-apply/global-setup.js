@@ -66,10 +66,12 @@ async function attemptLogin(email, password, attempt) {
 }
 
 module.exports = async function globalSetup() {
-  const email = process.env.ASTERON_LOGIN_EMAIL;
-  const password = process.env.ASTERON_LOGIN_PASSWORD;
+  // Generic env names (LOGIN_EMAIL/LOGIN_PASSWORD) are preferred so the framework is app-agnostic;
+  // the ASTERON_-prefixed names are still honoured as back-compat aliases.
+  const email = process.env.LOGIN_EMAIL || process.env.ASTERON_LOGIN_EMAIL;
+  const password = process.env.LOGIN_PASSWORD || process.env.ASTERON_LOGIN_PASSWORD;
   if (!email || !password) {
-    throw new Error('Set ASTERON_LOGIN_EMAIL and ASTERON_LOGIN_PASSWORD (see .env.example) before running tests.');
+    throw new Error('Set LOGIN_EMAIL and LOGIN_PASSWORD (see .env.example) before running tests.');
   }
 
   // Staggered launch: parallel streams set a per-stream STARTUP_STAGGER_MS (e.g. 0 / 8000 / 16000)

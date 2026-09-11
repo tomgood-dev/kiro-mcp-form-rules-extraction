@@ -1,8 +1,18 @@
-// Load .env from project root or app-specific folder
+// Load .env from project root, apps/, or the target app folder
 const fs = require('fs');
 const path = require('path');
+
+// The target app is resolvable via TARGET_APP so this framework works with ANY app under apps/.
+// Defaults to the bundled worked example for back-compat.
+const TARGET_APP = process.env.TARGET_APP || 'asteron-quote-apply';
+const APP_DIR = path.join(__dirname, 'apps', TARGET_APP);
+
 (function loadEnv() {
-  const paths = [path.join(__dirname, '.env'), path.join(__dirname, 'apps', '.env')];
+  const paths = [
+    path.join(__dirname, '.env'),
+    path.join(__dirname, 'apps', '.env'),
+    path.join(APP_DIR, '.env'),
+  ];
   for (const envPath of paths) {
     if (!fs.existsSync(envPath)) continue;
     for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
@@ -27,7 +37,7 @@ module.exports = defineConfig({
   // test-runs/ (derived from the spec file's path, see tools/artifact-helpers.js
   // findAppRoot()) and deletes this. Not under any one app since testDir spans all apps.
   outputDir: pendingDir(RUN_TIMESTAMP),
-  globalSetup: require.resolve('./apps/asteron-quote-apply/global-setup.js'),
+  globalSetup: require.resolve(path.join(APP_DIR, 'global-setup.js')),
   timeout: 240_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
@@ -35,11 +45,11 @@ module.exports = defineConfig({
   reporter: [
     ['list'],
     ['./tools/reporters/run-folder-reporter.js', { runTimestamp: RUN_TIMESTAMP }],
-    ['html', { open: 'never', outputFolder: './apps/asteron-quote-apply/playwright-report' }],
+    ['html', { open: 'never', outputFolder: path.join(APP_DIR, 'playwright-report') }],
   ],
   use: {
-    baseURL: 'https://outsystems-dev.asteronlife.co.nz',
-    storageState: './apps/asteron-quote-apply/.auth/' + (process.env.AUTH_STATE_FILENAME || 'state.json'),
+    baseURL: process.env.BASE_URL,
+    storageState: path.join(APP_DIR, '.auth', process.env.AUTH_STATE_FILENAME || 'state.json'),
     headless: process.env.HEADLESS !== 'false',
     actionTimeout: 15_000,
     trace: 'retain-on-failure',

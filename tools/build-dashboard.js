@@ -19,7 +19,14 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO_ROOT = path.join(__dirname, '..');
-const DEFAULT_APP = path.join(REPO_ROOT, 'apps', 'asteron-quote-apply');
+const TARGET_APP = process.env.TARGET_APP || 'asteron-quote-apply';
+const DEFAULT_APP = path.join(REPO_ROOT, 'apps', TARGET_APP);
+
+// Turn an apps/<folder> name into a readable title, e.g. "asteron-quote-apply" -> "Asteron Quote Apply".
+function appTitle(appRoot) {
+  const name = path.basename(appRoot);
+  return name.split(/[-_]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 
 function parseReportHeader(reportPath, specSlug, runTimestamp) {
   // Fallback for runs that only have report.md (pre-summary.json). Parse the header lines.
@@ -115,9 +122,9 @@ function aggregate(specs) {
   }), { specs: 0, tests: 0, passed: 0, failed: 0, skipped: 0, specsWithFailures: 0 });
 }
 
-function buildMarkdown(specs, agg, generatedAt) {
+function buildMarkdown(specs, agg, generatedAt, title) {
   const L = [];
-  L.push('# Asteron Quote & Apply — Test Suite Dashboard', '');
+  L.push(`# ${title} — Test Suite Dashboard`, '');
   L.push(`_Auto-generated ${generatedAt}. Shows the latest run of each spec. Rebuilds automatically after every test run._`, '');
   L.push('## Suite totals', '');
   L.push('| Specs | Tests | ✅ Passed | ❌ Failed | ⏭️ Skipped | Specs with failures |');
@@ -150,7 +157,7 @@ function buildMarkdown(specs, agg, generatedAt) {
   return L.join('\n');
 }
 
-function buildHtml(specs, agg, generatedAt) {
+function buildHtml(specs, agg, generatedAt, title) {
   const rows = specs.map((s) => {
     const state = s.failed > 0 ? 'fail' : (s.passed > 0 ? 'pass' : 'skip');
     const result = s.failed > 0 ? 'FAIL' : (s.passed > 0 ? 'PASS' : 'ALL SKIPPED');
@@ -161,7 +168,7 @@ function buildHtml(specs, agg, generatedAt) {
   const data = JSON.stringify(rows);
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Asteron Q&A — Test Suite Dashboard</title>
+<title>${title} — Test Suite Dashboard</title>
 <style>
   :root { --pass:#1a7f37; --fail:#cf222e; --skip:#9a6700; --bg:#f6f8fa; --border:#d0d7de; }
   body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; color:#1f2328; background:#fff; }
@@ -188,7 +195,7 @@ function buildHtml(specs, agg, generatedAt) {
 </style></head>
 <body>
 <header>
-  <h1>Asteron Quote &amp; Apply — Test Suite Dashboard</h1>
+  <h1>${title} — Test Suite Dashboard</h1>
   <div class="sub">Latest run of each spec · generated ${generatedAt} · rebuilds automatically after every test run</div>
 </header>
 <div class="cards">
@@ -256,8 +263,9 @@ function buildDashboard(appRoot = DEFAULT_APP) {
   const generatedAt = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
   const runsRoot = path.join(appRoot, 'test-runs');
   fs.mkdirSync(runsRoot, { recursive: true });
-  fs.writeFileSync(path.join(runsRoot, 'DASHBOARD.md'), buildMarkdown(specs, agg, generatedAt));
-  fs.writeFileSync(path.join(runsRoot, 'dashboard.html'), buildHtml(specs, agg, generatedAt));
+  const title = appTitle(appRoot);
+  fs.writeFileSync(path.join(runsRoot, 'DASHBOARD.md'), buildMarkdown(specs, agg, generatedAt, title));
+  fs.writeFileSync(path.join(runsRoot, 'dashboard.html'), buildHtml(specs, agg, generatedAt, title));
   return { specs: specs.length, agg, runsRoot };
 }
 

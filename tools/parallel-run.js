@@ -31,7 +31,8 @@ const { spawn } = require('child_process');
 const os = require('os');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const APP_DIR = path.join(REPO_ROOT, 'apps', 'asteron-quote-apply');
+const TARGET_APP = process.env.TARGET_APP || 'asteron-quote-apply';
+const APP_DIR = path.join(REPO_ROOT, 'apps', TARGET_APP);
 const ACCOUNTS_FILE = path.join(APP_DIR, 'accounts.json');
 const SPEC_DIR = path.join(APP_DIR, 'tests', 'quote-screen');
 const CLI = path.join('node_modules', '@playwright', 'test', 'cli.js');
@@ -110,17 +111,20 @@ function runStream({ specName, account, staggerMs, timeoutS, grep, baseUrl }) {
     // Use forward slashes for the spec path: Playwright's test-file filter matches against the
     // POSIX-style path relative to testDir, so backslashes (from path.join on Windows) match nothing
     // ("No tests found"). This is the one place we must NOT use path.join.
-    const specArg = `apps/asteron-quote-apply/tests/quote-screen/${specName}`;
+    const specArg = `apps/${TARGET_APP}/tests/quote-screen/${specName}`;
     const args = [CLI, 'test', specArg, '--workers=1', `--config=${CONFIG}`];
     if (grep) { args.push('-g', grep); }
     const env = Object.assign({}, process.env, {
-      ASTERON_LOGIN_EMAIL: account.email,
+      TARGET_APP,
+      LOGIN_EMAIL: account.email,
+      LOGIN_PASSWORD: account.password,
+      ASTERON_LOGIN_EMAIL: account.email,      // back-compat alias
       ASTERON_LOGIN_PASSWORD: account.password,
       AUTH_STATE_FILENAME: `state-qa-${account.id}.json`,
       KILL_STRAY_EDGE: 'false',              // CRITICAL: never let a stream taskkill sibling browsers
       STARTUP_STAGGER_MS: String(staggerMs),
       NODE_TLS_REJECT_UNAUTHORIZED: '0',
-      BASE_URL: baseUrl || process.env.BASE_URL || 'https://outsystems-qa.asteronlife.co.nz',
+      BASE_URL: baseUrl || process.env.BASE_URL,
     });
     const started = Date.now();
     const child = spawn('node', args, { cwd: REPO_ROOT, env });
@@ -180,7 +184,7 @@ async function runQueue(specs, accounts, opts, baseUrl) {
   const failures = results.filter((r) => r.code !== 0 || r.killed);
   process.stdout.write(`\n  ${results.length} stream(s), ${failures.length} non-clean, wall time ${totalMin} min\n`);
   process.stdout.write(`  host memory at end: ${memEnd.usedGB}/${memEnd.totalGB} GB used, ${memEnd.freeGB} free\n`);
-  process.stdout.write(`  per-stream logs: apps/asteron-quote-apply/probes/prun-<spec>-<acct>.txt\n`);
+  process.stdout.write(`  per-stream logs: apps/${TARGET_APP}/probes/prun-<spec>-<acct>.txt\n`);
   process.stdout.write(`======================================================\n`);
   return failures.length === 0 ? 0 : 1;
 }
