@@ -1,0 +1,24 @@
+{
+  "steps": [
+    {
+      "valueLanded": {
+        "value": "25",
+        "valid": true,
+        "validationMessage": ""
+      }
+    },
+    {
+      "ac07_over20_errSurfaces": {
+        "hasMaxInBody": false,
+        "maxLine": "",
+        "feedbackEls": [
+          "Remove"
+        ]
+      }
+    },
+    {
+      "ac07_2001_value": "20.01",
+      "ac07_2001_hasMax": false
+    }
+  ]
+}

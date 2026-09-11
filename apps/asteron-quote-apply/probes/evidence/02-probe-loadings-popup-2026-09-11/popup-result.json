@@ -1,0 +1,88 @@
+{
+  "steps": [
+    {
+      "modalInputs": [
+        {
+          "id": "b25-b16-Input_PerMille",
+          "type": "number",
+          "disabled": false,
+          "value": "",
+          "placeholder": "",
+          "row": ""
+        },
+        {
+          "id": "b25-b16-Input_PerMille_TPD",
+          "type": "number",
+          "disabled": true,
+          "value": "",
+          "placeholder": "",
+          "row": ""
+        },
+        {
+          "id": "b25-b16-Input_PerMille_Trauma",
+          "type": "number",
+          "disabled": false,
+          "value": "",
+          "placeholder": "",
+          "row": ""
+        },
+        {
+          "id": "b25-b16-Input_PerMille_Cancer",
+          "type": "number",
+          "disabled": false,
+          "value": "",
+          "placeholder": "",
+          "row": ""
+        },
+        {
+          "id": "b25-b16-Input_PerMille_Disability",
+          "type": "number",
+          "disabled": true,
+          "value": "",
+          "placeholder": "",
+          "row": ""
+        }
+      ]
+    },
+    {
+      "modalButtons": [
+        {
+          "text": "",
+          "cls": "",
+          "id": ""
+        },
+        {
+          "text": "Cancel",
+          "cls": "btn",
+          "id": ""
+        },
+        {
+          "text": "OK",
+          "cls": "btn btn-primary",
+          "id": ""
+        }
+      ]
+    },
+    {
+      "ac07_over20_value": "25",
+      "ac07_error": {
+        "matched": "",
+        "hasMax": false
+      }
+    },
+    {
+      "ac07_at20_value": "20",
+      "ac07_boundary_error": {
+        "matched": "",
+        "hasMax": false
+      }
+    },
+    {
+      "ac04_ac08_after_ok": {
+        "loadingsApplied": true,
+        "appliedLine": "Loadings have been applied",
+        "backOnQuote": true
+      }
+    }
+  ]
+}

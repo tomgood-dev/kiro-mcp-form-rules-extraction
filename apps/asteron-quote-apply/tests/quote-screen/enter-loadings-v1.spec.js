@@ -58,24 +58,62 @@ test.describe('Enter Loadings (ACB-3599)', () => {
       '', 'Expected: at least one disabled Per Mille input exists (TPD/Disability greyed).',
     ].join('\n') });
     const quote = await openLoadings(page);
-    const disabledCount = await quote.evaluate(() => [...document.querySelectorAll('input[type="number"],input[type="text"]')].filter((i) => i.disabled).length);
-    await recordStep(testInfo, page, { label: 'A disabled Per Mille input exists (TPD/Disability greyed)', expected: '>= 1 disabled input', actual: disabledCount });
-    expect(disabledCount, 'AC06: TPD/Disability per-mille greyed').toBeGreaterThan(0);
+    const states = await quote.evaluate(() => {
+      function st(idFrag) { const e = [...document.querySelectorAll('input')].find((i) => (i.id || '').indexOf(idFrag) !== -1); return e ? e.disabled : null; }
+      return {
+        tpd: st('Input_PerMille_TPD'),
+        trauma: st('Input_PerMille_Trauma'),
+        cancer: st('Input_PerMille_Cancer'),
+        disability: st('Input_PerMille_Disability'),
+      };
+    });
+    // TPD + Disability must be greyed (disabled); Life/Trauma/Cancer must be enabled.
+    await recordStep(testInfo, page, { label: 'TPD Per Mille field is greyed/disabled', expected: true, actual: states.tpd });
+    await recordStep(testInfo, page, { label: 'Disability Per Mille field is greyed/disabled', expected: true, actual: states.disability });
+    await recordStep(testInfo, page, { label: 'Trauma Per Mille field is enabled (per-mille allowed)', expected: false, actual: states.trauma });
+    await recordStep(testInfo, page, { label: 'Cancer Per Mille field is enabled (per-mille allowed)', expected: false, actual: states.cancer });
+    expect(states.tpd, 'AC06: TPD per-mille greyed/disabled').toBe(true);
+    expect(states.disability, 'AC06: Disability per-mille greyed/disabled').toBe(true);
+    expect(states.trauma, 'AC06: Trauma per-mille NOT disabled (per-mille allowed for lump-sum risk)').toBe(false);
+    expect(states.cancer, 'AC06: Cancer per-mille NOT disabled (per-mille allowed for lump-sum risk)').toBe(false);
   });
 
   test('AC07: Per Mille loading > $20.00 → maximum-per-mille error (+ $20.00 boundary accept)', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
-      'AC07: per mille > 20.00 → "The maximum per mille loading is $20.00"; at exactly $20.00 → accepted.',
+      'AC07: Given the user is on the Loadings screen, When the user enters a loading value greater',
+      'than 20.00 per mille, Then the system must display an error message',
+      '"The maximum per mille loading is $20.00".',
       '',
-      'Deferred: reaching the per-mille INPUT inside the Loadings pop-up reliably needs a focused DOM',
-      'probe. First attempts (raw .value=, then "first enabled input" heuristic) failed — the heuristic',
-      'grabbed a Quote-screen field (b15-Input_FirstName) sitting behind the pop-up backdrop rather than',
-      'the pop-up\'s per-mille field, and raw .value= did not trigger validation. The pop-up\'s per-mille',
-      'field must be located by its own row/label scoping (probe-<loadings>.js) before this is encoded —',
-      'not blind-tweaked further. The pop-up presence, the percentage dropdown, TPD/Disability greyed',
-      'per-mille, Cancel, tooltips, and the empty-quote error ARE verified (AC01/02/03/06/09/10).',
+      'Steps to reproduce:',
+      '1. New quote, price Life $200k, open Loadings.',
+      '2. Enter 25 in the Life Per Mille field (id b25-b16-Input_PerMille); blur.',
+      '3. Check for the max-per-mille error.',
+      '4. Enter exactly 20 (at the boundary); blur; confirm NO error (accepted).',
+      '',
+      'Expected: 25 → "The maximum per mille loading is $20.00"; 20 → accepted (no error).',
+      'Actual (current, probe 2026-09-11): entering 25 (and 20.01) leaves the value accepted',
+      '(validity.valid=true) with NO max-per-mille error shown anywhere — the cap is not enforced/',
+      'displayed on QA. AC07 therefore FAILS at the over-limit assertion (expected-fail until fixed).',
+      'The $20.00 at-boundary accept passes. Discrepancy Evidence Record: enter-loadings/page.md.',
     ].join('\n') });
-    test.fixme(true, 'Deferred: the Loadings pop-up per-mille input needs a focused DOM probe to target the correct field (the generic "first enabled input" grabbed a Quote-screen field behind the pop-up backdrop; raw .value= did not fire validation). Encode AC07 (>$20 error + $20 boundary accept) once the per-mille field is pinned by its row/label scoping — held per the "verify before writing up / do not blind-tweak" rule.');
+    const quote = await openLoadings(page);
+    const PM = '[id="b25-b16-Input_PerMille"]';
+    // Over-limit: enter 25 → spec expects the max-per-mille error.
+    await quote.locator(PM).fill('25');
+    await quote.locator(PM).blur().catch(() => {});
+    await waitForSettle(quote, 1500);
+    const overErr = await quote.evaluate(() => /maximum per mille loading is \$20\.00/i.test(document.body.innerText || ''));
+    await recordStep(testInfo, page, { label: 'Per mille 25 (> $20) shows "The maximum per mille loading is $20.00"', expected: true, actual: overErr });
+
+    // At-boundary: exactly 20.00 → accepted, no error (this side passes).
+    await quote.locator(PM).fill('20');
+    await quote.locator(PM).blur().catch(() => {});
+    await waitForSettle(quote, 1500);
+    const atBoundaryErr = await quote.evaluate(() => /maximum per mille/i.test(document.body.innerText || ''));
+    await recordStep(testInfo, page, { label: 'Per mille exactly $20.00 is accepted (no max error)', expected: false, actual: atBoundaryErr });
+    // Assert the accept side first (known-good), then the over-limit side (expected-fail per spec).
+    expect(atBoundaryErr, 'AC07: $20.00 at-boundary accepted (no max-per-mille error)').toBe(false);
+    expect(overErr, 'AC07: >$20.00 must show "The maximum per mille loading is $20.00" (currently NOT enforced — expected-fail until app fixed)').toBe(true);
   });
 
   test('AC03: Cancel / X returns to the Quote screen', async ({ page }, testInfo) => {
@@ -126,9 +164,55 @@ test.describe('Enter Loadings (ACB-3599)', () => {
     expect(hasError, `AC10: unpriced-quote Loadings error. Got errs="${errs}" msg="${msg.slice(0,120)}"`).toBe(true);
   });
 
-  // ── Deferred ACs (documented) ──
-  test('AC04/AC05/AC08: OK saves loadings + "Loadings have been applied" message + premium reflects loadings (per life)', async ({ page }, testInfo) => {
-    test.info().annotations.push({ type: 'acceptance-criteria', description: ['AC04: OK saves + redirects to Quote + premium reflects updated loadings + "Loadings have been applied" under Total Yearly Premium. AC05: the down-arrow opens the Underwriting Guide in a new window. AC08: "Loadings have been applied" per life it was applied to.'].join('\n') });
-    test.fixme(true, 'Deferred: AC04/AC08 assert the premium CHANGES by the loading and the "Loadings have been applied" confirmation after OK — the premium delta is a pricing-engine value (not hand-verifiable), and reliably reading the post-OK confirmation needs the exact OK-button selector + a stable post-apply signal (the probe found "Cancel" but not a plain "OK" — the apply control needs pinning down). AC05 opens an EXTERNAL Underwriting Guide URL in a new window (leaves the app). Encode in a focused follow-up: pin the OK/apply control, assert the "Loadings have been applied" text (behavioural, not the $ value), and capture the window.open target for AC05.');
+  // ── AC04/AC08: OK saves loadings, redirects to Quote, "Loadings have been applied" shown ──
+  test('AC04/AC08: OK applies loadings → back on Quote + "Loadings have been applied" message', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC04: Given the user is on the Loadings screen, When the user clicks OK, Then the selected',
+      'loading values are saved, the user is redirected to the Quote screen, the premium details',
+      'reflect the updated loadings, AND "Loadings have been applied" is displayed under Total Yearly',
+      'Premium.',
+      'AC08: "Loadings have been applied" is displayed on the quote page for each life a loading was',
+      'applied to.',
+      '',
+      'Steps to reproduce:',
+      '1. New quote, price Life $200k, open Loadings.',
+      '2. Enter a valid per mille loading (10) on Life; click OK.',
+      '3. Confirm redirect back to the Quote screen and the "Loadings have been applied" message.',
+      '',
+      'Expected: back on Quote screen; "Loadings have been applied" message present.',
+      'Note: the exact premium DELTA is a pricing-engine value (not hand-verifiable) — this test',
+      'asserts the behavioural AC04/AC08 outcome (save + redirect + confirmation message), which was',
+      'confirmed live 2026-09-11.',
+    ].join('\n') });
+    const quote = await openLoadings(page);
+    const PM = '[id="b25-b16-Input_PerMille"]';
+    await quote.locator(PM).fill('10');
+    await quote.locator(PM).blur().catch(() => {});
+    await waitForSettle(quote, 1000);
+    await quote.getByRole('button', { name: 'OK', exact: true }).click({ timeout: 10000 });
+    await waitForSettle(quote, 2500);
+    const backOnQuote = await sumInsuredInput(quote, 0).isVisible().catch(() => false);
+    await recordStep(testInfo, page, { label: 'After OK, redirected back to the Quote screen', expected: true, actual: backOnQuote });
+    expect(backOnQuote, 'AC04: OK redirects back to the Quote screen').toBe(true);
+    const applied = await quote.evaluate(() => /loadings have been applied/i.test(document.body.innerText || ''));
+    await recordStep(testInfo, page, { label: '"Loadings have been applied" message shown on the Quote screen', expected: true, actual: applied });
+    expect(applied, 'AC04/AC08: "Loadings have been applied" message displayed').toBe(true);
+  });
+
+  // ── Deferred: AC05 only (genuine external navigation) ──
+  test('AC05: down-arrow opens the Underwriting Guide in a new browser window', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC05: When the user clicks the Down arrow icon next to Loadings, Then the system opens the',
+      'Underwriting Guide document in a NEW browser window',
+      '(https://asteron-advisernet.int.corp.sun/adviser/document?title=Underwriting%20Guide).',
+      '',
+      'Deferred (genuine external navigation): this AC opens an EXTERNAL corporate URL',
+      '(asteron-advisernet.int.corp.sun) in a new window — it leaves the app and targets an intranet',
+      'host that is not reachable/whitelisted from the test network. Probe 2026-09-11 mapped the',
+      'Loadings modal (per-mille inputs, Cancel/OK) but the down-arrow launches an out-of-app window',
+      'to an intranet doc host. Reachable only if that host is whitelisted; otherwise assert via a',
+      'window.open target capture (popup event URL) rather than loading the external page.',
+    ].join('\n') });
+    test.fixme(true, 'Deferred (genuine external navigation): AC05 opens the Underwriting Guide at the intranet host asteron-advisernet.int.corp.sun in a NEW window — it leaves the app and targets a host not reachable/whitelisted from the test network. Probe 2026-09-11 confirmed the Loadings modal DOM (per-mille inputs + Cancel/OK) but this control launches an out-of-app window. Encode as a window.open target-URL capture (popup event) if/when that assertion approach is wired, or once the intranet host is whitelisted.');
   });
 });

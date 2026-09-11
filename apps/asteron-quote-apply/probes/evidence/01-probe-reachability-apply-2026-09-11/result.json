@@ -1,0 +1,15 @@
+{
+  "baseUrl": "https://outsystems-qa.asteronlife.co.nz",
+  "acct": "a",
+  "steps": [
+    "Navigating to dashboard https://outsystems-qa.asteronlife.co.nz/AdviserCentral_Uplift/ ...",
+    "HTTP 200 — landed https://outsystems-qa.asteronlife.co.nz/AdviserCentral_Uplift/",
+    "Session valid (not bounced to login)",
+    "Dashboard body length: 944 chars",
+    "Driving reachApplicationFlow (Life $500k, Upfront commission)...",
+    "APPLY FLOW: reached Client Summary = true",
+    "APPLY FLOW: reached Duty of Disclosure = true"
+  ],
+  "applyFlowReachable": true,
+  "dodReachable": true
+}
