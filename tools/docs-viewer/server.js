@@ -18,6 +18,15 @@ const { marked } = require('marked');
 const ROOT = path.resolve(__dirname, '..', '..');
 const PORT = Number(process.env.DOCS_PORT) || 4400;
 
+// Results mode: scope the viewer to ONLY the target app's testing output (test-runs: the parent
+// DASHBOARD.md + each run's report.md), landing on the interactive dashboard.html. Set via
+// VIEWER_MODE=results (+ optional TARGET_APP). Default (unset) = full project-docs viewer.
+const VIEWER_MODE = process.env.VIEWER_MODE || 'docs';
+const TARGET_APP = process.env.TARGET_APP || 'asteron-quote-apply';
+const RESULTS_ROOT = path.join(ROOT, 'apps', TARGET_APP, 'test-runs');
+// In results mode the tree is rooted at the app's test-runs/ dir, not the whole repo.
+const TREE_ROOT = VIEWER_MODE === 'results' ? RESULTS_ROOT : ROOT;
+
 const IGNORE_DIRS = new Set(['node_modules', '.git', 'test-results', 'playwright-report']);
 
 const RAW_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
@@ -35,7 +44,10 @@ function walk(dir) {
       const child = walk(full);
       if (child.children.length) children.push({ type: 'dir', name: entry.name, children: child.children });
     } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
-      children.push({ type: 'file', name: entry.name, relPath: toPosix(path.relative(ROOT, full)) });
+      // Results mode: surface ONLY the deliverables — each run's report.md + the parent DASHBOARD.md.
+      // Hide legacy/interim files (results.md, known-failures.md, generation-log-*.md).
+      if (VIEWER_MODE === 'results' && !/^(report|dashboard)\.md$/i.test(entry.name)) continue;
+      children.push({ type: 'file', name: entry.name, relPath: toPosix(path.relative(TREE_ROOT, full)) });
     }
   }
   children.sort((a, b) => (a.type !== b.type ? (a.type === 'dir' ? -1 : 1) : a.name.localeCompare(b.name)));
@@ -278,8 +290,8 @@ function filterTree(query) {
 // ── HTTP handling ────────────────────────────────────────────────────────
 
 function safeResolve(relPath) {
-  const resolved = path.resolve(ROOT, relPath);
-  if (!resolved.startsWith(ROOT)) return null;
+  const resolved = path.resolve(TREE_ROOT, relPath);
+  if (!resolved.startsWith(TREE_ROOT)) return null;
   return resolved;
 }
 
@@ -291,7 +303,7 @@ function serve404(res, message) {
 function handleView(req, res, relPathRaw) {
   const relPath = toPosix(relPathRaw || '');
   const full = safeResolve(relPath);
-  const tree = walk(ROOT);
+  const tree = walk(TREE_ROOT);
 
   if (!full || !relPath.toLowerCase().endsWith('.md') || !fs.existsSync(full)) {
     const html = pageTemplate({
@@ -330,9 +342,17 @@ function handleRaw(req, res, relPathRaw) {
 }
 
 function handleIndex(req, res) {
-  const tree = walk(ROOT);
+  // Results mode: land on the interactive dashboard.html if present.
+  if (VIEWER_MODE === 'results' && fs.existsSync(path.join(RESULTS_ROOT, 'dashboard.html'))) {
+    res.writeHead(302, { Location: '/dashboard' });
+    res.end();
+    return;
+  }
+  const tree = walk(TREE_ROOT);
   const files = flattenFiles(tree);
-  const landing = files.find((f) => f === 'README.md') || files.find((f) => f.toLowerCase().includes('project-summary')) || files[0];
+  const landing = VIEWER_MODE === 'results'
+    ? (files.find((f) => /DASHBOARD\.md$/i.test(f)) || files[0])
+    : (files.find((f) => f === 'README.md') || files.find((f) => f.toLowerCase().includes('project-summary')) || files[0]);
   if (landing) {
     handleView(req, res, landing);
     return;
@@ -351,6 +371,15 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   try {
     if (url.pathname === '/' ) return handleIndex(req, res);
+    if (url.pathname === '/dashboard') {
+      const dash = path.join(RESULTS_ROOT, 'dashboard.html');
+      if (fs.existsSync(dash)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        fs.createReadStream(dash).pipe(res);
+        return;
+      }
+      return serve404(res, 'No dashboard.html yet — run some tests first.');
+    }
     if (url.pathname === '/view') return handleView(req, res, url.searchParams.get('path'));
     if (url.pathname === '/raw') return handleRaw(req, res, url.searchParams.get('path'));
     return serve404(res);

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "AI-assisted business rules discovery and Playwright test generation for web applications",
   "scripts": {
+    "setup": "node run.js setup",
+    "new": "node run.js new",
+    "start": "node run.js help",
+    "view": "node run.js view",
     "explore": "node tools/server.js",
     "docs": "node tools/docs-viewer/server.js",
     "test": "npx playwright test",
