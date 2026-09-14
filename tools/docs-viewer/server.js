@@ -389,7 +389,31 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Docs viewer running at http://localhost:${PORT}`);
-  console.log(`Serving markdown files from: ${ROOT}`);
-});
+// Self-healing startup: if the port is already in use (e.g. an orphaned viewer from a previous
+// session that wasn't cleanly stopped), automatically try the next port instead of crashing.
+const MAX_PORT_TRIES = 20;
+
+function startServer(port, triesLeft) {
+  server.once('error', (err) => {
+    if (err.code === 'EADDRINUSE' && triesLeft > 0) {
+      const next = port + 1;
+      console.log(`Port ${port} is already in use (an old viewer may still be running) — trying ${next}...`);
+      // Give the failed listen a tick to release before retrying.
+      setTimeout(() => startServer(next, triesLeft - 1), 150);
+      return;
+    }
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Could not find a free port in the range ${PORT}-${PORT + MAX_PORT_TRIES}. ` +
+        `Close any running docs viewers and try again.`);
+      process.exit(1);
+    }
+    throw err;
+  });
+  server.listen(port, () => {
+    console.log(`Docs viewer running at http://localhost:${port}`);
+    if (port !== PORT) console.log(`(default port ${PORT} was busy — using ${port} instead)`);
+    console.log(`Serving markdown files from: ${TREE_ROOT}`);
+  });
+}
+
+startServer(PORT, MAX_PORT_TRIES);
