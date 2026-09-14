@@ -75,6 +75,33 @@ extraction — do not produce OutSystems-specific output).
 - **Network requirement:** only reachable from a whitelisted IP (see
   `apps/asteron-quote-apply/docs/network-access-issue.md`)
 
+## Saved auth state goes STALE — refresh before probing (learned repeatedly, incl. 2026-09-14)
+
+**Saved `.auth/state-qa-<id>.json` sessions expire (roughly days).** A stale state does NOT error
+loudly — the browser just lands on the LOGIN screen. This has bitten twice: after a weekend the
+09-09 states were dead on 09-11, and again on 09-14 a probe opened 4 browsers that all sat on the
+login page because the saved session had expired.
+
+**Why standalone probes can't recover on their own:** the login flow lives ONLY in
+`global-setup.js` (which the Playwright config runs automatically before a test run). A standalone
+probe under `probes/` loads `storageState` from the saved `.auth/` file and does NOT log in — so if
+that state is stale, the probe has no way to authenticate and every action fails on the login page.
+
+**Rules:**
+1. **Before running any standalone probe, refresh the account's auth state first** via global-setup:
+   ```
+   BASE_URL=<qa> LOGIN_EMAIL=<..> LOGIN_PASSWORD=<..> AUTH_STATE_FILENAME=state-qa-a.json KILL_STRAY_EDGE=true \
+     node -e "require('./apps/asteron-quote-apply/global-setup.js')().then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1)})"
+   ```
+   (It logs in, retries session-conflict with backoff, and writes a fresh `state-qa-a.json`.)
+2. **Do NOT burn repeated attempts against a stale session.** If a probe lands on the login page
+   (dashboard body empty / URL contains `login` / `openNewQuote` aborts with "did not open a popup
+   tab"), STOP — that's a stale-state signal, not an app bug. Refresh the state, then retry once.
+3. **A full `run.js test` run does NOT have this problem** — its config runs `global-setup.js`, so it
+   always logs in fresh. The stale-state trap is specific to standalone `probes/` scripts that reuse
+   saved state.
+4. Assume any saved state older than ~a day is stale and refresh it up front rather than testing it.
+
 ## Where things live (current structure — see root README.md for the full map)
 
 - `apps/asteron-quote-apply/tests/` — Playwright test suite (ES5-inside-`page.evaluate()`,
