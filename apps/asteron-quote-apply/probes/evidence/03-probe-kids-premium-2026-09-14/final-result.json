@@ -1,30 +1,46 @@
 {
   "sweeps": [
     {
-      "step": "life",
+      "step": "life $200k",
       "errors": [],
       "yearly": "$296.16",
       "kidsPremiumLines": []
     },
     {
-      "step": "after SI dropdown $100k",
-      "errors": [
-        "Required field!"
-      ],
-      "yearly": "$0.00",
+      "step": "FINAL 3 kids @ $100k (blurred)",
+      "errors": [],
+      "yearly": "$476.16",
       "kidsPremiumLines": []
     },
     {
-      "step": "after kids fully filled",
-      "errors": [
-        "Required field!"
-      ],
-      "yearly": "$296.16",
-      "kidsPremiumLines": []
-    },
-    {
-      "step": "empty-required remaining",
-      "rem": []
+      "step": "PANEL breakdown",
+      "panel": [
+        "Premium",
+        "Total Monthly Premium (All Lives)",
+        "$39.68",
+        "Life 1",
+        "Personal Insurance 1",
+        "Life Cover A",
+        "$24.68",
+        "Kids",
+        "$15.00",
+        "Payment frequency",
+        "Fortnightly",
+        "Monthly",
+        "Quarterly",
+        "Half Yearly",
+        "Yearly",
+        "Total",
+        "$39.68",
+        "Total Yearly Premium",
+        "$476.16",
+        "Bundling Discounts",
+        "None",
+        "Adviser Use",
+        "Loadings",
+        "CloseView PDFSave as NewSaveApply",
+        "Annual income can include salary,wages, packaged fringe benefits, commissions, bonuses and company superannuation contributions e.g KiwiSaver. For the self-employed it's the insured's share of the net profit (or loss) of the business, derived from their own personal exertion (after deduction of all business expenses, including depreciation), but before tax."
+      ]
     }
   ]
 }
