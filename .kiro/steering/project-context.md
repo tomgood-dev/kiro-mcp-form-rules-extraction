@@ -94,13 +94,11 @@ extraction — do not produce OutSystems-specific output).
   **acceptance-criteria mode** (see `.kiro/steering/test-expansion-process.md`)
 - `apps/asteron-quote-apply/docs/exhaustive-analysis.md` — full field/boundary/validation map
 - `tools/` — the generic, reusable, app-agnostic exploration server + helpers (`server.js`,
-  `batch.js`, `cmd.js`, `run.js`) — NOT Asteron-specific, works with any target app per root
-  README's "Add Your App" section
-- `sessions/` — dated working-session notes (chronological, all in one place)
-- `archive/` — superseded material: `iteration-001/`, `iteration-002/`, `iteration-003/` (early
-  exploration passes, now superseded by the business-rules docs above),
-  `legacy-scripts/` (pre-`tools/`-framework one-off exploration scripts), `sessions/` merged
-  into root `sessions/`
+  `batch.js`, `cmd.js`, `run.js`) — NOT Asteron-specific, works with any target app (see the
+  root README + WRAPPER.md "Quick Start", and `.kiro/steering/how-to-run.md`)
+- `sessions/` and `archive/` — **local-only (gitignored, not shipped)**: the builder's dated
+  working-session notes and superseded early iterations / legacy scripts. Kept on the builder's
+  machine for history; not part of the repo a user clones.
 
 ## Completed iterations (historical — see archive/iteration-00N/ for raw evidence)
 

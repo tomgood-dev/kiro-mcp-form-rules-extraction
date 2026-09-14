@@ -62,19 +62,23 @@ silently omit an AC, evidence per run).
 
 ## 4. Day-to-day operation
 
-Full commands are in `WRAPPER.md`. The essentials:
+**To START the process:** open the repo in Kiro and ask (e.g. "help me get started"). The agent
+detects the working-directory state and drives explore/generate itself — see
+`.kiro/steering/how-to-run.md`. There is no `explore`/`generate` script command.
+
+`run.js` covers only the mechanical steps (full detail in `WRAPPER.md`):
 
 ```
 node run.js setup                 # one-time: deps + browsers
-node run.js new <app>             # scaffold a new target app
-node run.js explore <app>         # OR: generate <app>  → prints the Kiro CLI starting prompt
+node run.js new <app>             # scaffold a new target app (dirs + .env)
 node run.js test <app>            # run the suite (edge config)
 node run.js view <app>            # results viewer: dashboard + each run's report.md
 ```
 
 - **Credentials/env:** `apps/<app>/.env` — `BASE_URL`, `LOGIN_EMAIL`, `LOGIN_PASSWORD` (gitignored).
+- **Materials:** user stories → `apps/<app>/docs/user-stories/`, existing BRs → `docs/business-rules/`.
 - **Parallel runs across accounts:** `node tools/parallel-run.js` (accounts in `apps/<app>/accounts.json`).
-- **Live exploration server (explore mode):** `node tools/server.js "<login-url>"` — see README.
+- **Live exploration server (explore mode):** `node tools/server.js "<login-url>"` — the agent drives it.
 
 ---
 

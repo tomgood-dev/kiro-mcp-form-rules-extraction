@@ -4,69 +4,84 @@ Automatically reverse-engineer business rules from any live web application and 
 
 ## How It Works
 
-1. **Point it at your app** — provide a URL and login credentials
-2. **AI explores the app** — discovers fields, validation rules, dependencies, error messages, and formulas by systematically probing every interaction
-3. **AI generates Playwright tests** — each discovered rule becomes a self-contained, runnable test case
-4. **Run and verify** — execute tests against the live app to confirm they pass
-5. **Upload to your test suite** — drop the standalone test file into any Playwright project
+This framework is **agent-native**: you open the repository in **Kiro** and ask it to get started.
+The Kiro agent reads its auto-loaded steering files (`.kiro/steering/`), inspects the working
+directory to see how far along things are, and drives the whole process with you:
 
-The exploration is driven by an AI assistant (Kiro CLI, Claude, etc.) communicating with a headed browser via the included HTTP command server. The AI reads page state, interacts with fields one at a time, observes validation responses, and documents every rule it finds.
+1. **Point it at your app** — a URL and login credentials in `apps/<app>/.env`
+2. **The agent discovers or verifies business rules** — in EXPLORE mode it probes the live app to
+   reverse-engineer rules; in GENERATE mode it works from your existing user stories / business rules
+3. **The agent generates Playwright tests** — each rule / acceptance criterion becomes a
+   self-contained, verified test case (passing, expected-to-fail, or deferred-with-evidence)
+4. **Run and verify** — tests execute against the live app; every run emits `report.md`,
+   `summary.json`, and an `.xlsx` workbook, and rebuilds the suite dashboard
+5. **Review** — a scoped results viewer shows the dashboard + each run's report
+
+A small helper script, `run.js`, handles the few genuinely-mechanical shell steps (install deps,
+scaffold a new app, run the suite, open the viewer). It does **not** drive the process — that's the
+agent's job, guided by the steering rulebook in `.kiro/steering/`.
 
 ## Quick Start
 
+See `WRAPPER.md` for the full walkthrough. In short:
+
 ### Prerequisites
-- Node.js 22+
+- Node.js 18+ (22+ ideal)
+- **Kiro CLI** (this runs the actual process)
+- Microsoft Edge (local `edge` config) or Chromium
 - Network access to the target application
 
-### Setup
-
+### 1. Set up
 ```bash
 git clone https://github.com/tomgood-dev/kiro-mcp-form-rules-extraction.git
 cd kiro-mcp-form-rules-extraction
-npm install
-npx playwright install chromium
+node run.js setup            # installs deps + Playwright browsers
 ```
 
-### Add Your App
+### 2. Start the process — open the repo in Kiro and ask
+Open this repository in Kiro CLI, then say something like *"help me get started"*. The agent
+(guided by `.kiro/steering/how-to-run.md`) will:
+- **Detect where things are at** — which apps exist under `apps/`, and for each, whether it has
+  user stories, business rules, tests, run results, or a coverage report yet.
+- **Summarise what it found and ask how to proceed** — continue an in-progress app or start a new one.
+- **Run the right mode:**
+  - **EXPLORE** (no docs yet) — reverse-engineer business rules by probing the live app.
+  - **GENERATE** (you have user stories / business rules) — produce verified regression tests
+    mapped to each acceptance criterion.
 
+### 3. Starting a brand-new app
 ```bash
-mkdir -p apps/my-app/tests
-mkdir -p apps/my-app/helpers
-mkdir -p apps/my-app/docs
+node run.js new my-app       # scaffolds apps/my-app/ (dirs + .env)
+```
+Then edit `apps/my-app/.env`:
+```
+TARGET_APP=my-app
+BASE_URL=https://your-app.example.com
+LOGIN_EMAIL=test@example.com
+LOGIN_PASSWORD=your-password
+```
+Put user stories in `apps/my-app/docs/user-stories/` and any existing business rules in
+`apps/my-app/docs/business-rules/` — then ask Kiro to get started. (There is no `inbox/`; materials
+live in the docs tree.)
+
+### 4. Run tests and view results
+```bash
+node run.js test my-app                 # run the suite (edge config)
+node run.js test my-app -g "AC03"       # a single test by grep
+node run.js view my-app                 # results viewer: dashboard + each run's report.md
 ```
 
-Create `apps/my-app/.env`:
-```
-APP_BASE_URL=https://your-app.example.com
-APP_LOGIN_EMAIL=test@example.com
-APP_LOGIN_PASSWORD=your-password
-```
+## The exploration server (EXPLORE mode)
 
-### Explore (AI-driven discovery)
-
-Start the exploration server:
+In EXPLORE mode the agent drives a real browser via the included HTTP command server — the agent
+issues these commands; you don't drive it by hand. Start it (the agent will do this, or you can for
+a manual probe):
 ```bash
 node tools/server.js "https://your-app.example.com/login"
 ```
-
-This opens a browser. Log in manually, then let the AI assistant drive exploration via HTTP commands to `localhost:3333`. The AI will:
-- Read every field, dropdown, button, and checkbox on each page
-- Test boundary values, invalid inputs, and edge cases
-- Identify mandatory fields, cross-field dependencies, and validation rules
-- Document formulas, caps, and business logic
-
-### Run Generated Tests
-
-```bash
-# Run all tests for your app
-npx playwright test apps/my-app/tests/ --headed
-
-# Run headless (CI mode)
-npx playwright test apps/my-app/tests/
-
-# Run a specific test by name
-npx playwright test -g "my-rule-name"
-```
+This opens a browser (log in once). The agent then reads page state and interacts one field at a
+time via HTTP commands to `localhost:3333`, documenting every rule it finds under
+`apps/<app>/docs/business-rules/` with `[Exploration]` provenance.
 
 ## Exploration Server Commands
 
@@ -108,38 +123,47 @@ Where `commands.json` is an array:
 ## Project Structure
 
 ```
-├── README.md
+├── README.md · HANDOVER.md · WRAPPER.md · ROADMAP.md   # start-here docs
+├── TEST-GENERATION-PROCESS.md · TEST-GENERATION-LEARNINGS.md
+├── run.js                       # mechanical helper: setup / new / test / view
 ├── package.json
-├── playwright.config.js         # Generic/CI config (Chromium)
+├── playwright.config.js         # Generic config (Chromium)
 ├── playwright.edge.config.js    # Local config (Edge — use when Chromium is blocked)
-├── .env.example
+├── .env.example                 # TARGET_APP, BASE_URL, LOGIN_EMAIL/PASSWORD
+├── start-docs-viewer.cmd · start-results-viewer.cmd
+│
+├── .kiro/
+│   └── steering/                # AUTO-LOADED rulebook that drives the agent:
+│       ├── how-to-run.md         #   entry point (detect state, onboard, pick mode)
+│       ├── test-expansion-process.md   #   the authoring rulebook
+│       ├── project-context.md          #   app-specific facts
+│       └── reference-reconciliation.md #   using external test material safely
+│
+├── docs/
+│   └── METHOD.md                # the method explained for PM/testers
 │
 ├── apps/                        # One folder per target application
-│   └── asteron-quote-apply/     # Worked example (insurance form)
+│   └── asteron-quote-apply/     # Worked example (OutSystems insurance form)
 │       ├── tests/               # Generated Playwright test files
-│       ├── probes/              # App-specific throwaway/retained investigation scripts
+│       ├── probes/              # App-specific investigation scripts
 │       ├── helpers/             # App-specific interaction patterns
 │       ├── global-setup.js      # Login automation
-│       ├── test-runs/           # Generated: one folder per spec file, one dated
-│       │                        # subfolder per run (results.md + bug-reports/)
-│       ├── playwright-report/   # Generated: HTML report (gitignored)
-│       └── docs/                # Discovered business rules
+│       ├── test-runs/           # Generated: per spec, per run — report.md +
+│       │                        # summary.json + <spec>.xlsx; plus DASHBOARD.md/.html
+│       └── docs/                # user-stories/ · business-rules/ · test-documentation/
 │           └── exhaustive-analysis.md  # Full boundary/validation analysis
 │
-├── tools/                       # Generic, reusable, app-agnostic exploration + verification tooling
-│   ├── server.js                # HTTP browser command server (buttons/fields/errors/modals + fingerprint find)
-│   ├── batch.js                 # Batch command runner
-│   ├── cmd.js                   # Quick single command
-│   ├── run.js                   # File-based command
-│   ├── artifact-helpers.js      # test-runs/ convention: embedImage(), per-app run folders
-│   ├── reporters/                # Custom Playwright reporter: builds test-runs/ from each run
-│   ├── probe-safety-lint.js     # Static check for banned interaction patterns
-│   ├── verify-finding.js        # Independent-reverification engine — see "Verifying a finding" below
-│   └── draft-bug-report.js      # Turns a confirmed verdict into a TEMPLATE.md-shaped draft
-│
-├── sessions/                    # Session notes (working context), chronological
-│
-└── archive/                     # Superseded material — early iterations, legacy scripts
+└── tools/                       # Generic, reusable, app-agnostic tooling
+    ├── server.js                # HTTP browser command server (EXPLORE mode)
+    ├── batch.js · cmd.js · run.js   # command runners for the server
+    ├── artifact-helpers.js      # test-runs/ convention: run folders, recordCheck/recordStep
+    ├── reporters/               # Custom reporter: builds report.md/summary.json/.xlsx per run
+    ├── build-dashboard.js       # Suite dashboard (DASHBOARD.md + dashboard.html)
+    ├── parallel-run.js          # N-account parallel launcher
+    ├── docs-viewer/             # Local markdown/results viewer (self-healing port)
+    ├── lib/                     # Dependency-free .xlsx/zip writers (no npm needed)
+    ├── probe-safety-lint.js     # Static check for banned interaction patterns
+    └── verify-finding.js        # Independent-reverification engine
 ```
 
 Each app's own `probes/` folder holds throwaway or retained investigation scripts specific to
