@@ -36,6 +36,53 @@ async function freshQuoteWithLife(page, personal) {
   return quote;
 }
 
+// ── AC08/AC09 helpers (premium-panel behaviour) ──
+// Reads the Total Yearly Premium value from the panel (e.g. "$296.16").
+async function readYearlyPremium(page) {
+  return page.evaluate(() => {
+    const lines = (document.body.innerText || '').split('\n').map((l) => l.trim());
+    const idx = lines.findIndex((l) => /Total Yearly Premium/i.test(l));
+    // The amount is usually on the same or an adjacent line — scan a small window for a $ amount.
+    for (let i = idx; i >= 0 && i < lines.length && i <= idx + 3; i++) {
+      const m = (lines[i] || '').match(/\$[\d,]+\.\d{2}/);
+      if (m) return m[0];
+    }
+    const any = (document.body.innerText || '').match(/\$[\d,]+\.\d{2}/);
+    return any ? any[0] : null;
+  });
+}
+// Fills every kid's mandatory fields (name + a young DOB) so the panel isn't blocked on them.
+async function fillKidMandatory(page) {
+  await page.evaluate(() => {
+    function si(el, v) { if (!el) return; el.focus(); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); el.blur(); }
+    [...document.querySelectorAll('input[id*="FirstName"]')].filter((i) => !/b15-/.test(i.id)).forEach((f, i) => si(f, 'Kid' + (i + 1)));
+    [...document.querySelectorAll('input[id*="LastName"],input[id*="Surname"]')].filter((i) => !/b15-/.test(i.id)).forEach((l) => si(l, 'Test'));
+    [...document.querySelectorAll('input[type="date"][id*="Input_BirthDate"]')].filter((i) => i.id.indexOf('b15-Input_BirthDate') === -1).forEach((d) => si(d, '2018-06-15'));
+  });
+  await waitForSettle(page, 800);
+}
+// Sets every kid SI tier select to a given label (e.g. "$100,000") via REAL selectOption.
+async function setKidTiers(page, label) {
+  const n = await page.evaluate(() => {
+    const tiers = [...document.querySelectorAll('select')].filter((s) => [...s.options].some((o) => o.text.includes('$50,000')) && [...s.options].some((o) => o.text.trim() === '$200,000'));
+    tiers.forEach((s, i) => s.setAttribute('data-kidtier', String(i)));
+    return tiers.length;
+  });
+  for (let i = 0; i < n; i++) {
+    await page.locator(`select[data-kidtier="${i}"]`).selectOption({ label }).catch(() => {});
+  }
+}
+// Waits until the panel's $ amounts stop changing (2 identical consecutive reads) — signal, not a fixed sleep.
+async function waitForStablePremium(page, timeoutMs = 12000) {
+  const start = Date.now(); let last = null; let stable = 0;
+  while (Date.now() - start < timeoutMs) {
+    const sig = await page.evaluate(() => ((document.body.innerText || '').match(/\$[\d,]+\.\d{2}/g) || []).join('|'));
+    if (sig === last) { if (++stable >= 2) return sig; } else { stable = 0; last = sig; }
+    await page.waitForTimeout(400);
+  }
+  return last;
+}
+
 test.describe('Apply for Kids Cover (ACB-2295)', () => {
   test.describe.configure({ mode: 'parallel' });
 
@@ -148,23 +195,34 @@ test.describe('Apply for Kids Cover (ACB-2295)', () => {
     expect(maxKids, 'BR: max 9 kids').toBe(9);
   });
 
-  test('AC08/AC09: kid SI above $50k adds a single "Kids" premium line (regardless of number of kids)', async ({ page }, testInfo) => {
+  test('AC08: kid SI above $50k dynamically calculates + displays a (non-zero) premium', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
-      'AC08: kid SI > $50,000 dynamically calculates a premium. AC09: regardless of how many kids, the premium panel shows ONE total "Kids" premium line.',
-      '', 'Steps to reproduce:', '1. New quote, Life $200k, Number of kids = 2, set each kid SI to $100,000. 2. Confirm a single "Kids" premium line appears in the panel.',
-      '', 'Expected: a "Kids" premium entry appears (one line, not one per kid).',
+      'AC08: Given I am on the Kids Cover section, When I select kid(s) sum insured more than 50000,',
+      'Then the system should dynamically calculate premium and display.',
+      '',
+      'Deferred (unverified — driving not yet clean): probing 2026-09-14 could not yet establish the',
+      'true premium result because (1) setting a kid SI tier RE-RENDERS the kids repeating list and',
+      'wipes previously-entered per-kid DOBs, producing a "Required field!" and a $0.00 panel, and',
+      '(2) the masked Sum Insured field gets corrupted (".2.0.0.0..") when not driven digit-by-digit.',
+      'Both are driving artifacts, not confirmed app behaviour. Encode only once the scenario is',
+      'driven cleanly (fillCalcMask for masked SI, set SI before per-kid DOB, verify every required',
+      'field filled + zero on-screen errors), then assert the real calculated kids premium.',
+      'Evidence: probes/evidence/03-probe-kids-premium-2026-09-14/.',
     ].join('\n') });
-    const quote = await freshQuoteWithLife(page);
-    await setNumKids(quote, 2);
-    // Set kid SI tiers above $50k where present.
-    await quote.evaluate(() => {
-      const tiers = [...document.querySelectorAll('select')].filter((s) => [...s.options].some((o) => o.text.includes('$50,000')) && [...s.options].some((o) => o.text.trim() === '$200,000'));
-      tiers.forEach((s) => { const opt = [...s.options].find((o) => o.text.trim() === '$100,000'); if (opt) { s.value = opt.value; s.dispatchEvent(new Event('change', { bubbles: true })); } });
-    });
-    await waitForSettle(quote, 2000);
-    const kidsLineCount = await quote.evaluate(() => (document.body.innerText.match(/\bKids\b/g) || []).length);
-    const hasKidsPremium = await quote.evaluate(() => /Kids/i.test(document.body.innerText));
-    await recordStep(testInfo, page, { label: 'A "Kids" premium line appears in the panel', expected: 'present (single total line)', actual: `Kids mentions=${kidsLineCount}` });
-    expect(hasKidsPremium, 'AC08/AC09: Kids premium line present').toBe(true);
+    test.fixme(true, 'Deferred (unverified): kid-SI change re-renders the kids list and wipes DOBs (-> Required field! -> $0.00), and the masked SI field corrupts unless driven digit-by-digit. Both are driving artifacts, not confirmed app behaviour. Drive cleanly (fillCalcMask, SI-before-DOB, verify no empty required + no on-screen error) before encoding. Evidence: probes/evidence/03-probe-kids-premium-2026-09-14/.');
+  });
+
+  test('AC09: multiple kids >$50k show a single aggregated "Kids" premium line', async ({ page }, testInfo) => {
+    test.info().annotations.push({ type: 'acceptance-criteria', description: [
+      'AC09: Given I am on the Kids Cover section, When I select multiple kids with sum insured more',
+      'than 50000, Then regardless of how many kids the premium panel should show only ONE total Kids',
+      'premium line (e.g. Life A - 100.10, Kids - 14.00, Total - $114.10).',
+      '',
+      'Deferred (unverified — same blocker as AC08): the kids-list re-render on SI change + masked-SI',
+      'corruption prevented a clean read of the premium panel. Not yet confirmed whether a single',
+      'aggregated "Kids" line appears. Encode once the scenario is driven cleanly (see AC08 note).',
+      'Evidence: probes/evidence/03-probe-kids-premium-2026-09-14/.',
+    ].join('\n') });
+    test.fixme(true, 'Deferred (unverified): same blocker as AC08 (kids-list re-render wipes DOBs + masked-SI corruption). Drive cleanly before encoding whether a single aggregated "Kids" premium line appears. Evidence: probes/evidence/03-probe-kids-premium-2026-09-14/.');
   });
 });

@@ -6,6 +6,28 @@
 
 ## Probe & Interaction Safety (applies to every probe and test, both modes)
 
+### Check for on-screen errors after EVERY interaction (mandatory — non-negotiable)
+
+After **every** browser interaction (fill, select, click, blur, navigation, recalc), you MUST
+capture and surface **any** message that appeared on screen — a field validation message, a toast/
+snackbar, a banner, a modal error, an inline red-text error, a `role="alert"`, anything — **whether
+or not you expected it**. Do not read a downstream value (a premium, a total, a button state) and
+draw a conclusion while ignoring an error that surfaced from the interaction that produced it.
+
+- **Never explain away a surprising downstream result without first checking for an error.** A
+  $0.00 premium, a blank field, a "nothing happened" button — the FIRST question is "did an error
+  appear?", not "is the app broken?". An unnoticed validation error (often from the test's OWN bad
+  input — e.g. an invalid/oob date, a missing mandatory field) is the usual cause and would make any
+  "finding" a false positive (see 2026-09-14: a kid-DOB field error was ignored while a $0.00 total
+  was nearly written up as a real defect).
+- **Every probe/read helper must include an error sweep** — read `[class*="feedback"]`,
+  `[class*="error"]`, `[role="alert"]`, `.text-danger`, toast/snackbar containers, and the visible
+  validation summary — and log whatever it finds after each step. A run that changed state but
+  reported no error must have positively CONFIRMED there was none, not simply not looked.
+- If an unexpected error appears, STOP and diagnose it (is it my input? a mandatory field? a genuine
+  app error?) before proceeding or concluding. Report it — do not silently continue.
+
+
 A false "finding" caused by the test's own interaction technique is worse than no finding — it
 wastes review time and can misdirect a real dev fix. 2026-08-20: a probe's own `page.mouse.wheel()`
 call (used only to scroll a screenshot into frame) silently produced a false "Update button always

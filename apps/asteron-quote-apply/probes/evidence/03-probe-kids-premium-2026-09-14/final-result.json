@@ -1,0 +1,30 @@
+{
+  "sweeps": [
+    {
+      "step": "life",
+      "errors": [],
+      "yearly": "$296.16",
+      "kidsPremiumLines": []
+    },
+    {
+      "step": "after SI dropdown $100k",
+      "errors": [
+        "Required field!"
+      ],
+      "yearly": "$0.00",
+      "kidsPremiumLines": []
+    },
+    {
+      "step": "after kids fully filled",
+      "errors": [
+        "Required field!"
+      ],
+      "yearly": "$296.16",
+      "kidsPremiumLines": []
+    },
+    {
+      "step": "empty-required remaining",
+      "rem": []
+    }
+  ]
+}

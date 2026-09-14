@@ -1,0 +1,91 @@
+{
+  "sweeps": [
+    {
+      "step": "after Life $200k",
+      "errors": [],
+      "hasErrors": false,
+      "yearly": "$296.16"
+    },
+    {
+      "step": "after Number of kids = 2",
+      "errors": [],
+      "hasErrors": false,
+      "yearly": "$296.16"
+    },
+    {
+      "step": "after kid names",
+      "errors": [],
+      "hasErrors": false,
+      "yearly": "$296.16"
+    },
+    {
+      "step": "after kid SI = $100,000 (before DOBs)",
+      "errors": [
+        "Required field!"
+      ],
+      "hasErrors": true,
+      "yearly": "$0.00"
+    },
+    {
+      "step": "after all kid DOBs filled post-SI",
+      "errors": [
+        "Required field!"
+      ],
+      "hasErrors": true,
+      "yearly": "$296.16",
+      "allDobFilled": true,
+      "finalDobs": [
+        "2018-06-15",
+        "2018-06-15"
+      ]
+    },
+    {
+      "step": "remaining empty-required + kid-row snapshot",
+      "remaining": {
+        "emptyRequired": [],
+        "kidRow": [
+          {
+            "id": "l2-1457_0-b7-Input_SumInsured",
+            "val": ".2.0.0.0.0.0."
+          },
+          {
+            "id": "l2-1457_0-b7-Dropdown1",
+            "val": "Stepped"
+          },
+          {
+            "id": "l2-1455_0-b5-Input_FirstName",
+            "val": "Kid1"
+          },
+          {
+            "id": "l2-1455_0-b5-Input_LastName",
+            "val": "Test"
+          },
+          {
+            "id": "l2-1455_0-b5-Input_BirthDate",
+            "val": "2018-06-15"
+          },
+          {
+            "id": "l2-1455_0-b5-Dropdown1",
+            "val": "$100,000"
+          },
+          {
+            "id": "l2-1455_1-b5-Input_FirstName",
+            "val": "Kid2"
+          },
+          {
+            "id": "l2-1455_1-b5-Input_LastName",
+            "val": "Test"
+          },
+          {
+            "id": "l2-1455_1-b5-Input_BirthDate",
+            "val": "2018-06-15"
+          },
+          {
+            "id": "l2-1455_1-b5-Dropdown1",
+            "val": "$100,000"
+          }
+        ]
+      }
+    }
+  ]
+}

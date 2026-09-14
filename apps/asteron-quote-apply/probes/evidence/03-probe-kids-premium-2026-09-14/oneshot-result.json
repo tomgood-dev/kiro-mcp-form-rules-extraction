@@ -1,0 +1,51 @@
+{
+  "steps": [
+    {
+      "before": {
+        "kids": [
+          "Kids Cover",
+          "Number of Kids"
+        ],
+        "totals": [
+          "Total Monthly Premium (All Lives)",
+          "Total",
+          "Total Yearly Premium",
+          "This is the total premium the clients will pay for the year. For example, the monthly premium x 12 or the half-yearly premium x 2"
+        ],
+        "money": [
+          "$24.68",
+          "$24.68",
+          "$24.68",
+          "$296.16"
+        ],
+        "errs": [
+          "Remove"
+        ]
+      }
+    },
+    {
+      "tiersSet": 2,
+      "stablePremiumSignature": "$0.00|$0.00"
+    },
+    {
+      "after": {
+        "kids": [
+          "Kids Cover",
+          "Number of Kids"
+        ],
+        "totals": [
+          "Total Annualised Premium (All Lives)",
+          "Total Yearly Premium",
+          "This is the total premium the clients will pay for the year. For example, the monthly premium x 12 or the half-yearly premium x 2"
+        ],
+        "money": [
+          "$0.00",
+          "$0.00"
+        ],
+        "errs": [
+          "Remove"
+        ]
+      }
+    }
+  ]
+}
