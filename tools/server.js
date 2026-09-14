@@ -92,6 +92,18 @@ async function setup() {
   page.setDefaultTimeout(30000);
   if (STORAGE_STATE) log(`Seeded with storage state: ${STORAGE_STATE}`);
 
+  // AUTO-FOLLOW the newest tab. This app opens the quote (and the Quote & Apply list) in a NEW tab
+  // via window.open — without this the server stays on the original tab and can't drive the quote.
+  // When a new page opens, make it the active `page` so subsequent commands target it automatically.
+  context.on('page', async (newPage) => {
+    try {
+      await newPage.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+      page = newPage;
+      page.setDefaultTimeout(30000);
+      log(`[tab] switched to new tab: ${newPage.url()}`);
+    } catch (e) { log(`[tab] follow error: ${e.message}`); }
+  });
+
   log(`Navigating to ${START_URL} ...`);
   await page.goto(START_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
@@ -386,7 +398,9 @@ async function handle(cmd) {
     case 'press': {
       await page.keyboard.press(cmd.key || 'Tab');
       await page.waitForTimeout(300);
-      return { ok: true };
+      // Auto-sweep: never let an interaction happen without surfacing what changed on screen.
+      const [errors, modals] = await Promise.all([page.evaluate(READ_ERRORS), page.evaluate(READ_MODALS)]);
+      return { ok: true, url: page.url(), errors, modals };
     }
 
     case 'type': {
@@ -490,7 +504,12 @@ async function handle(cmd) {
 
     case 'eval': {
       const result = await page.evaluate(new Function(cmd.code));
-      return { ok: true, result };
+      await page.waitForTimeout(300);
+      // Auto-sweep: eval is often used to click/mutate — always surface errors + modals + url so an
+      // eval-driven interaction can never be run blind (enforces the "check the screen after every
+      // interaction" rule structurally, not by discipline).
+      const [errors, modals] = await Promise.all([page.evaluate(READ_ERRORS), page.evaluate(READ_MODALS)]);
+      return { ok: true, url: page.url(), result, errors, modals };
     }
 
     default:
