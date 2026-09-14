@@ -65,6 +65,7 @@ const storageStateFlagIdx = cliArgs.indexOf('--storage-state');
 const STORAGE_STATE = storageStateFlagIdx !== -1 ? cliArgs[storageStateFlagIdx + 1] : undefined;
 
 let page;
+let ctx;                          // browser context (module-scoped, for tab control)
 let lastAction = '(none)';        // for the status endpoint
 let authState = 'unknown';        // 'authenticated' | 'login-page' | 'unknown'
 
@@ -88,6 +89,7 @@ async function setup() {
   log('Edge launched OK.');
 
   const context = await browser.newContext({ ignoreHTTPSErrors: true, ...(STORAGE_STATE ? { storageState: STORAGE_STATE } : {}) });
+  ctx = context;
   page = await context.newPage();
   page.setDefaultTimeout(30000);
   if (STORAGE_STATE) log(`Seeded with storage state: ${STORAGE_STATE}`);
@@ -275,6 +277,24 @@ async function handle(cmd) {
 
     case 'url':
       return { ok: true, url: page.url() };
+
+    case 'tabs': {
+      const pages = ctx ? ctx.pages() : [page];
+      return { ok: true, count: pages.length, urls: pages.map((p) => p.url()), active: page.url() };
+    }
+
+    case 'switch-tab': {
+      const pages = ctx ? ctx.pages() : [page];
+      // index (0-based) or default to the newest tab
+      const idx = (typeof cmd.index === 'number') ? cmd.index : pages.length - 1;
+      if (!pages[idx]) return { ok: false, error: `no tab at index ${idx} (have ${pages.length})` };
+      page = pages[idx];
+      page.setDefaultTimeout(30000);
+      await page.bringToFront().catch(() => {});
+      await page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+      const [errors, modals] = await Promise.all([page.evaluate(READ_ERRORS), page.evaluate(READ_MODALS)]);
+      return { ok: true, switchedTo: page.url(), tabCount: pages.length, errors, modals };
+    }
 
     case 'buttons':
       return { ok: true, buttons: await page.evaluate(READ_BUTTONS) };
