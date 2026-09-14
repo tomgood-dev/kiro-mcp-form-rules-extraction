@@ -191,15 +191,3 @@ older versions referenced by number are in `apps/asteron-quote-apply/tests/depre
 These tests run against the live dev environment and pass consistently (~1-4 min each).
 
 An exhaustive boundary analysis document (`apps/asteron-quote-apply/docs/exhaustive-analysis.md`) maps all 216 discovered rules to fields, permutations, and test scenarios.
-
-## CI Integration
-
-```yaml
-# GitHub Actions
-- name: Run business rule tests
-  env:
-    NODE_TLS_REJECT_UNAUTHORIZED: '0'
-  run: |
-    npx playwright install chromium
-    npx playwright test apps/my-app/tests/
-```
