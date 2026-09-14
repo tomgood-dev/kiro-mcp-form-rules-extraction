@@ -41,3 +41,15 @@ reference/**/*.csv
 
 # Local-only daily working checklist — never commit/upload.
 TODAY-TODO.md
+
+# Builder-only / personal / scratch material — kept locally, not shipped to repo users.
+# Presentation + meeting prep (author's own, not part of the framework):
+docs/exec-presentation-script.md
+docs/meeting-run-sheet.md
+# Chronological build-session notes (the builder's log, not needed to use the framework):
+sessions/
+# Superseded early iterations + legacy one-off scripts (historical, not current source of truth):
+archive/
+# Throwaway per-stream run logs + scratch index from parallel runs:
+apps/*/probes/prun-*.txt
+apps/*/probes/exec-index.txt
