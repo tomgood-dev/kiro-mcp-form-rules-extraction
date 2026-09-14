@@ -885,7 +885,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'life field + premium + all commission dropdowns) before this asserts green reliably.',
       'Evidence: probes/probe-2life-build-2026-09-14.js + probe-multilife-cs-2026-09-14.js.',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): reachability PROVEN - a standalone probe built a valid 2-life quote and reached the multi-life Client Summary (2 per-life name+DOB inputs, 2 Proceed buttons, 2 statuses). NOT yet reproducible in the harness: 2nd-life masked-SI + per-life commission cascade are timing-flaky, so Apply intermittently stays on the quote screen. Needs a hardened per-life build helper. NOT the old "Apply does not navigate" issue. Evidence: probe-2life-build-2026-09-14.js.');
+    test.fixme(true, 'Deferred (updated 2026-09-15): CHARACTERIZED but unresolved. Single-life Apply reaches Client Summary reliably. With a fully-valid 2-life quote (both lives priced $934.56, 0 unset commission dropdowns, 0 on-screen errors, 1 enabled "Apply" btn-primary) the Apply click is INERT: URL unchanged, no navigation, no error — reproduced across 4 idle-waited retries + a direct click (probe-2life-ready-2026-09-15.js). This looks like a real multi-life Apply defect, BUT one earlier run (probe-multilife-cs) DID report reaching the 2-life Client Summary, so it is not confirmed to the "verify before writeup" bar. Needs a HEADED live observation of the 2-life Apply click (what happens on click) to resolve defect-vs-intermittent before encoding as pass or expected-fail. NOT the old "Apply does not navigate at all" issue (single-life works).');
   });
 
   test('MLP-11/AC11: Proceed to Application on Life 1 proceeds for Life 1 only', async ({ page }) => {
