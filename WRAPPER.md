@@ -1,63 +1,72 @@
-# Quick Start — the framework wrapper
+# Quick Start — running this framework
 
-`run.js` is a thin, cross-platform entry point that lets anyone who clones this repo go from
-zero to running regression tests (or live business-rules exploration) without hand-wiring configs.
+This framework is **agent-native**: you open the repository in **Kiro** and *ask it to get
+started*. The Kiro agent reads its steering files (auto-loaded from `.kiro/steering/`), inspects
+the working directory to see how far along things are, and drives the whole process — extracting
+business rules, generating tests, and deciding coverage — with you.
+
+A small helper script, `run.js`, handles the few genuinely-mechanical shell steps (installing
+dependencies, running the test suite, opening the results viewer). It does **not** drive the
+process — that's the agent's job.
 
 ## 0. Prerequisites
 - Node.js 18+ (22+ ideal). Microsoft Edge (for the local `edge` config) or Chromium.
+- **Kiro CLI** — this is what runs the actual process.
 
-## 1. Set up
+## 1. One-time setup
 ```
 node run.js setup
 ```
 Installs npm dependencies and Playwright browsers.
 
-## 2. Create your app workspace
+## 2. Start the process — open the repo in Kiro and ask
+Open this repository in Kiro CLI, then just say something like:
+
+> "Help me get started" · "I want to extract business rules from my app" ·
+> "Generate regression tests for these user stories"
+
+The agent (guided by `.kiro/steering/how-to-run.md`) will:
+1. **Detect where things are at** — which apps exist under `apps/`, and for each, whether it has
+   user stories, business rules, tests, run results, or a coverage report yet.
+2. **Summarise what it found and ask you how to proceed** — e.g. continue an in-progress app
+   (close gaps, re-test, run the suite) or start a new one. It won't assume you're starting fresh.
+3. **Run the right mode** —
+   - **Explore** (no docs yet): reverse-engineer business rules by probing the live app.
+   - **Generate** (you have user stories / business rules): produce verified regression tests
+     mapped to each acceptance criterion.
+
+### Where your materials go
+There is **no `inbox/`**. Put materials in the app's docs tree (or just paste/point the agent at
+them and it will file them):
+- **User stories** → `apps/<app>/docs/user-stories/`
+- **Existing business rules** → `apps/<app>/docs/business-rules/`
+- **A client's existing test suite / reference material** → `reference/` (handled per
+  `.kiro/steering/reference-reconciliation.md`).
+
+### Starting a brand-new app
 ```
-node run.js new my-app
+node run.js new my-app          # scaffolds apps/my-app/ (dirs + .env)
 ```
-Scaffolds `apps/my-app/` with `tests/ helpers/ probes/ docs/ inbox/ .auth/` and a pre-filled
-`.env` (edit it: `BASE_URL`, `LOGIN_EMAIL`, `LOGIN_PASSWORD`).
+Then edit `apps/my-app/.env` (`BASE_URL`, `LOGIN_EMAIL`, `LOGIN_PASSWORD`), add your materials to
+`docs/user-stories/`, and ask Kiro to get started.
 
-## 3. Drop in your materials
-Put your **user stories**, **existing business rules**, and any **reference material**
-(client test suites, requirement docs, screenshots) into `apps/my-app/inbox/`.
-
-## 4. Start the AI process (two modes)
-Run the launcher, then paste the printed prompt into a Kiro CLI session opened in this repo:
-
+## 3. Run the tests (mechanical)
 ```
-node run.js explore my-app      # LIVE reverse-engineering (no docs yet — discover rules from the app)
-node run.js generate my-app     # GENERATE regression tests from the BRs / user stories you dropped in
+node run.js test my-app                 # whole suite (edge config)
+node run.js test my-app -g "AC03"       # a single test by grep
 ```
+(The agent also runs tests itself as part of the process; this is for running them by hand.)
 
-- **explore** → the AI drives the live app via the exploration server, discovers rules, documents
-  them under `docs/business-rules/`, then generates + runs Playwright tests.
-- **generate** → the AI reads your user stories/BRs, probes the live app to confirm behaviour, and
-  encodes each acceptance criterion as a verified (or expected-to-fail) Playwright test.
-
-The prompt tells the AI to follow the process in `.kiro/steering/` and `TEST-GENERATION-PROCESS.md`.
-
-## 5. Run the tests
-```
-node run.js test my-app                       # whole suite (edge config)
-node run.js test my-app -g "AC03"             # a single test by grep
-```
-
-## 6. View results (testing output only)
+## 4. View results (dashboard + reports only)
 ```
 node run.js view my-app
 ```
-Opens http://localhost:4400 — lands on the interactive **dashboard** (pass/fail per spec) with a
-sidebar of each run's **report.md**. It shows ONLY testing output — not the whole project's docs.
-(Double-clickers on Windows can use `start-results-viewer.cmd my-app`.)
-
-## npm aliases
-`npm run setup`, `npm run new -- my-app`, `npm run view -- my-app`.
+Opens http://localhost:4400 — lands on the interactive **dashboard** with a sidebar of each run's
+**report.md**. Shows only testing output, not the whole project's docs. (Windows: double-click
+`start-results-viewer.cmd my-app`. If the port is busy it auto-moves to the next free one.)
 
 ## Notes
-- `TARGET_APP` env overrides the default app for any command (default: the bundled
-  `asteron-quote-apply` worked example).
+- `TARGET_APP` env overrides the default app (default: the bundled `asteron-quote-apply` example).
 - `apps/<app>/.env` is gitignored; credentials never get committed.
-- The wrapper is intentionally thin — the real process lives in `.kiro/steering/*.md`, `tools/`,
-  and `TEST-GENERATION-PROCESS.md`.
+- The real IP lives in `.kiro/steering/*.md` (the rulebook + app context) and `tools/`. The agent
+  is bound by those; `run.js` is just the mechanical shell.

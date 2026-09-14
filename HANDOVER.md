@@ -35,7 +35,7 @@ producing evidence a BA/PM/dev can act on. Proven on the Asteron Life Quote & Ap
 ## 3. How the process runs (the loop)
 
 ```
-   Materials (user stories / existing BRs / reference)  ──►  apps/<app>/inbox/
+   Materials (user stories → docs/user-stories/ · existing BRs → docs/business-rules/)
                                    │
               ┌────────────────────┴────────────────────┐
               ▼                                          ▼
