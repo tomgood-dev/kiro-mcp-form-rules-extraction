@@ -22,7 +22,7 @@ test.describe('Occupation — Apply-flow screen', () => {
       'payment/flow-gated in this environment. The quote-screen occupation control is covered separately',
       'by occupational-codes-v1 (ACB-6504).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (not reachable from the Quote screen): the Occupation story is the Apply-flow screen (Previous->Insurance History, Next->Income; captures Employer/Country/Address). Reaching it requires progressing a full application past Duty of Disclosure, which is not driveable from the quote screen in this environment (Apply flow historically payment/flow-gated). Encode as part of a dedicated Apply-flow test pass once that flow is reachable end-to-end. The quote-screen occupation dropdown + code eligibility is already covered by occupational-codes-v1.');
+    test.fixme(true, 'Deferred (updated 2026-09-14): the Apply flow IS now reachable - Apply navigates to Client Summary -> Duty of Disclosure -> Personal Details (proven: probe-applyflow-depth-2026-09-14). The Occupation screen sits further along (past Personal Details, which has its own mandatory Paramedical/Address/Contact fields before Next progresses). Reachable in principle now; needs the Personal Details screen driven through first (a dedicated Apply-flow-walk helper). No longer "Apply is payment/flow-gated at the quote screen". Quote-screen occupation dropdown + code eligibility is already covered by occupational-codes-v1.');
     expect(true).toBe(true);
   });
 });

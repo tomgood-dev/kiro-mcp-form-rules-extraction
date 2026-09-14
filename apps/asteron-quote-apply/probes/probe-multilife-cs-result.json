@@ -1,0 +1,28 @@
+[
+  {
+    "addLifeControl": "Add life"
+  },
+  {
+    "adviser": "locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Adviser Use', { exact: true }).first()\u001b[22m\n\u001b[2m    - locator resolved to <div id=\"b25-l4-11491_0-b11-Content\" class=\"vertical-align flex-direction-row\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    19 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+  },
+  {
+    "apply": true,
+    "errors": []
+  },
+  {
+    "clientSummary": {
+      "onClientSummary": true,
+      "proceedBtns": [
+        "Proceed to application",
+        "Proceed to application"
+      ],
+      "lifeSectionCount": 4,
+      "firstNameInputs": 2,
+      "dobInputs": 2,
+      "statuses": [
+        "PRE APPLICATION",
+        "PRE APPLICATION"
+      ]
+    }
+  }
+]

@@ -1,0 +1,459 @@
+[
+  {
+    "step": "after reachApplicationFlow (expect Client Summary)",
+    "url": "/QuoteAndApply/Quote?QuoteId=&ShowApplyNow=false&IsClone=false&LastModifiedDate=1900-01-01&ApplicationId=",
+    "heads": [
+      "Client summary\nLast modified: 14/09/2026 05:04 PM",
+      "Life 1\nPRE APPLICATION",
+      "Life 1\nPRE APPLICATION",
+      "Premium",
+      "Premium",
+      "Life 1",
+      "Life 1"
+    ],
+    "markers": {
+      "dutyOfDisclosure": false,
+      "clientSummary": true,
+      "personalStatement": false,
+      "occupation": false,
+      "income": false,
+      "ure": false
+    },
+    "errors": [],
+    "buttons": [
+      "Sign out",
+      "Proceed to application",
+      "Return to Quote"
+    ]
+  },
+  {
+    "step": "after proceedThroughClientSummary",
+    "url": "/QuoteAndApply/DutyOfDisclosure?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Duty Of Disclosure",
+      "Why accurate information matters to us",
+      "Please read carefully",
+      "Risk to you from non-disclosure",
+      "Privacy statement",
+      "Important: Insurer Financial Strength Rating",
+      "Fitch Rating Scale",
+      "Adviser"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": true,
+      "income": true,
+      "ure": true
+    },
+    "errors": [],
+    "buttons": [
+      "Sign out",
+      "www.asteronlife.co.nz",
+      "www.fitchratings.com",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ],
+    "reachedDoD": true
+  },
+  {
+    "step": "after attempting to progress past DoD",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 1",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "Please review required fields",
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 2",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 3",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 4",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 5",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 6",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 7",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 8",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 9",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  },
+  {
+    "step": "wizard step 10",
+    "url": "/QuoteAndApply/PersonalDetails?ApplicationId=f54916b4-42cf-4b16-b860-3a8c4195a8f6",
+    "heads": [
+      "Personal Details\nLast modified: 14/09/2026",
+      "Personal Information",
+      "Personal Information",
+      "Paramedical Services",
+      "Paramedical Services",
+      "Address",
+      "Address",
+      "Contact"
+    ],
+    "markers": {
+      "dutyOfDisclosure": true,
+      "clientSummary": false,
+      "personalStatement": true,
+      "occupation": false,
+      "income": false,
+      "ure": true
+    },
+    "errors": [
+      "You must enter a value in this field",
+      "Type to search No options to show..."
+    ],
+    "buttons": [
+      "Sign out",
+      "Yes",
+      "No",
+      "View Stellar PDF",
+      "View PDF",
+      "Close",
+      "Previous",
+      "Next"
+    ]
+  }
+]

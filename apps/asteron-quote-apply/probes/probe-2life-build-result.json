@@ -1,0 +1,159 @@
+[
+  {
+    "step": "life1 ready",
+    "lifeTabs": [
+      "Life 1"
+    ],
+    "addLife": [
+      "Add life"
+    ],
+    "applyBtn": [
+      {
+        "disabled": false
+      }
+    ],
+    "firstNames": [
+      {
+        "id": "b15-Input_FirstName",
+        "v": "Alpha"
+      }
+    ],
+    "incomes": [],
+    "dobs": [
+      {
+        "id": "b15-Input_BirthDate",
+        "v": "1985-06-15"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "step": "after Add life",
+    "lifeTabs": [
+      "Life 1",
+      "Life 2"
+    ],
+    "addLife": [
+      "Add life"
+    ],
+    "applyBtn": [
+      {
+        "disabled": false
+      }
+    ],
+    "firstNames": [
+      {
+        "id": "b15-Input_FirstName",
+        "v": "Alpha"
+      }
+    ],
+    "incomes": [],
+    "dobs": [
+      {
+        "id": "b15-Input_BirthDate",
+        "v": ""
+      }
+    ],
+    "errors": []
+  },
+  {
+    "life2Ready": {
+      "dob": "1985-06-15",
+      "errs": [],
+      "yearly": "$934.56"
+    }
+  },
+  {
+    "step": "life2 completed",
+    "lifeTabs": [
+      "Life 1",
+      "Life 2"
+    ],
+    "addLife": [
+      "Add life"
+    ],
+    "applyBtn": [
+      {
+        "disabled": false
+      }
+    ],
+    "firstNames": [
+      {
+        "id": "b15-Input_FirstName",
+        "v": "Beta"
+      }
+    ],
+    "incomes": [],
+    "dobs": [
+      {
+        "id": "b15-Input_BirthDate",
+        "v": "1985-06-15"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "adviserPopup": {
+      "hasModal": true,
+      "buttons": [
+        {
+          "t": "Update",
+          "cls": "btn ThemeGrid_MarginGutter"
+        },
+        {
+          "t": "Cancel",
+          "cls": "btn"
+        },
+        {
+          "t": "OK",
+          "cls": "btn btn-primary"
+        }
+      ],
+      "commissionDropdowns": [
+        {
+          "cur": "Upfront",
+          "opts": [
+            "Upfront",
+            "Level 30",
+            "Spread 20"
+          ]
+        },
+        {
+          "cur": "IC-100%, RC-100%",
+          "opts": [
+            "Please Select",
+            "IC-100%, RC-100%"
+          ]
+        },
+        {
+          "cur": "Please Select",
+          "opts": [
+            "Please Select",
+            "Level 30",
+            "Spread 20",
+            "Upfront"
+          ]
+        },
+        {
+          "cur": "Please Select",
+          "opts": [
+            "Please Select",
+            "Upfront",
+            "Level 30",
+            "Spread 20"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "applyProgressed": false,
+    "applyErrors": []
+  },
+  {
+    "afterApply": {
+      "onCS": false,
+      "url": "/QuoteAndApply/Quote"
+    }
+  }
+]

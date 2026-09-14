@@ -355,24 +355,47 @@ async function clickApplyNow(page) {
  */
 async function fillAdviserUse(page, structure = 'Upfront') {
   console.log(`  [step] Filling Adviser Use (commission = ${structure})...`);
-  await page.getByText('Adviser Use', { exact: true }).first().click({ timeout: 10000 });
+  // The commission popup is opened by a BUTTON labelled "Adviser Use" (class contains 'btn') — NOT
+  // the per-life section-header DIVs that also read "Adviser Use" (2026-09-14: in multi-life view a
+  // getByText().first() matched a header DIV, opening nothing; the real trigger is the button).
+  const adviserBtn = page.locator('button', { hasText: /^Adviser Use$/ }).first();
+  await adviserBtn.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
+  let opened = await adviserBtn.click({ timeout: 6000 }).then(() => true).catch(() => false);
+  if (!opened) {
+    opened = await page.evaluate(() => {
+      const b = [...document.querySelectorAll('button')].find((e) => e.offsetParent !== null && (e.innerText || '').trim() === 'Adviser Use');
+      if (b) { b.scrollIntoView({ block: 'center' }); b.click(); return true; }
+      return false;
+    });
+  }
+  console.log(`  [step] Adviser Use button ${opened ? 'clicked' : 'NOT FOUND'}`);
   await waitForSettle(page, 2500);
-  // Set the "Select All" dropdown (cascades) + any per-cover commission dropdown still on "Please Select".
-  const set = await page.evaluate((struct) => {
+  // Set commission for ALL lives. In multi-life the popup has a Select-All-style commission dropdown
+  // that cascades, PLUS a per-life commission dropdown per life. Set the first one, wait for the
+  // cascade, then sweep any that are STILL "Please Select" (per-life). Apply silently gates if ANY
+  // commission dropdown remains unset (confirmed 2026-09-14).
+  const setAll = async () => page.evaluate((struct) => {
     function vis(e) { return e && e.offsetParent !== null; }
-    function nl(el) { let n = el; for (let d = 0; d < 5 && n; d++) { let s = n.previousElementSibling; while (s) { const t = (s.innerText || '').trim(); if (t) return t.split('\n')[0].slice(0, 45); s = s.previousElementSibling; } n = n.parentElement; } return ''; }
-    const done = [];
-    [...document.querySelectorAll('select')].filter(vis).forEach((s) => {
-      const label = nl(s);
-      const cur = (s.options[s.selectedIndex] || {}).text || '';
-      if ((/select all/i.test(label) || /life cover|cover$/i.test(label)) && /please select/i.test(cur)) {
+    function commission(s) { const o = [...s.options].map((x) => x.text.trim()); return o.includes('Upfront') && o.includes('Level 30') && o.includes('Spread 20'); }
+    let n = 0;
+    [...document.querySelectorAll('select')].filter(vis).filter(commission).forEach((s) => {
+      if (/please select/i.test((s.options[s.selectedIndex] || {}).text || '')) {
         const opt = [...s.options].find((o) => o.text.trim() === struct);
-        if (opt) { s.value = opt.value; s.dispatchEvent(new Event('change', { bubbles: true })); done.push(label); }
+        if (opt) { s.value = opt.value; s.dispatchEvent(new Event('change', { bubbles: true })); n++; }
       }
     });
-    return done;
+    return n;
   }, structure);
-  await waitForSettle(page, 2000);
+  const set = await setAll(); await waitForSettle(page, 1500);
+  const set2 = await setAll(); await waitForSettle(page, 1000);
+  const set3 = await setAll(); await waitForSettle(page, 1000);
+  // verify none remain unset
+  const remaining = await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    function commission(s) { const o = [...s.options].map((x) => x.text.trim()); return o.includes('Upfront') && o.includes('Level 30') && o.includes('Spread 20'); }
+    return [...document.querySelectorAll('select')].filter(vis).filter(commission).filter((s) => /please select/i.test((s.options[s.selectedIndex] || {}).text || '')).length;
+  });
+  console.log(`  [step] Adviser Use commission dropdowns set (pass counts ${set}/${set2}/${set3}); ${remaining} still unset`);
   // OK closes the modal (real click).
   await page.getByRole('button', { name: 'OK', exact: true }).click({ timeout: 10000 }).catch(() => {});
   await waitForSettle(page, 2000);

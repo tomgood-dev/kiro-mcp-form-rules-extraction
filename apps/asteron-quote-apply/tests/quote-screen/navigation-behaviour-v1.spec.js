@@ -21,7 +21,7 @@ test.describe('Navigation Behaviour (URE questionnaire)', () => {
       'inside the Apply/underwriting flow, past the Quote screen and Duty of Disclosure — not reachable from',
       'the quote screen (probe 2026-09-08 confirmed no quote-screen path into it).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (not reachable from the Quote screen): all ACs concern the URE underwriting questionnaire navigation panel (completion ticks + previous-page navigation), which requires a completed URE questionnaire deep in the Apply/underwriting flow (past Duty of Disclosure). Not reachable from the quote screen. Encode in a dedicated URE/underwriting-flow test pass once that flow is reachable end-to-end.');
+    test.fixme(true, 'Deferred (updated 2026-09-14): the Apply flow IS now reachable to Client Summary -> Duty of Disclosure -> Personal Details (proven: probe-applyflow-depth-2026-09-14). The URE underwriting questionnaire navigation panel these ACs concern sits deeper still (past Personal Details + the underwriting steps). Reachable in principle now; needs the Apply flow driven through Personal Details and into the URE questionnaire first (a dedicated Apply/underwriting-walk helper). No longer "not reachable from the quote screen".');
     expect(true).toBe(true);
   });
 });
