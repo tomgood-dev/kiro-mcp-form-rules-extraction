@@ -1,5 +1,12 @@
 # Quote-Screen Acceptance-Criteria Coverage Gap Analysis
 
+> **⚠️ SUPERSEDED (2026-09-16):** this quote-screen-only analysis predates the apply-flow
+> breakthrough. The Apply flow is now reachable + completable end-to-end (policy J4211922), so the
+> "N/A-apply-flow / unreachable / payment-gated" verdicts below are largely stale. See the
+> re-validation **`coverage-gaps-2026-09-16.md`** for the current picture (what moved to COVERED,
+> which deferrals are now stale, and what is newly actionable). This file is kept as the baseline.
+
+
 - **Date:** 2026-09-11
 - **Scope:** Quote-screen only. Apply-flow stories (Apply Now, Duty of Disclosure, Payment, Submit, Tele-Interview, URE, Insurance History, Owner Details, Underwriting Decision, etc.) are excluded per the tracker.
 - **Method:** Read-only cross-reference. For every ✅ quote-screen user story in `docs/user-story-tracker.md`, each AC id in the story `.md` was matched against the `test()` titles + `acceptance-criteria` annotations and the `test.fixme(true, reason)` deferrals in the matching spec under `tests/quote-screen/`. No app was driven, no test was run, no spec was modified.

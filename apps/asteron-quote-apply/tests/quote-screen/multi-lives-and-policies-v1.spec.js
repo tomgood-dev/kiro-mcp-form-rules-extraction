@@ -889,10 +889,11 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
 
   // ── Apply-flow ACs (updated 2026-09-14: Apply DOES navigate now) ──
   // Client Summary + Duty of Disclosure + Personal Details are reachable from the browser (proven
-  // 2026-09-14, probe-applyflow-depth + probe-multilife-cs). MLP-10/MLP-19 are now ENCODED as
-  // passing (Client Summary per-life fields + per-life Proceed control + status). The remaining
-  // MLP-11/12/20/21 are deferred for a narrower reason: they need per-life proceed-isolation or a
-  // full application SUBMISSION (payment/STP-gated) - NOT because Apply fails to navigate.
+  // 2026-09-14/15). MLP-10/MLP-19 are now ENCODED as passing (Client Summary per-life fields +
+  // per-life Proceed control + status). Single-life submission is CONFIRMED completable end-to-end
+  // (policy J4211922 — there is NO payment/STP gate). The remaining MLP-11/12/20/21 are deferred for
+  // a narrower reason: the flaky multi-life BUILD + the multi-life per-life Proceed not navigating -
+  // NOT because Apply fails to navigate and NOT because submission is gated.
   test('MLP-10/AC10: multi-life Apply reaches Client Summary with per-life fields', async ({ page }, testInfo) => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC10: multi-life Apply -> Client Summary with per-life First/Last/DOB + a Proceed button per life.',
@@ -925,8 +926,9 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'AC11: Given AC10, When I click Proceed to Application on Life 1, Then the system must proceed',
       'with the application only for Life 1.',
       '',
-      'Blocked (evidence): depends on the Client Summary, which is unreachable (Apply does not',
-      'navigate — see MLP-10 evidence).',
+      'Deferred (evidence): the Client Summary IS reachable (MLP-10/MLP-19 pass). The blocker is the',
+      'flaky multi-life build + the per-life Proceed not navigating into a per-life app - see the',
+      'fixme reason.',
     ].join('\n') });
     test.fixme(true, 'Deferred (retested 2026-09-16). Single-life Proceed now fully works (DOB-must-match-ANB fix + full apply-flow helpers; single-life submits end-to-end, policy J4211922). Retested multi-life with the DOB-match applied to both lives (probe-mlp11-retest-2026-09-16.js): the 2-life build did NOT reliably re-reach the multi-life Client Summary (Apply stayed on the Quote screen, proceedBtns=0) — the multi-life build itself is flaky (masked-SI/occupation-name racing on the Add-life re-render under one session), which compounds the original per-life-Proceed question. So "Proceed for Life 1 ONLY" still cannot be asserted: the blocker is now (a) a fragile multi-life build to reliably reach Client Summary, then (b) the original finding that per-life Proceed did not navigate even with all names filled. Needs a hardened multi-life builder (promote buildTwoLifeApplyReady with price-verify + occupation-name retry) reaching Client Summary reliably, THEN re-confirm per-life Proceed with matching DOBs. Client Summary reachability + per-life controls remain covered by MLP-10/MLP-19.');
   });
@@ -936,9 +938,9 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'AC12: Given AC11, When I have submitted the application for Life 1, Then the Proceed to',
       'Application button should be greyed out for Life 1 And I must be able to proceed with other lives.',
       '',
-      'Blocked (evidence): requires reaching the Client Summary AND submitting a full application,',
-      'which is unreachable from the browser (Apply does not navigate; full application submission was',
-      'documented as payment/STP-gated in iteration-001).',
+      'Deferred (evidence): the Client Summary IS reachable (MLP-10/MLP-19 pass) and single-life',
+      'submission completes end-to-end (no payment/STP gate). This MULTI-life AC is blocked on the',
+      'flaky multi-life build + the per-life Proceed not navigating - see the fixme reason.',
     ].join('\n') });
     test.fixme(true, 'Deferred (updated 2026-09-15): SINGLE-life submission is now CONFIRMED completable end-to-end on QA (drove Quote->...->Submit, policy J4211922 — there is NO payment/STP gate; see docs/apply-flow-end-to-end-2026-09-15.md, corrects the earlier wrong "payment-gated" claim). This AC is MULTI-life, and the remaining blocker is the multi-life per-life "Proceed to application" not navigating into a per-life app (MLP-11 finding, probe-mlp11-2026-09-15.js) — so the per-life Submitted-status/PDF checks cannot be reached until per-life app-entry works, NOT because submission is gated. Single-life apply-flow submission helpers are in quote-helpers.js (submitApplication etc.).');
   });
@@ -986,8 +988,9 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'Application, Confirmation, Declaration) / Clone the quote, and allow proceeding with other',
       'applications.',
       '',
-      'Blocked (evidence): requires a full application submission past the Client Summary, which is',
-      'unreachable from the browser (Apply does not navigate; submission is payment/STP-gated).',
+      'Deferred (evidence): single-life submission completes end-to-end (no payment/STP gate; policy',
+      'J4211922). This MULTI-life AC is blocked on the flaky multi-life build + the per-life Proceed',
+      'not navigating into a per-life app - not a submission gate. See the fixme reason.',
     ].join('\n') });
     test.fixme(true, 'Deferred (updated 2026-09-15): SINGLE-life submission is now CONFIRMED completable end-to-end on QA (drove Quote->...->Submit, policy J4211922 — there is NO payment/STP gate; see docs/apply-flow-end-to-end-2026-09-15.md, corrects the earlier wrong "payment-gated" claim). This AC is MULTI-life, and the remaining blocker is the multi-life per-life "Proceed to application" not navigating into a per-life app (MLP-11 finding, probe-mlp11-2026-09-15.js) — so the per-life Submitted-status/PDF checks cannot be reached until per-life app-entry works, NOT because submission is gated. Single-life apply-flow submission helpers are in quote-helpers.js (submitApplication etc.).');
   });
