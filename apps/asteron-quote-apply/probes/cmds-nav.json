@@ -1,7 +1,6 @@
 [
-  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); return {applyPresent:!!b}" },
-  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); if(b)b.click(); return {clicked:!!b}" },
-  { "action": "wait", "ms": 10000 },
-  { "action": "eval", "code": "return {url:location.href, onCS:/client summary/i.test(document.body.innerText||''), proceed:[].slice.call(document.querySelectorAll('button,a')).filter(function(x){return x.offsetParent!==null && /proceed to application/i.test((x.innerText||'').trim());}).length, bodyHint:(document.body.innerText||'').slice(0,60)}" },
+  { "action": "click", "selector": "button:has-text('Proceed to application')" },
+  { "action": "wait", "ms": 7000 },
+  { "action": "eval", "code": "return {url:location.pathname, onDoD:/duty of disclosure/i.test(document.body.innerText||''), heading:((document.querySelector('h1,h2')||{}).innerText||'').slice(0,40)}" },
   { "action": "errors" }
 ]

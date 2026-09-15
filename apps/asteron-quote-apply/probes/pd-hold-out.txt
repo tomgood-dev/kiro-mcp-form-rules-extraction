@@ -1,0 +1,28 @@
+building quote...
+  [step] Opening a new quote...
+  [step] New Quote opened in a new tab (proper adviser-session entry; footer bar present)
+  [step] Quote form rendered OK
+  [step] Completing personal details for Apply...
+  [step] Setting Date of Birth = 1985-06-15
+  [step] Setting Gender = Male
+  [step] Setting Pre-tax Annual Income = 120000
+  [step] Entering calc-mask value: 120000
+  [step] Personal details for Apply complete
+  [step] Activating cover: Life
+  [step] Entering calc-mask value: 1000000
+  [step] Filling Adviser Use (commission = Upfront)...
+  [step] Adviser Use button clicked
+  [step] Adviser Use commission dropdowns set (pass counts 1/0/0); 0 still unset
+  [step] Adviser Use set: 1
+  [step] Clicking Apply (to enter application flow)...
+  [step] Apply progressed (Client summary / application flow)
+at client summary; proceeding...
+  [step] Client Summary: filling mandatory names + Proceed to application...
+  [step] Client Summary Proceed reached Duty of Disclosure
+at Personal Details; filling all fields except address...
+  [step] Entering calc-mask value: 180
+  [step] Entering calc-mask value: 80
+
+>>> PAUSED at the ADDRESS LOOKUP on Personal Details. Watch the address field / suggestions.
+>>> Everything else is filled. This is the blocker. Browser stays open ~15 min. <<<
+
