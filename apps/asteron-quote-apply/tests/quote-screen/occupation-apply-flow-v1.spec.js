@@ -22,7 +22,7 @@ test.describe('Occupation — Apply-flow screen', () => {
       'payment/flow-gated in this environment. The quote-screen occupation control is covered separately',
       'by occupational-codes-v1 (ACB-6504).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): the Apply flow IS now reachable - Apply navigates to Client Summary -> Duty of Disclosure -> Personal Details (proven: probe-applyflow-depth-2026-09-14). The Occupation screen sits further along (past Personal Details, which has its own mandatory Paramedical/Address/Contact fields before Next progresses). Reachable in principle now; needs the Personal Details screen driven through first (a dedicated Apply-flow-walk helper). No longer "Apply is payment/flow-gated at the quote screen". Quote-screen occupation dropdown + code eligibility is already covered by occupational-codes-v1.');
+    test.fixme(true, 'Deferred (updated 2026-09-15, reachability mapped live): the Apply flow reaches Client Summary -> Duty of Disclosure -> PERSONAL DETAILS and STOPS there. Next from Personal Details surfaces "Please review required fields / You must enter a value in this field" + a "Type to search" typeahead with no options - i.e. the Occupation screen sits behind FULL completion of the Personal Details application form (address, contact, paramedical, typeahead fields), which is a large screen not yet automated (probe-applyflow-walk-2026-09-15.js). Reachable once Personal Details completion is driven as a helper. No longer "Apply is payment/flow-gated at the quote screen". Quote-screen occupation dropdown + code eligibility is covered by occupational-codes-v1.');
     expect(true).toBe(true);
   });
 });
