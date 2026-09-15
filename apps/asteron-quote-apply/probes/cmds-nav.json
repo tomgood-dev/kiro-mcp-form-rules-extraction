@@ -1,8 +1,3 @@
 [
-  { "action": "eval", "code": "var c=document.querySelector('input[type=\"checkbox\"][id*=\"AcknowledgmentCheckbox\"]'); if(c&&!c.checked){c.click(); if(!c.checked){c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));}} return {ack:c?c.checked:null}" },
-  { "action": "wait", "ms": 1500 },
-  { "action": "click", "selector": "button:has-text('Submit Application')" },
-  { "action": "wait", "ms": 9000 },
-  { "action": "eval", "code": "return {url:location.pathname, full:(document.getElementById('b2-MainContentWrapper')||document.body).innerText.replace(/\\s+/g,' ').trim().slice(0,500)}" },
-  { "action": "errors" }
+  { "action": "eval", "code": "return {url:location.pathname, alive:true}" }
 ]

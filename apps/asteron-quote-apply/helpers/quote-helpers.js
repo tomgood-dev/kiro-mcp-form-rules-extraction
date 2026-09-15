@@ -730,37 +730,72 @@ async function passDutyOfDisclosure(page) {
 }
 
 /**
- * Personal Details application screen. Fills the confirmed mandatory set and selects a real address
- * suggestion (force-focus + keyboard type + pick). Postal-same-as-home = Yes.
- * @param {object} opts { title, cm, kg, mobile, email, addressQuery, dob (must match quote ANB) }
+ * Personal Details application screen. Fills the confirmed mandatory set (Title, Marital Status,
+ * Cm/Kg masked, Mobile, Email, DOB, home address via lookup) and answers the Yes/No button-groups.
+ * Uses real Playwright selectOption/fill (raw .value does not commit reliably here). Verifies the
+ * masked height/weight landed and retries. Postal-same-as-home + button-groups default answered.
+ * @param {object} opts { title, maritalStatus, cm, kg, mobile, email, addressQuery, dob (match quote ANB) }
  */
 async function fillPersonalDetailsScreen(page, opts = {}) {
-  const { title = 'Mr', cm = '180', kg = '80', mobile = '0211234567', email = 'test@example.com', addressQuery = '12 Queen', dob } = opts;
+  const { title = 'Mr', maritalStatus = 'Single', cm = '180', kg = '80', mobile = '0211234567', email = 'test@example.com', addressQuery = '12 Queen', dob } = opts;
   console.log('  [apply] Personal Details screen');
-  await page.evaluate((t) => { const s = document.querySelector('select[id*="Dropdown_Title"]'); if (s) { for (let i = 0; i < s.options.length; i++) { if (s.options[i].text.trim() === t) { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); break; } } } }, title);
-  await fillCalcMask(page.locator('input[id*="b5-Input_Cm"]').first(), cm).catch(() => {});
-  await fillCalcMask(page.locator('input[id*="b5-Input_Kg"]').first(), kg).catch(() => {});
-  await page.evaluate((o) => { function si(sel, v) { const e = document.querySelector(sel); if (e) { e.focus(); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } } si('input[id*="Input_MobileNumber"]', o.m); si('input[id*="b5-Input_Email"]', o.e); }, { m: mobile, e: email });
-  if (dob) await page.evaluate((d) => { const e = document.querySelector('input[id*="b5-Input_DateOfBirth"]'); if (e) { e.focus(); e.value = d; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } }, dob).catch(() => {});
-  await waitForSettle(page, 800);
+  // Title + Marital Status via real selectOption (by label).
+  await page.locator('select[id*="b5-Dropdown_Title"]').first().selectOption({ label: title }).catch(async () => {
+    await page.evaluate((t) => { const s = document.querySelector('select[id*="Dropdown_Title"]'); if (s) { for (let i = 0; i < s.options.length; i++) { if (s.options[i].text.trim() === t) { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); break; } } } }, title);
+  });
+  await page.locator('select[id*="b5-Dropdown_MaritalStatus"]').first().selectOption({ label: maritalStatus }).catch(() => {});
+  await waitForSettle(page, 500);
+  // Mobile + Email via real fill.
+  await page.locator('input[id*="b5-Input_MobileNumber"]').first().fill(mobile).catch(() => {});
+  await page.locator('input[id*="b5-Input_Email"]').first().fill(email).catch(() => {});
+  // DOB (must match quote ANB) via real fill.
+  if (dob) await page.locator('input[id*="b5-Input_DateOfBirth"]').first().fill(dob).catch(() => {});
+  // Height/Weight: masked Cm/Kg ONLY (leave Feet/Inches/Stones/Pounds blank). fillCalcMask +
+  // verify the digits landed (mask can show just "." if focus was lost); retry once.
+  for (const [sel, val, name] of [['input[id*="b5-Input_Cm"]', cm, 'Cm'], ['input[id*="b5-Input_Kg"]', kg, 'Kg']]) {
+    const loc = page.locator(sel).first();
+    await fillCalcMask(loc, val).catch(() => {});
+    await waitForSettle(page, 400);
+    const landed = await loc.inputValue().catch(() => '');
+    if (!/\d/.test(landed)) { // mask empty -> retry with explicit focus+type
+      await loc.evaluate((e) => e.focus()).catch(() => {});
+      await loc.type(val, { delay: 40 }).catch(() => {});
+      await waitForSettle(page, 400);
+      console.log(`  [apply] ${name} retry -> "${await loc.inputValue().catch(() => '')}"`);
+    }
+  }
+  await waitForSettle(page, 600);
   // Home address: focus FIRST (click alone leaves it unfocused -> "No options to show"), type, pick a real suggestion.
   const addr = page.locator('input[id*="b5-b20-Input_AddressLookup"]').first();
   await addr.evaluate((e) => e.focus()).catch(() => {});
-  await addr.type(addressQuery, { delay: 60 }).catch(() => {});
-  await waitForSettle(page, 2500);
+  await addr.type(addressQuery, { delay: 70 }).catch(() => {});
+  await waitForSettle(page, 3000);
+  const picked = await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const opt = [].slice.call(document.querySelectorAll('li,[role="option"],.dropdown-item,[class*="suggestion"],[class*="Option"]')).filter(vis).find((x) => /\d+\s+.+,.+\d{4}/.test((x.innerText || '').trim()));
+    if (opt) { opt.click(); return (opt.innerText || '').trim().slice(0, 40); }
+    return null;
+  });
+  console.log(`  [apply] address picked: ${picked || '(none yet)'}`);
+  await waitForSettle(page, 1500);
+  // Answer the Yes/No button-groups by their QUESTION text (each set has a Yes + No item):
+  //  - "postal address same as ... home" => Yes (skips the 2nd/postal address block)
+  //  - everything else (Paramedical Services "mobile medical", etc.) => No
   await page.evaluate(() => {
     function vis(e) { return e && e.offsetParent !== null; }
-    const opt = [].slice.call(document.querySelectorAll('li,[role="option"],.dropdown-item,[class*="suggestion"]')).filter(vis).find((x) => /\d+\s+.+,.+\d{4}/.test((x.innerText || '').trim()));
-    if (opt) opt.click();
+    const items = [].slice.call(document.querySelectorAll('.button-group-item')).filter(vis);
+    const seen = [];
+    items.forEach((it) => {
+      // Climb until the ancestor text is meaningfully longer than "Yes No" (i.e. includes the question).
+      let c = it; let q = '';
+      for (let k = 0; k < 9 && c; k++) { c = c.parentElement; if (c) { const t = (c.innerText || '').replace(/\s+/g, ' ').trim(); if (t.length > 15 && /yes\s*no/i.test(t)) { q = t; break; } } }
+      if (!c || seen.indexOf(c) >= 0) return; seen.push(c);
+      const wantYes = /postal address same as|same as (your |the )?home address/i.test(q);
+      const pick = [].slice.call(c.querySelectorAll('.button-group-item')).find((b) => new RegExp('^' + (wantYes ? 'yes' : 'no') + '$', 'i').test((b.innerText || '').trim()));
+      if (pick) pick.click();
+    });
   });
-  await waitForSettle(page, 1200);
-  // Postal same as home = Yes (button-group / radio).
-  await page.evaluate(() => {
-    function vis(e) { return e && e.offsetParent !== null; }
-    const yes = [].slice.call(document.querySelectorAll('.button-group-item,button,input[type="radio"][value="Yes"],[id*="Yes"] input')).find((x) => vis(x) && (/^yes$/i.test((x.innerText || '').trim()) || /Yes/i.test(x.value || '')));
-    if (yes) yes.click();
-  });
-  await waitForSettle(page, 1200);
+  await waitForSettle(page, 1500);
 }
 
 /** Answer every visible Yes/No question on the current questionnaire page "No" (radio-styled). */
