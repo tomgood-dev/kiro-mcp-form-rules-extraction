@@ -1,6 +1,7 @@
 [
-  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); if(b)b.click(); return {applyClicked:!!b}" },
-  { "action": "wait", "ms": 7000 },
-  { "action": "eval", "code": "return {url:location.href, onClientSummary:/client summary/i.test(document.body.innerText||''), proceedBtns:[].slice.call(document.querySelectorAll('button,a')).filter(function(x){return x.offsetParent!==null && /proceed to application/i.test((x.innerText||'').trim());}).length}" },
+  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); return {applyPresent:!!b}" },
+  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); if(b)b.click(); return {clicked:!!b}" },
+  { "action": "wait", "ms": 10000 },
+  { "action": "eval", "code": "return {url:location.href, onCS:/client summary/i.test(document.body.innerText||''), proceed:[].slice.call(document.querySelectorAll('button,a')).filter(function(x){return x.offsetParent!==null && /proceed to application/i.test((x.innerText||'').trim());}).length, bodyHint:(document.body.innerText||'').slice(0,60)}" },
   { "action": "errors" }
 ]

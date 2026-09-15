@@ -38,19 +38,39 @@ const { recordCheck, recordStep } = require('../../../../tools/artifact-helpers'
 
 // ── Story-specific DOM helpers (discovered via the recon probes; see generation log) ──
 
-// Builds a valid TWO-life quote that is Apply-ready (proven 2026-09-14). Returns the quote page.
-// Encodes the fixes that made multi-life Apply progress:
-//  - life 1: full Apply personal details + Life $1M.
-//  - "Add life" switches the view to a blank Life 2 (same b15-* input ids).
-//  - life 2: personal details, THEN verify Gender + DOB actually landed (they race the re-render),
-//    retrying until set; then activate Life + $1M SI (>$240/life min-premium).
+// Sets the occupation NAME on the currently-active life via its "Select..." vscomp typeahead.
+// REQUIRED to pass the "complete employment details before applying" Apply gate — occupation CODE
+// + employment status alone are NOT sufficient (proven live 2026-09-15). Picks the first match for
+// a common occupation so the field is populated.
+async function setOccupationName(page, search) {
+  const opened = await page.evaluate(() => {
+    const t = [...document.querySelectorAll('.vscomp-toggle-button')].find((x) => x.offsetParent !== null && /select\.\.\./i.test((x.innerText || '').trim()));
+    if (t) { t.click(); return true; }
+    return false; // already set or no typeahead on this life
+  });
+  if (!opened) return false;
+  await waitForSettle(page, 1200);
+  await page.evaluate((s) => { const box = document.querySelector('.vscomp-search-input, input[class*="search"]'); if (box) { box.focus(); box.value = s; box.dispatchEvent(new Event('input', { bubbles: true })); } }, search || 'Accountant');
+  await waitForSettle(page, 1800);
+  await page.evaluate(() => { const o = [...document.querySelectorAll('.vscomp-option')].filter((x) => x.offsetParent !== null)[0]; if (o) o.click(); });
+  await waitForSettle(page, 2000);
+  return true;
+}
+
+// Builds a valid TWO-life quote that is Apply-ready (proven live 2026-09-15). Returns the quote page.
+// Correct order (personal details FIRST, cover+SI LAST) + the employment-details gate fix:
+//  - per life: age/gender/occ-code/employment/income, occupation NAME via typeahead, Life $1M SI.
+//  - masked SI + gender/DOB are landing-verified (they race the re-render).
 // Caller then does fillAdviserUse (sets ALL per-life commission dropdowns) + clickApplyNow.
 async function buildTwoLifeApplyReady(page) {
   const quote = await openNewQuote(page);
+  // ── Life 1 ──
   await completePersonalDetailsForApply(quote, { firstName: 'Alpha', lastName: 'One', income: 120000 });
+  await setOccupationName(quote, 'Accountant');
   await activateCover(quote, 'Life');
   await fillCalcMask(sumInsuredInput(quote, 0), '1000000');
   await waitForSettle(quote, 1500);
+  // ── Add Life 2 ──
   await quote.evaluate(() => { const b = [...document.querySelectorAll('button,a')].find((x) => x.offsetParent !== null && /add life/i.test((x.innerText || '').trim())); if (b) b.click(); });
   await waitForSettle(quote, 2500);
   await completePersonalDetailsForApply(quote, { firstName: 'Beta', lastName: 'Two', income: 120000 }).catch(() => {});
@@ -68,9 +88,9 @@ async function buildTwoLifeApplyReady(page) {
     await quote.locator('body').click({ position: { x: 5, y: 5 } }).catch(() => {});
     await waitForSettle(quote, 1000);
   }
+  await setOccupationName(quote, 'Accountant'); // Life 2 occupation NAME — clears the Apply gate
   await activateCover(quote, 'Life').catch(() => {});
-  // Fill Life 2 SI and VERIFY the premium actually priced (>$0) — the masked SI field is flaky on the
-  // re-rendered life; retry until it lands, else Apply fails the $240/life min-premium (2026-09-14).
+  // Fill Life 2 SI and VERIFY the premium priced (>$0); masked SI is flaky on the re-rendered life.
   for (let p = 0; p < 4; p++) {
     await fillCalcMask(sumInsuredInput(quote, 0), '1000000').catch(() => {});
     await waitForSettle(quote, 2500);
@@ -80,6 +100,10 @@ async function buildTwoLifeApplyReady(page) {
     });
     if (priced && priced !== '$0.00') break;
   }
+  // Re-set Life 1 occupation name too (switch to Life 1 tab); BOTH lives need it for the gate.
+  await quote.evaluate(() => { const t = [...document.querySelectorAll('*')].find((e) => e.offsetParent !== null && (e.innerText || '').trim() === 'Life 1'); if (t) t.click(); });
+  await waitForSettle(quote, 2000);
+  await setOccupationName(quote, 'Accountant');
   return quote;
 }
 
@@ -873,19 +897,27 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC10: multi-life Apply -> Client Summary with per-life First/Last/DOB + a Proceed button per life.',
       '',
-      'Deferred (updated 2026-09-14 - reachability PROVEN, harness build divergent): the old "Apply',
-      'does not navigate" reason is STALE. Proven this session: single-life Apply reaches Client',
-      'Summary -> Duty of Disclosure -> Personal Details; and a STANDALONE probe',
-      '(probe-2life-build-2026-09-14.js) built a valid 2-life quote (both lives priced, $934.56, no',
-      'errors) and reached the multi-life Client Summary with 2 per-life First Name + DOB inputs + 2',
-      '"Proceed to application" buttons + 2 "PRE APPLICATION" statuses. HOWEVER the same build is not',
-      'yet reproducible in the Playwright harness: the 2nd life priced/commission state is timing-',
-      'flaky run-to-run (masked-SI re-render, per-life commission cascade), so Apply intermittently',
-      'stays on the quote screen. Needs a hardened buildTwoLifeApplyReady (landing-verify every per-',
-      'life field + premium + all commission dropdowns) before this asserts green reliably.',
-      'Evidence: probes/probe-2life-build-2026-09-14.js + probe-multilife-cs-2026-09-14.js.',
+      'Steps: build a valid 2-life quote (each life: personal details + occupation NAME via typeahead',
+      '+ Life $1M), fill Adviser Use, Apply. The occupation NAME per life is REQUIRED to pass the',
+      '"complete employment details before applying" gate (proven live 2026-09-15).',
+      '',
+      'Expected: Client Summary reached; per-life First Name + DOB inputs; one "Proceed to',
+      'application" button per life. Confirmed reachable live 2026-09-15.',
     ].join('\n') });
-    test.fixme(true, 'Deferred (ROOT CAUSE FOUND, live 2026-09-15): built a fully-valid 2-life quote via the server (both lives: age/gender/occ-code/employment/income + Life $1M each priced, all Adviser Use commission dropdowns set, 0 errors). Clicking Apply surfaced the real blocker via the error sweep: "Please complete the client\'s employment details before applying". Occupation Code + Employment Status are NOT sufficient for the Apply gate - it wants fuller employment details (occupation NAME via typeahead / employer info) not exposed as a simple field in the priced-quote state. Same gate that deferred select-default-commission-category AC16. To encode MLP-10 the build must satisfy the employment-details gate first (fill occupation NAME via the typeahead per life). This is a KNOWN GATE, not "Apply does not navigate". See .kiro/steering/project-context.md "complete employment details" gate.');
+    const quote = await buildTwoLifeApplyReady(page);
+    await fillAdviserUse(quote, 'Upfront').catch(() => {});
+    await clickApplyNow(quote);
+    await waitForSettle(quote, 4000);
+    const cs = await quote.evaluate(() => ({
+      onClientSummary: /client summary/i.test(document.body.innerText || ''),
+      firstNameInputs: [...document.querySelectorAll('input[id*="FirstName"]')].filter((e) => e.offsetParent !== null).length,
+      dobInputs: [...document.querySelectorAll('input[type="date"][id*="BirthDate"]')].filter((e) => e.offsetParent !== null).length,
+      proceedBtns: [...document.querySelectorAll('button,a')].filter((b) => b.offsetParent !== null && /proceed to application|start application/i.test((b.innerText || '').trim())).length,
+    }));
+    recordCheck(testInfo, { label: 'Multi-life Apply reached the Client Summary', expected: true, actual: cs.onClientSummary });
+    recordCheck(testInfo, { label: 'One Proceed-to-application per life (2 lives)', expected: '>= 2', actual: cs.proceedBtns });
+    expect(cs.onClientSummary, 'AC10: multi-life Apply reaches Client Summary').toBe(true);
+    expect(cs.proceedBtns, 'AC10: one Proceed-to-application per life').toBeGreaterThanOrEqual(2);
   });
 
   test('MLP-11/AC11: Proceed to Application on Life 1 proceeds for Life 1 only', async ({ page }) => {
@@ -912,17 +944,28 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
   });
 
   test('MLP-19/AC19: multi-life Apply shows one Start Application + status per life', async ({ page }, testInfo) => {
+    test.setTimeout(600000);
     test.info().annotations.push({ type: 'acceptance-criteria', description: [
       'AC19: multi-life Apply -> Client Summary with one Start/Proceed control per life + a status per life.',
       '',
-      'Deferred (updated 2026-09-14): same state as MLP-10 - reachability PROVEN via standalone probe',
-      '(2-life Client Summary reached: 2 "Proceed to application" controls + 2 "PRE APPLICATION"',
-      'statuses), but the 2-life build is not yet reproducible in the harness (2nd-life masked-SI +',
-      'per-life commission cascade timing-flaky). Needs a hardened per-life build helper.',
-      'Also flags: AC10 "Proceed to Application" vs AC19 "Start Application" - live label is',
-      '"Proceed to application" (story wording inconsistency, for author clarification).',
+      'Confirmed reachable live 2026-09-15 (occupation NAME per life clears the employment-details',
+      'Apply gate). NOTE: AC10 calls the control "Proceed to Application", AC19 calls it "Start',
+      'Application" - the live label is "Proceed to application" (story wording inconsistency, flagged).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): same as MLP-10 - reachability proven via standalone probe (2 Proceed controls + 2 statuses on the multi-life Client Summary) but not yet reproducible in the harness (2nd-life build timing-flaky). Needs a hardened per-life build helper. Live control label is "Proceed to application" (AC19 says "Start Application" - wording inconsistency).');
+    const quote = await buildTwoLifeApplyReady(page);
+    await fillAdviserUse(quote, 'Upfront').catch(() => {});
+    await clickApplyNow(quote);
+    await waitForSettle(quote, 4000);
+    const cs = await quote.evaluate(() => ({
+      onClientSummary: /client summary/i.test(document.body.innerText || ''),
+      controls: [...document.querySelectorAll('button,a')].filter((b) => b.offsetParent !== null && /proceed to application|start application/i.test((b.innerText || '').trim())).length,
+      statuses: ((document.body.innerText || '').match(/PRE APPLICATION|IN PROGRESS|SUBMITTED|NOT STARTED/gi) || []).length,
+    }));
+    recordCheck(testInfo, { label: 'One per-life Start/Proceed Application control', expected: '>= 2', actual: cs.controls });
+    recordCheck(testInfo, { label: 'One status per life', expected: '>= 2', actual: cs.statuses });
+    expect(cs.onClientSummary, 'AC19: Client Summary reached').toBe(true);
+    expect(cs.controls, 'AC19: one control per life').toBeGreaterThanOrEqual(2);
+    expect(cs.statuses, 'AC19: one status per life').toBeGreaterThanOrEqual(2);
   });
 
   test('MLP-20/AC20: Start Application proceeds, shows Continue Application on return', async ({ page }) => {
