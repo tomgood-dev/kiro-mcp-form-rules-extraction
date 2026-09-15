@@ -499,7 +499,11 @@ async function handle(cmd) {
       // Usage: { action: "calcmask", id: "field-id", value: "250000" }
       const loc = buildLocator(cmd);
       await loc.scrollIntoViewIfNeeded().catch(() => {});
-      await loc.click();
+      await loc.click().catch(() => {});
+      // Some masked SI/benefit fields do NOT take focus from a click (activeElement stays BODY,
+      // so keystrokes go nowhere — confirmed live 2026-09-15). Force focus on the element itself
+      // before typing.
+      await loc.evaluate((el) => el.focus()).catch(() => {});
       await page.waitForTimeout(150);
       await page.keyboard.press('Control+A');
       await page.keyboard.press('Backspace');
