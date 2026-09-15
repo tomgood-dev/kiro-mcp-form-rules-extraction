@@ -928,7 +928,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'Blocked (evidence): depends on the Client Summary, which is unreachable (Apply does not',
       'navigate — see MLP-10 evidence).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): Client Summary IS reachable and Proceed-to-application clicks through to the per-life application (Personal Details). Asserting "proceeds for Life 1 ONLY" needs driving one life into the app while confirming the other stays not-started - a per-life proceed-isolation check to encode once per-life app-entry is a helper. Client Summary reachability is covered by MLP-10.');
+    test.fixme(true, 'Deferred (updated 2026-09-15, characterized live): the multi-life Client Summary IS reached (MLP-10 passes) with 2 "Proceed to application" buttons. But clicking Life 1\'s Proceed does NOT navigate into the per-life application even after filling EVERY Client-Summary per-life First/Last name (repeating list l1-NNNN_i-Input_FirstName/LastName; Life 1 = _0) — both lives stay "PRE APPLICATION", no on-screen error (probe-mlp11-2026-09-15.js). The single-life proceedThroughClientSummary DOES reach Duty of Disclosure, so multi-life per-life Proceed differs. Likely a further per-life step (section expand / per-life confirmation) or a real multi-life behaviour — needs BA clarification or deeper live inspection before encoding "proceeds for Life 1 ONLY". Client Summary reachability + per-life controls are covered by MLP-10/MLP-19.');
   });
 
   test('MLP-12/AC12: after submitting Life 1, its Proceed button is greyed out', async ({ page }) => {
@@ -976,7 +976,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       '',
       'Blocked (evidence): depends on the Client Summary + application flow, unreachable (see MLP-10).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): Client Summary reachable + Proceed enters the application (Personal Details). Asserting the Start->Continue-on-return status transition needs driving into the app, leaving, and re-reading the per-life status - a stateful multi-step check to encode next once per-life app-entry is a helper. Reachability itself is no longer the blocker.');
+    test.fixme(true, 'Deferred (updated 2026-09-15): same blocker as MLP-11 - the multi-life per-life "Proceed to application" does not navigate into the per-life app even with all Client-Summary names filled (no error; both lives stay PRE APPLICATION - probe-mlp11-2026-09-15.js). The Start->Continue-on-return status transition can only be tested once per-life app-entry works. Client Summary + per-life controls/status are covered by MLP-10/MLP-19.');
   });
 
   test('MLP-21/AC21: after submitting one application, Submitted status + downloads + clone', async ({ page }) => {

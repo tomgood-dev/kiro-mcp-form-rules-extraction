@@ -1,0 +1,20 @@
+{
+  "before": {
+    "onCS": true,
+    "proceedCount": 2,
+    "statuses": [
+      "PRE APPLICATION",
+      "PRE APPLICATION"
+    ]
+  },
+  "after": {
+    "url": "/QuoteAndApply/Quote",
+    "onDoD": false,
+    "onPD": false,
+    "statuses": [
+      "PRE APPLICATION",
+      "PRE APPLICATION"
+    ],
+    "body": "tom good\nSign out\nClient summary\nLast modified: 15/09/2026 11:44 AM\nLife 1\nPRE A"
+  }
+}
