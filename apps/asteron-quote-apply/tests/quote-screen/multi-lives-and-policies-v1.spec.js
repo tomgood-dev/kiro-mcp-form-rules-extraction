@@ -940,7 +940,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'which is unreachable from the browser (Apply does not navigate; full application submission was',
       'documented as payment/STP-gated in iteration-001).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): Client Summary + Personal Details are now reachable, but this AC needs a full application SUBMISSION (Submitted status / greyed control / PDF downloads), which remains payment/STP-gated on this environment - genuinely blocked past the reachable Personal Details step, not a Client-Summary-reachability issue anymore.');
+    test.fixme(true, 'Deferred (updated 2026-09-15): SINGLE-life submission is now CONFIRMED completable end-to-end on QA (drove Quote->...->Submit, policy J4211922 — there is NO payment/STP gate; see docs/apply-flow-end-to-end-2026-09-15.md, corrects the earlier wrong "payment-gated" claim). This AC is MULTI-life, and the remaining blocker is the multi-life per-life "Proceed to application" not navigating into a per-life app (MLP-11 finding, probe-mlp11-2026-09-15.js) — so the per-life Submitted-status/PDF checks cannot be reached until per-life app-entry works, NOT because submission is gated. Single-life apply-flow submission helpers are in quote-helpers.js (submitApplication etc.).');
   });
 
   test('MLP-19/AC19: multi-life Apply shows one Start Application + status per life', async ({ page }, testInfo) => {
@@ -989,7 +989,7 @@ test.describe('Multi Lives and Policies (ACB-4394)', () => {
       'Blocked (evidence): requires a full application submission past the Client Summary, which is',
       'unreachable from the browser (Apply does not navigate; submission is payment/STP-gated).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-14): Client Summary + Personal Details are now reachable, but this AC needs a full application SUBMISSION (Submitted status / greyed control / PDF downloads), which remains payment/STP-gated on this environment - genuinely blocked past the reachable Personal Details step, not a Client-Summary-reachability issue anymore.');
+    test.fixme(true, 'Deferred (updated 2026-09-15): SINGLE-life submission is now CONFIRMED completable end-to-end on QA (drove Quote->...->Submit, policy J4211922 — there is NO payment/STP gate; see docs/apply-flow-end-to-end-2026-09-15.md, corrects the earlier wrong "payment-gated" claim). This AC is MULTI-life, and the remaining blocker is the multi-life per-life "Proceed to application" not navigating into a per-life app (MLP-11 finding, probe-mlp11-2026-09-15.js) — so the per-life Submitted-status/PDF checks cannot be reached until per-life app-entry works, NOT because submission is gated. Single-life apply-flow submission helpers are in quote-helpers.js (submitApplication etc.).');
   });
 });
 

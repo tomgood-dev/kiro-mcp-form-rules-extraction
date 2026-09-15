@@ -94,6 +94,19 @@ The helpers in `apps/asteron-quote-apply/helpers/quote-helpers.js` already encod
 `fillCalcMask`, `fillAdviserUse` (sets every per-life commission dropdown), `clickApplyNow`,
 `proceedThroughClientSummary`. **Reuse these** rather than re-deriving the interaction.
 
+**Apply-flow helpers (added 2026-09-15, verified by a full end-to-end submission — policy J4211922):**
+the whole post-quote wizard is now encoded — `passDutyOfDisclosure`, `fillPersonalDetailsScreen`
+(address lookup = focus+type+pick, postal-same=Yes), `passInsuranceAndFinancial`, `passTeleInterview`,
+`passPersonalStatement` (handles the 3 answer-traps: citizen=Yes, alcohol standard-drinks number,
+Family History "None of the above"), `passOwnerAndAddress`, `passPaymentDirectDebit`,
+`submitApplication`, plus `applyFlowScreen`/`applyFlowNext`. The full map, the answer-traps, and the
+"underwriting-engine toast is a red herring" finding are in
+`apps/asteron-quote-apply/docs/apply-flow-end-to-end-2026-09-15.md`. The Apply flow is fully
+reachable and completable on QA — there is NO payment gate and NO backend block. When encoding the
+deferred apply-flow ACs (occupation-apply-flow, navigation-behaviour/URE, MLP-11/12/20/21), build on
+these helpers; the Personal Statement's page-cycling + dynamic ids make it the most fragile screen —
+assert on `applyFlowScreen` head/URL transitions and reopen-by-ApplicationId to keep runtimes sane.
+
 The employment-gate clearer `setOccupationName` (opens the "Select..." vscomp, searches, picks the
 first occupation) and the `buildTwoLifeApplyReady` multi-life builder currently live in
 `tests/quote-screen/multi-lives-and-policies-v1.spec.js` — promote them into `quote-helpers.js` when

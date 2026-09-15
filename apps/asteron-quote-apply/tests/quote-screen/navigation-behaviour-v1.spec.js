@@ -21,7 +21,7 @@ test.describe('Navigation Behaviour (URE questionnaire)', () => {
       'inside the Apply/underwriting flow, past the Quote screen and Duty of Disclosure — not reachable from',
       'the quote screen (probe 2026-09-08 confirmed no quote-screen path into it).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-15): the URE questionnaire these ACs concern sits past Personal Details in the Apply flow. Personal Details cannot currently be passed because its address autocomplete (b5-b20-Input_AddressLookup) returns "No options to show..." on this whitelisted-IP network (external address service) with no manual-address fallback (probe-pd-*-2026-09-15.js). So URE is blocked behind that address-service limit (likely environment). Confirm the address service is reachable before treating this as testable.');
+    test.fixme(true, 'Reachability CONFIRMED (2026-09-15) — no longer blocked. The URE/underwriting questionnaire these ACs concern (completion ticks, previous-page navigation) is the Personal Statement / Insurance & Financial Details questionnaire, which was driven to completion end-to-end on QA (full submission, policy J4211922; see docs/apply-flow-end-to-end-2026-09-15.md). Personal Details IS passable (address lookup works via focus+type+pick — the earlier "address service blocked" note was wrong). Interaction sequences are in helpers/quote-helpers.js (passPersonalStatement, applyFlowScreen/applyFlowNext). Still fixme pending a real encoded+run spec: the completion-tick / previous-page assertions must be written against the live navigation panel and pass a green edge-config run. NOT a coverage gap or environment block.');
     expect(true).toBe(true);
   });
 });

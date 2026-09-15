@@ -688,9 +688,242 @@ async function getTpdOnTraumaDefinition(page) {
   });
 }
 
+/* ============================================================================
+ * APPLY-FLOW HELPERS (post-quote application wizard)
+ * Verified end-to-end on QA 2026-09-15 (full submission -> policy J4211922).
+ * See docs/apply-flow-end-to-end-2026-09-15.md for the full map + the 3 answer-traps.
+ * These encode the proven interaction sequences so apply-flow ACs can be scripted
+ * without re-deriving the page-cycling / dynamic-id logic.
+ * ========================================================================== */
+
+/** Read the current apply-flow screen: pathname + the visible section heading. */
+async function applyFlowScreen(page) {
+  return page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const heads = [].slice.call(document.querySelectorAll('h1,h2,h3')).filter(vis).map((e) => (e.innerText || '').trim()).filter(Boolean);
+    const bodyHead = (document.body.innerText.match(/(MENTAL HEALTH|PHYSICAL HEALTH - EVER|PHYSICAL HEALTH - IN THE LAST 5 YEARS|OTHER MEDICAL HISTORY|FAMILY HISTORY|UNDERWRITING ASSESSMENTS & CLAIMS|RESIDENCE AND TRAVEL|OCCUPATION|FINANCIAL|INSURANCE HISTORY|Questionnaire Completed|Unanswered Questions)/) || [''])[0];
+    return { url: location.pathname, heading: heads[0] || '', section: bodyHead };
+  });
+}
+
+/** Click the footer primary "Next" and wait for the wizard to settle. */
+async function applyFlowNext(page, settleMs = 5000) {
+  await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const n = [].slice.call(document.querySelectorAll('button.btn-primary,button,a')).find((b) => vis(b) && /^next$/i.test((b.innerText || '').trim()));
+    if (n) n.click();
+  });
+  await waitForSettle(page, settleMs);
+}
+
+/** Duty of Disclosure: set the adviser-confirmation Yes and click Next. */
+async function passDutyOfDisclosure(page) {
+  console.log('  [apply] Duty of Disclosure: agree + Next');
+  await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    // Yes can be a button-group item or a radio-styled div; click the first "Yes".
+    const yes = [].slice.call(document.querySelectorAll('.button-group-item,button,[id*="RadioButton1"] input,[id*="Yes"] input,input[type="radio"][value="Yes"]')).find((x) => vis(x) && (/^yes$/i.test((x.innerText || '').trim()) || /Yes/i.test(x.value || '')));
+    if (yes) yes.click();
+  });
+  await waitForSettle(page, 1500);
+  await applyFlowNext(page, 6000);
+}
+
+/**
+ * Personal Details application screen. Fills the confirmed mandatory set and selects a real address
+ * suggestion (force-focus + keyboard type + pick). Postal-same-as-home = Yes.
+ * @param {object} opts { title, cm, kg, mobile, email, addressQuery, dob (must match quote ANB) }
+ */
+async function fillPersonalDetailsScreen(page, opts = {}) {
+  const { title = 'Mr', cm = '180', kg = '80', mobile = '0211234567', email = 'test@example.com', addressQuery = '12 Queen', dob } = opts;
+  console.log('  [apply] Personal Details screen');
+  await page.evaluate((t) => { const s = document.querySelector('select[id*="Dropdown_Title"]'); if (s) { for (let i = 0; i < s.options.length; i++) { if (s.options[i].text.trim() === t) { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); break; } } } }, title);
+  await fillCalcMask(page.locator('input[id*="b5-Input_Cm"]').first(), cm).catch(() => {});
+  await fillCalcMask(page.locator('input[id*="b5-Input_Kg"]').first(), kg).catch(() => {});
+  await page.evaluate((o) => { function si(sel, v) { const e = document.querySelector(sel); if (e) { e.focus(); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } } si('input[id*="Input_MobileNumber"]', o.m); si('input[id*="b5-Input_Email"]', o.e); }, { m: mobile, e: email });
+  if (dob) await page.evaluate((d) => { const e = document.querySelector('input[id*="b5-Input_DateOfBirth"]'); if (e) { e.focus(); e.value = d; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } }, dob).catch(() => {});
+  await waitForSettle(page, 800);
+  // Home address: focus FIRST (click alone leaves it unfocused -> "No options to show"), type, pick a real suggestion.
+  const addr = page.locator('input[id*="b5-b20-Input_AddressLookup"]').first();
+  await addr.evaluate((e) => e.focus()).catch(() => {});
+  await addr.type(addressQuery, { delay: 60 }).catch(() => {});
+  await waitForSettle(page, 2500);
+  await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const opt = [].slice.call(document.querySelectorAll('li,[role="option"],.dropdown-item,[class*="suggestion"]')).filter(vis).find((x) => /\d+\s+.+,.+\d{4}/.test((x.innerText || '').trim()));
+    if (opt) opt.click();
+  });
+  await waitForSettle(page, 1200);
+  // Postal same as home = Yes (button-group / radio).
+  await page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const yes = [].slice.call(document.querySelectorAll('.button-group-item,button,input[type="radio"][value="Yes"],[id*="Yes"] input')).find((x) => vis(x) && (/^yes$/i.test((x.innerText || '').trim()) || /Yes/i.test(x.value || '')));
+    if (yes) yes.click();
+  });
+  await waitForSettle(page, 1200);
+}
+
+/** Answer every visible Yes/No question on the current questionnaire page "No" (radio-styled). */
+async function answerAllNoOnPage(page) {
+  return page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const nos = [].slice.call(document.querySelectorAll('input[type="radio"][id*="RadioButton2-input"],input[type="radio"][id*="-b12-No-input"],input[type="radio"][id*="b9-No-input"]')).filter(vis);
+    let n = 0; nos.forEach((i) => { if (!i.checked) { i.click(); if (!i.checked) { i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); } } n++; });
+    // Any "Please select" dropdown that offers No -> No.
+    [].slice.call(document.querySelectorAll('select')).filter(vis).forEach((s) => { if (/select an option|please select/i.test((s.options[s.selectedIndex] || {}).text || '')) { for (let i = 0; i < s.options.length; i++) { if (/^no$/i.test(s.options[i].text)) { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); break; } } } });
+    return n;
+  });
+}
+
+/**
+ * Clears the Insurance & Financial Details 3-page loop (occupation hazards No, income + mortgage,
+ * insurance history No) then advances past "Questionnaire Completed".
+ */
+async function passInsuranceAndFinancial(page, income = 120000) {
+  console.log('  [apply] Insurance & Financial Details');
+  for (let i = 0; i < 6; i++) {
+    const s = await applyFlowScreen(page);
+    if (/Questionnaire Completed/.test(s.section)) break;
+    if (/Unanswered Questions/.test(s.section)) {
+      // open the first remaining Answer, or finish if none.
+      const opened = await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => vis(x) && /^answer$/i.test((x.innerText || '').trim()))[0]; if (b) { b.click(); return true; } return false; });
+      if (!opened) break;
+      await waitForSettle(page, 3500);
+      continue;
+    }
+    await answerAllNoOnPage(page);
+    // Fill the FINANCIAL income masked field with the full id if present.
+    await page.evaluate((inc) => { function vis(e) { return e && e.offsetParent !== null; } const m = [].slice.call(document.querySelectorAll('input[id*="b8-Input_AnswerTextMasked2"]')).filter(vis)[0]; if (m && !m.value) { m.focus(); m.dispatchEvent(new Event('focus', { bubbles: true })); } }, income);
+    const incEl = page.locator('input[id*="b8-Input_AnswerTextMasked2"]').first();
+    if (await incEl.count()) await fillCalcMask(incEl, String(income)).catch(() => {});
+    await waitForSettle(page, 1000);
+    await applyFlowNext(page, 5000);
+  }
+  // Past "Questionnaire Completed" -> next stage.
+  await applyFlowNext(page, 6000);
+}
+
+/** Tele Interview: answer No (radio-styled DIVs) and advance to Personal Statement. */
+async function passTeleInterview(page) {
+  console.log('  [apply] Tele Interview: No');
+  await page.evaluate(() => {
+    const d = document.querySelector('[id*="b3-RadioButton2"]');
+    const inp = d ? (d.querySelector('input') || d) : null;
+    if (inp) { inp.click(); if (inp.tagName === 'INPUT') { inp.checked = true; inp.dispatchEvent(new Event('change', { bubbles: true })); } }
+  });
+  await waitForSettle(page, 1500);
+  await applyFlowNext(page, 6000);
+}
+
+/**
+ * Clears the Personal Statement (the 3 answer-traps handled): No to health pages, citizen=Yes on
+ * Residence, standard-drinks number on Alcohol, "None of the above" on Family History. Loops until
+ * the Unanswered count is 0, then advances past "Questionnaire Completed".
+ * @param {object} opts { drinks = '5' }
+ */
+async function passPersonalStatement(page, opts = {}) {
+  const { drinks = '5' } = opts;
+  console.log('  [apply] Personal Statement (3 answer-traps)');
+  for (let guard = 0; guard < 25; guard++) {
+    const s = await applyFlowScreen(page);
+    if (/Questionnaire Completed/.test(s.section)) break;
+    if (/Unanswered Questions/.test(s.section)) {
+      const count = await page.evaluate(() => [].slice.call(document.querySelectorAll('button,a')).filter((b) => b.offsetParent !== null && /^answer$/i.test((b.innerText || '').trim())).length);
+      if (count === 0) break;
+      await page.evaluate(() => { const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => x.offsetParent !== null && /^answer$/i.test((x.innerText || '').trim()))[0]; if (b) b.click(); });
+      await waitForSettle(page, 3500);
+      continue;
+    }
+    // FAMILY HISTORY: tick "None of the above" (last checkbox); do not batch-No.
+    if (/FAMILY HISTORY/.test(s.section)) {
+      await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const cbs = [].slice.call(document.querySelectorAll('input[type="checkbox"]')).filter(vis); const none = cbs[cbs.length - 1]; if (none && !none.checked) { none.click(); if (!none.checked) { none.checked = true; none.dispatchEvent(new Event('change', { bubbles: true })); } } });
+      await waitForSettle(page, 800);
+      await applyFlowNext(page, 5000);
+      continue;
+    }
+    // Everything else: answer No first, then fix the RESIDENCE + ALCOHOL traps.
+    await answerAllNoOnPage(page);
+    if (/RESIDENCE AND TRAVEL/.test(s.section)) {
+      // citizen = Yes (first b3 group). Overrides the batch-No above.
+      await page.evaluate(() => { const y = document.querySelector('input[type="radio"][id*="b3-RadioButton1-input"]'); if (y) { y.click(); y.checked = true; y.dispatchEvent(new Event('change', { bubbles: true })); } });
+      await waitForSettle(page, 1500);
+      // any "how long in NZ" dropdown (only shows if citizen=No) -> Over 5 years, just in case.
+      await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const d = [].slice.call(document.querySelectorAll('select')).filter(vis).find((s2) => [].slice.call(s2.options).some((o) => /over 5 years/i.test(o.text))); if (d) { for (let i = 0; i < d.options.length; i++) { if (/over 5 years/i.test(d.options[i].text)) { d.selectedIndex = i; d.dispatchEvent(new Event('change', { bubbles: true })); break; } } } });
+    }
+    // ALCOHOL: fill the masked standard-drinks field by its FULL id (partial id hits wrong element).
+    const drinkEl = page.locator('input[id$="b8-Input_AnswerTextMasked"]').first();
+    if (await drinkEl.count()) {
+      const id = await drinkEl.getAttribute('id').catch(() => null);
+      if (id) { const cur = await drinkEl.inputValue().catch(() => ''); if (!cur) await fillCalcMask(drinkEl, String(drinks)).catch(() => {}); }
+    }
+    await waitForSettle(page, 1000);
+    await applyFlowNext(page, 5000);
+  }
+  await applyFlowNext(page, 6000);
+}
+
+/** Owner & Address Detail: select the existing person (value 0) in both dropdowns and click Add for each. */
+async function passOwnerAndAddress(page) {
+  console.log('  [apply] Owner & Address Detail');
+  await page.evaluate(() => { const s = document.querySelector('select[id*="Dropdown_PolicyOwnerRelatedParty"]'); if (s) { s.value = '0'; s.selectedIndex = Math.max(1, s.selectedIndex); s.dispatchEvent(new Event('change', { bubbles: true })); } });
+  await waitForSettle(page, 1500);
+  await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const add = [].slice.call(document.querySelectorAll('button,a')).filter((b) => vis(b) && /^add$/i.test((b.innerText || '').trim()))[0]; if (add) add.click(); });
+  await waitForSettle(page, 3000);
+  await page.evaluate(() => { const s = document.querySelector('select[id*="Dropdown_AddressRelatedParty"]'); if (s) { s.value = '0'; s.selectedIndex = Math.max(1, s.selectedIndex); s.dispatchEvent(new Event('change', { bubbles: true })); } });
+  await waitForSettle(page, 2000);
+  await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const adds = [].slice.call(document.querySelectorAll('button,a')).filter((b) => vis(b) && /^add$/i.test((b.innerText || '').trim())); if (adds.length) adds[adds.length - 1].click(); });
+  await waitForSettle(page, 3000);
+  await applyFlowNext(page, 6000);
+}
+
+/**
+ * Payment: Direct Debit with test bank details, tick product-line + DD-authority, Apply to Policy, Next.
+ * NB the bank-number field id collides with BankName on a partial match — set it by exact suffix.
+ */
+async function passPaymentDirectDebit(page, opts = {}) {
+  const { bankName = 'ANZ Bank', accountName = 'Test Applicant', bank = '01', branch = '0001', account = '0123456', suffix = '00' } = opts;
+  console.log('  [apply] Payment: Direct Debit');
+  await page.evaluate(() => { const s = document.querySelector('select[id*="DropdownPaymentMethod"]'); if (s) { for (let i = 0; i < s.options.length; i++) { if (/direct debit/i.test(s.options[i].text)) { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); break; } } } });
+  await waitForSettle(page, 3000);
+  await page.evaluate((o) => {
+    function setExact(suffixId, v) { const els = [].slice.call(document.querySelectorAll('input')).filter((e) => e.id.endsWith(suffixId)); if (els[0]) { const e = els[0]; e.focus(); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); } }
+    setExact('b6-Input_BankName', o.bankName); setExact('b6-Input_AccountName', o.accountName);
+    setExact('b6-Input_Bank', o.bank); setExact('b6-Input_Branch', o.branch);
+    setExact('b6-Input_AccountNumber', o.account); setExact('b6-Input_AccountNumber2', o.suffix);
+  }, { bankName, accountName, bank, branch, account, suffix });
+  await waitForSettle(page, 1000);
+  // Tick product line + DD authority (all visible checkboxes except a header select-all).
+  await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } [].slice.call(document.querySelectorAll('input[type="checkbox"][id*="CheckboxItem"],input[type="checkbox"][id*="b6-Checkbox2"]')).filter(vis).forEach((c) => { if (!c.checked) { c.click(); if (!c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); } } }); });
+  await waitForSettle(page, 1500);
+  await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => vis(x) && /apply to policy/i.test((x.innerText || '').trim()))[0]; if (b) b.click(); });
+  await waitForSettle(page, 4000);
+  await applyFlowNext(page, 6000);
+}
+
+/** Submit Application: tick the acknowledgment declaration and click Submit Application. Returns the policy number if reached. */
+async function submitApplication(page) {
+  console.log('  [apply] Submit Application');
+  await page.evaluate(() => { const c = document.querySelector('input[type="checkbox"][id*="AcknowledgmentCheckbox"]'); if (c && !c.checked) { c.click(); if (!c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); } } });
+  await waitForSettle(page, 1500);
+  await page.evaluate(() => { function vis(e) { return e && e.offsetParent !== null; } const b = [].slice.call(document.querySelectorAll('button,a')).filter((x) => vis(x) && /submit application/i.test((x.innerText || '').trim()))[0]; if (b) b.click(); });
+  await waitForSettle(page, 9000);
+  return page.evaluate(() => { const m = document.body.innerText.match(/([A-Z]\d{6,})/); return { submitted: /application has been submitted/i.test(document.body.innerText), policyNumber: m ? m[1] : null }; });
+}
+
 module.exports = {
   openNewQuote,
   waitForSettle,
+  applyFlowScreen,
+  applyFlowNext,
+  passDutyOfDisclosure,
+  fillPersonalDetailsScreen,
+  answerAllNoOnPage,
+  passInsuranceAndFinancial,
+  passTeleInterview,
+  passPersonalStatement,
+  passOwnerAndAddress,
+  passPaymentDirectDebit,
+  submitApplication,
   setAge,
   setGender,
   setMinimumPersonalDetails,

@@ -39,17 +39,68 @@ these to avoid the multi-hour thrash of 2026-09-14/15:
    also read `[class*="message"|"toast"|"alert"|"warning"]`). For ANB 40 on 2026-09-15, DOB
    `1986-12-15` works. Blur the DOB after fill, then Proceed → Duty of Disclosure. Unblocks the
    Client-Summary → apply-flow path.
-8. **Apply-flow depth frontier (2026-09-15): the Personal Details application screen.** Past DoD,
-   the flow reaches `/QuoteAndApply/PersonalDetails`. Its required fields are: Title (`b5-Dropdown_Title`),
+8. **Personal Details application screen (cracked 2026-09-15 — address lookup DOES work).** Past DoD,
+   the flow reaches `/QuoteAndApply/PersonalDetails`. Required fields: Title (`b5-Dropdown_Title`="Mr"),
    height `b5-Input_Cm` + weight `b5-Input_Kg` (masked → calcmask), `b5-Input_MobileNumber`,
-   `b5-Input_Email`, and an ADDRESS autocomplete `b5-b20-Input_AddressLookup` ("Start typing address..."
-   → "Type to search"). All fillable EXCEPT the address lookup: it's a type-ahead backed by an external
-   address service that returns "No options to show..." on this whitelisted-IP test network, so no
-   suggestion can be selected and Next stays on Personal Details with "Please review required fields".
-   There is NO manual-address-entry fallback on the screen. This gates the Occupation / Income / URE
-   apply-flow screens (occupation-apply-flow, navigation-behaviour). Likely an environment/external-
-   service limit (same class as the Loadings intranet URL), not a coverage gap — confirm the address
-   service is reachable before treating these apply-flow-deep ACs as testable.
+   `b5-Input_Email`, home address `b5-b20-Input_AddressLookup`, postal `b5-b21-Input_AddressLookup`,
+   smoking = button-group No. RETRACTED earlier claim that the address lookup is unreachable: it works.
+   The earlier failure was that a plain click never focused the field. MECHANISM: `el.focus()` FIRST,
+   THEN keyboard-type the query (click alone leaves it unfocused → "No options to show"); suggestions
+   populate as list items → click a real one (e.g. "12 Queen Mary Avenue, Epsom, Auckland 1023"). Tick
+   "Is your postal address same as your home address?" = **Yes** to skip the second (b21) address. Its
+   OWN Date of Birth (`b5-Input_DateOfBirth`) must ALSO match the quote ANB (same rule as Client Summary).
+   Next then advances to Insurance & Financial Details.
+9. **Apply-flow full map + backend depth frontier (2026-09-15).** The complete post-quote flow is:
+   Quote → Client Summary → Duty of Disclosure → Personal Details → **Insurance & Financial Details**
+   → **Tele Interview** → **Personal Statement** → Summary & Payment (Underwriting Decision → Owner &
+   Address → Payment → Submit Application → Next Steps). Reached and cleared live:
+   - **Insurance & Financial Details** (`/QuoteAndApply/InsuranceAndFinancialDetails`): a 3-page loop
+     (OCCUPATION hazardous-duties Yes/No; FINANCIAL annual income via masked `...b8-Input_AnswerTextMasked2`
+     + mortgage Yes/No; INSURANCE HISTORY 2× Yes/No). Deferred items surface on an "Unanswered Questions"
+     summary with per-question "Answer" buttons; answered pages auto-skip on Next; ends "Questionnaire
+     Completed". CLEARED fully (answered all No / income 120000).
+   - **Tele Interview** (`/QuoteAndApply/TeleInterview`): "Would you like to use our tele-interview
+     service?" Yes/No are RADIO-STYLED DIVs (`...b3-RadioButton2`), not `<select>`/button-group — click
+     the nested `input`. Answer No → Personal Statement. CLEARED.
+   - **Personal Statement** (`/QuoteAndApply/PersonalStatement`): a 7-page medical questionnaire — MENTAL
+     HEALTH, PHYSICAL HEALTH EVER, PHYSICAL HEALTH LAST 5 YRS, OTHER MEDICAL HISTORY, FAMILY HISTORY,
+     UNDERWRITING ASSESSMENTS & CLAIMS, plus deferred special questions reachable via the
+     Unanswered-Questions "Answer" buttons: RESIDENCE AND TRAVEL, TOBACCO, ALCOHOL. Batch-answer the
+     Yes/No pages by clicking every `input[type=radio][id*="RadioButton2-input"|"-b12-No-input"|"b9-No-input"]`
+     then Next; walk the linear pages by heading; special questions surface on the "Unanswered Questions"
+     summary. **NOT a backend blocker (corrected 2026-09-15 — the form COMPLETES end-to-end).** The
+     toast *"We encountered an error when calling the underwriting engine."* is TRANSIENT and does NOT
+     block submission — do not treat it as a hard blocker (that was a wrong earlier conclusion). The 3
+     things that actually kept the questionnaire "incomplete" were unanswered questions needing REAL
+     answers, not simple No's:
+       1. **RESIDENCE**: "Are you a NZ citizen…?" must be **Yes** (a blanket set-all-No wrongly sets it
+          No, which then demands a "How long have you lived in NZ?" dropdown; answering Yes REMOVES that
+          dropdown and lets it commit). Do NOT include the citizen radio in a batch-No.
+       2. **ALCOHOL**: "how many standard drinks… in a typical week?" is a MASKED NUMBER field
+          (`...b8-Input_AnswerTextMasked`) — must be filled (e.g. 5) via calcmask with the FULL id
+          (partial id matches the wrong element). Can't be left blank.
+       3. **FAMILY HISTORY**: a "select all that apply" checkbox list — leaving it empty is NOT valid;
+          you must tick **"None of the above"** (last checkbox) to commit.
+     Once unanswered count = 0, Next → "Questionnaire Completed" → Next.
+   - **Underwriting Decision** (`/QuoteAndApply/UnderwritingDecision`): renders the engine result — for
+     a clean applicant: *"your application has been accepted"* (Accepted). Optional file-attach. Next.
+   - **Owner and Address Detail** (`/QuoteAndApply/OwnerAndAddressDetail`): select the existing person
+     ("Mr Solo One", option value 0) in BOTH `Dropdown_PolicyOwnerRelatedParty` and
+     `Dropdown_AddressRelatedParty`, and click the **"Add"** button for each (selecting the dropdown
+     alone is NOT enough — "At least one owner/Address … must be added" until Add is clicked). Next.
+   - **Payment** (`/QuoteAndApply/Payment`): pick `DropdownPaymentMethod` = Direct Debit → fill Bank
+     Name / Account Name / Bank(01) / Branch(0001) / AccountNumber(0123456) / AccountNumber2(00) (NB:
+     `fill` partial-id `Input_Bank` collides with `Input_BankName` — set the bank-number field by an
+     EXACT `.endsWith('b6-Input_Bank')` match). Tick the product-line checkbox + the DD-authority
+     confirmation checkbox, click **"Apply to Policy"** (attaches the method+start-date to the product
+     row). Next.
+   - **Submit Application** (`/QuoteAndApply/SubmitApplication`): tick the single `AcknowledgmentCheckbox`
+     declaration, click **"Submit Application"**.
+   - **Next Steps** (`/QuoteAndApply/NextSteps`): *"Thank you. Your application has been submitted."* with
+     a real **Policy Number** (e.g. J4211922). FULL SUBMISSION CONFIRMED on QA 2026-09-15 — the entire
+     Quote → Apply → Submit flow is reachable and completable; the URE/navigation-behaviour and
+     occupation-apply-flow ACs that live in these screens ARE testable (not backend-blocked). There is
+     NO payment gate that blocks submission with Direct Debit.
 
 
 # Project Context
