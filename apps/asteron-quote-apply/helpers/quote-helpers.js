@@ -716,6 +716,44 @@ async function applyFlowNext(page, settleMs = 5000) {
   await waitForSettle(page, settleMs);
 }
 
+/**
+ * Reads the apply-flow PROGRESS SIDEBAR (the "1. Quote / 2. Client / ..." panel). Each completed
+ * step carries a completion tick: `<i class="... text-success fa fa-check-ci">` next to its label
+ * (confirmed live 2026-09-15 — this is the "completion tick" of the Navigation Behaviour ACs).
+ * Returns [{ label, completed }] for the numbered top-level steps.
+ */
+async function getApplyFlowSidebar(page) {
+  return page.evaluate(() => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    // Numbered step labels look like "1. Quote", "4. Personal Details", "5. Personal Statement", "6. Summary and payment".
+    const out = [];
+    const seen = {};
+    [].slice.call(document.querySelectorAll('*')).forEach((e) => {
+      if (!vis(e)) return;
+      const txt = (e.childElementCount === 0 ? (e.textContent || '') : '').replace(/\s+/g, ' ').trim();
+      const m = txt.match(/^(\d+)\.\s+(.+)$/);
+      if (!m || m[2].length > 40) return;
+      const key = m[1] + '.' + m[2];
+      if (seen[key]) return; seen[key] = 1;
+      // The tick <i> is a sibling within the same step row; climb to the row and look for fa-check-ci.
+      let row = e; for (let k = 0; k < 4 && row; k++) { row = row.parentElement; if (row && row.querySelector('i.fa-check-ci, i[class*="check-ci"]')) break; }
+      const completed = !!(row && row.querySelector('i.fa-check-ci, i[class*="check-ci"]'));
+      out.push({ num: Number(m[1]), label: m[2].trim(), completed });
+    });
+    return out.sort((a, b) => a.num - b.num);
+  });
+}
+
+/** Clicks a progress-sidebar step by its label (partial match) to navigate to it. */
+async function clickApplyFlowStep(page, labelMatch) {
+  await page.evaluate((lm) => {
+    function vis(e) { return e && e.offsetParent !== null; }
+    const el = [].slice.call(document.querySelectorAll('a,span,div,li')).find((e) => vis(e) && e.childElementCount <= 2 && new RegExp('^\\d+\\.\\s*' + lm, 'i').test((e.textContent || '').replace(/\s+/g, ' ').trim()));
+    if (el) { (el.closest('a') || el).click(); }
+  }, labelMatch);
+  await waitForSettle(page, 4000);
+}
+
 /** Duty of Disclosure: set the adviser-confirmation Yes and click Next. */
 async function passDutyOfDisclosure(page) {
   console.log('  [apply] Duty of Disclosure: agree + Next');
@@ -950,6 +988,8 @@ module.exports = {
   waitForSettle,
   applyFlowScreen,
   applyFlowNext,
+  getApplyFlowSidebar,
+  clickApplyFlowStep,
   passDutyOfDisclosure,
   fillPersonalDetailsScreen,
   answerAllNoOnPage,

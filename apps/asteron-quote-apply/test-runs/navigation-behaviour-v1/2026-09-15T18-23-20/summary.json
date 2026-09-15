@@ -1,0 +1,25 @@
+{
+  "specSlug": "navigation-behaviour-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/navigation-behaviour-v1.spec.js",
+  "runTimestamp": "2026-09-15T18-23-20",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 781908.937,
+  "filtered": false,
+  "total": 2,
+  "passed": 0,
+  "failed": 1,
+  "skipped": 1,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Navigation Behaviour — apply-flow progress panel (URE) › AC01/AC03: completion ticks appear for completed sections; clicking a previous step navigates there with its tick",
+      "status": "failed",
+      "durationMs": 497220
+    },
+    {
+      "title": "Navigation Behaviour — apply-flow progress panel (URE) › AC02/AC04: completion tick disappears when an answer change triggers further questions / unticks later sections",
+      "status": "skipped",
+      "durationMs": 2100
+    }
+  ]
+}
