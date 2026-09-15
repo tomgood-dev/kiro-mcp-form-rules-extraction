@@ -1,0 +1,6 @@
+[
+  { "action": "eval", "code": "var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.offsetParent!==null && (x.innerText||'').trim()==='Apply';}); if(b)b.click(); return {applyClicked:!!b}" },
+  { "action": "wait", "ms": 7000 },
+  { "action": "eval", "code": "return {url:location.href, onClientSummary:/client summary/i.test(document.body.innerText||''), proceedBtns:[].slice.call(document.querySelectorAll('button,a')).filter(function(x){return x.offsetParent!==null && /proceed to application/i.test((x.innerText||'').trim());}).length}" },
+  { "action": "errors" }
+]

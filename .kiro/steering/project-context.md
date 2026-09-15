@@ -1,3 +1,38 @@
+# Quote-build driving lessons (learned live 2026-09-15 — read before driving the quote screen)
+
+Driving the quote screen live (via tools/server.js) surfaced concrete, repeatable rules. Follow
+these to avoid the multi-hour thrash of 2026-09-14/15:
+
+1. **New Quote entry (mandatory sequence):** on the Quote & Apply list, an ADVISER must be selected
+   in the "Operating-as" vscomp dropdown (`#b5-DropdownSearchAdviser .vscomp-toggle-button`) BEFORE
+   clicking "New Quote" — otherwise New Quote no-ops (no popup, no nav). New Quote then opens the
+   quote in a SECOND browser tab (window.open). The server auto-follows / use `switch-tab`.
+2. **Build order matters — set ALL personal details FIRST, cover + SI LAST.** Activating a cover and
+   entering SI triggers recalcs/re-renders that can RESET or drop already-entered Age/Gender, then
+   Apply fails "You must complete the following fields: Gender & Age Next Birthday." Sequence:
+   age → gender → occupation code → employment → income → THEN activate cover → THEN SI. Re-verify
+   age+gender are still set after the SI recalc.
+3. **Masked fields (Sum Insured, Monthly Benefit, Income):** a plain click may NOT focus them
+   (activeElement stays BODY → keystrokes go nowhere). Use `calcmask` (now force-focuses first) or,
+   in code, `fillCalcMask`. NEVER type digits key-by-key with separate `press` calls — that corrupts
+   the mask to ".1.0.0.0..". Use ONE `keyboard.type(digits)` (what calcmask/fillCalcMask do). Always
+   use the FULL element id (e.g. `b23-l2-1647_0-b7-Input_SumInsured`); a truncated id silently no-ops.
+4. **Transient popup-backdrop:** during recalcs a `.popup-backdrop` briefly intercepts pointer events,
+   so a click/type can time out mid-recalc. It clears on its own — wait for stable premium / no
+   Loading, then retry, rather than concluding the control is broken.
+5. **Always read errors after every interaction** — the server now returns errors+modals on every
+   action; a $0.00 premium or inert button is almost always a dropped mandatory field, not an app bug.
+6. **The "complete employment details" Apply gate (confirmed live 2026-09-15).** Clicking Apply on
+   an otherwise-valid quote (personal details + Employment Status + Occupation Code + priced cover +
+   Adviser Use commission all set) can STILL be blocked by: *"Please complete the client's employment
+   details before applying"* — with NO other visible required field. Occupation Code + Employment
+   Status are NOT sufficient; the gate wants fuller employment details (occupation NAME via typeahead
+   / employer info) that aren't exposed as a simple field in the priced-quote state. This is the same
+   gate that deferred select-default-commission-category AC16, and it blocks the multi-life
+   Client-Summary ACs (MLP-10/AC10, MLP-19/AC19). Reaching Client Summary requires satisfying this
+   gate first — surface it via the error sweep, don't treat the inert Apply as "no navigation".
+
+
 # Project Context
 
 ## Suite dashboard (high-level view for dev/BA)
