@@ -1,0 +1,9 @@
+{
+  "url": "/QuoteAndApply/PersonalDetails",
+  "head": "",
+  "errs": [
+    "Please review required fields",
+    "You must enter a value in this field",
+    "Type to search No options to show..."
+  ]
+}

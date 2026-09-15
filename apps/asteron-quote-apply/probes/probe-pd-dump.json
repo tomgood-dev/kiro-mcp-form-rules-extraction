@@ -1,0 +1,146 @@
+[
+  {
+    "id": "b5-Dropdown_Title",
+    "tag": "SELECT",
+    "type": "select-one",
+    "val": "Please select",
+    "req": true,
+    "ph": "",
+    "label": "Title"
+  },
+  {
+    "id": "b5-Input_FullName",
+    "tag": "INPUT",
+    "type": "text",
+    "val": "Test Applicant",
+    "req": false,
+    "ph": "",
+    "label": "Name"
+  },
+  {
+    "id": "b5-Input_Gender",
+    "tag": "INPUT",
+    "type": "text",
+    "val": "Male",
+    "req": false,
+    "ph": "",
+    "label": "Gender"
+  },
+  {
+    "id": "b5-Input_DateOfBirth",
+    "tag": "INPUT",
+    "type": "date",
+    "val": "1985-06-15",
+    "req": false,
+    "ph": "",
+    "label": "Date of Birth"
+  },
+  {
+    "id": "b5-Dropdown_MaritalStatus",
+    "tag": "SELECT",
+    "type": "select-one",
+    "val": "Please select",
+    "req": false,
+    "ph": "",
+    "label": "Marital Status"
+  },
+  {
+    "id": "b5-Input_Cm",
+    "tag": "INPUT",
+    "type": "text",
+    "val": ".",
+    "req": true,
+    "ph": "cm",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_Feet",
+    "tag": "INPUT",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "ph": "ft",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_Inches",
+    "tag": "INPUT",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "ph": "in",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_Kg",
+    "tag": "INPUT",
+    "type": "text",
+    "val": ".",
+    "req": true,
+    "ph": "kg",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_Stones",
+    "tag": "INPUT",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "ph": "st",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_Pounds",
+    "tag": "INPUT",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "ph": "lb",
+    "label": ""
+  },
+  {
+    "id": "b5-Input_HomeNumber",
+    "tag": "INPUT",
+    "type": "tel",
+    "val": "",
+    "req": false,
+    "ph": "Area Code & Phone number",
+    "label": "Home"
+  },
+  {
+    "id": "b5-Input_WorkNumber",
+    "tag": "INPUT",
+    "type": "tel",
+    "val": "",
+    "req": false,
+    "ph": "Area Code & Phone number",
+    "label": "Work"
+  },
+  {
+    "id": "b5-Input_MobileNumber",
+    "tag": "INPUT",
+    "type": "tel",
+    "val": "",
+    "req": true,
+    "ph": "",
+    "label": "Mobile Number"
+  },
+  {
+    "id": "b5-Input_Email",
+    "tag": "INPUT",
+    "type": "email",
+    "val": "",
+    "req": true,
+    "ph": "Email address",
+    "label": "Email"
+  },
+  {
+    "id": "b5-b20-Input_AddressLookup",
+    "tag": "INPUT",
+    "type": "search",
+    "val": "",
+    "req": false,
+    "ph": "Start typing address...",
+    "label": "Type to search"
+  }
+]

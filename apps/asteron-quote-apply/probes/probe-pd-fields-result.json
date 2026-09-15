@@ -1,0 +1,138 @@
+[
+  {
+    "tag": "SELECT",
+    "id": "b5-Dropdown_Title",
+    "type": "select-one",
+    "val": "Please select",
+    "req": true,
+    "kind": ""
+  },
+  {
+    "tag": "SELECT",
+    "id": "b5-Dropdown_MaritalStatus",
+    "type": "select-one",
+    "val": "Please select",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Cm",
+    "type": "text",
+    "val": ".",
+    "req": true,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Feet",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Inches",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Kg",
+    "type": "text",
+    "val": ".",
+    "req": true,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Stones",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Pounds",
+    "type": "number",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "BUTTON",
+    "id": "b5-ButtonGroupItem1",
+    "type": "submit",
+    "val": "Yes",
+    "req": false,
+    "kind": "btngroup"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "b5-ButtonGroupItem2",
+    "type": "submit",
+    "val": "No",
+    "req": false,
+    "kind": "btngroup"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "b5-ButtonGroupItem11",
+    "type": "submit",
+    "val": "Yes",
+    "req": false,
+    "kind": "btngroup"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "b5-ButtonGroupItem12",
+    "type": "submit",
+    "val": "No",
+    "req": false,
+    "kind": "btngroup"
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_HomeNumber",
+    "type": "tel",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_WorkNumber",
+    "type": "tel",
+    "val": "",
+    "req": false,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_MobileNumber",
+    "type": "tel",
+    "val": "",
+    "req": true,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-Input_Email",
+    "type": "email",
+    "val": "",
+    "req": true,
+    "kind": ""
+  },
+  {
+    "tag": "INPUT",
+    "id": "b5-b20-Input_AddressLookup",
+    "type": "search",
+    "val": "",
+    "req": false,
+    "kind": ""
+  }
+]

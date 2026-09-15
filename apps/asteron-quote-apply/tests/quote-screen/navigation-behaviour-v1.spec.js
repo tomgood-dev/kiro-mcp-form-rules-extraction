@@ -21,7 +21,7 @@ test.describe('Navigation Behaviour (URE questionnaire)', () => {
       'inside the Apply/underwriting flow, past the Quote screen and Duty of Disclosure — not reachable from',
       'the quote screen (probe 2026-09-08 confirmed no quote-screen path into it).',
     ].join('\n') });
-    test.fixme(true, 'Deferred (updated 2026-09-15, reachability mapped live): the Apply flow reaches Client Summary -> Duty of Disclosure -> PERSONAL DETAILS and stops there (Next needs the full Personal Details form completed - address/contact/paramedical/typeahead; probe-applyflow-walk-2026-09-15.js). The URE underwriting questionnaire these ACs concern sits even deeper (past Personal Details + Occupation + Income + underwriting). Reachable only once Personal Details completion + the subsequent apply-flow screens are driven as helpers. No longer "not reachable from the quote screen".');
+    test.fixme(true, 'Deferred (updated 2026-09-15): the URE questionnaire these ACs concern sits past Personal Details in the Apply flow. Personal Details cannot currently be passed because its address autocomplete (b5-b20-Input_AddressLookup) returns "No options to show..." on this whitelisted-IP network (external address service) with no manual-address fallback (probe-pd-*-2026-09-15.js). So URE is blocked behind that address-service limit (likely environment). Confirm the address service is reachable before treating this as testable.');
     expect(true).toBe(true);
   });
 });

@@ -31,6 +31,17 @@ these to avoid the multi-hour thrash of 2026-09-14/15:
    gate that deferred select-default-commission-category AC16, and it blocks the multi-life
    Client-Summary ACs (MLP-10/AC10, MLP-19/AC19). Reaching Client Summary requires satisfying this
    gate first — surface it via the error sweep, don't treat the inert Apply as "no navigation".
+7. **Apply-flow depth frontier (2026-09-15): the Personal Details application screen.** Past DoD,
+   the flow reaches `/QuoteAndApply/PersonalDetails`. Its required fields are: Title (`b5-Dropdown_Title`),
+   height `b5-Input_Cm` + weight `b5-Input_Kg` (masked → calcmask), `b5-Input_MobileNumber`,
+   `b5-Input_Email`, and an ADDRESS autocomplete `b5-b20-Input_AddressLookup` ("Start typing address..."
+   → "Type to search"). All fillable EXCEPT the address lookup: it's a type-ahead backed by an external
+   address service that returns "No options to show..." on this whitelisted-IP test network, so no
+   suggestion can be selected and Next stays on Personal Details with "Please review required fields".
+   There is NO manual-address-entry fallback on the screen. This gates the Occupation / Income / URE
+   apply-flow screens (occupation-apply-flow, navigation-behaviour). Likely an environment/external-
+   service limit (same class as the Loadings intranet URL), not a coverage gap — confirm the address
+   service is reachable before treating these apply-flow-deep ACs as testable.
 
 
 # Project Context

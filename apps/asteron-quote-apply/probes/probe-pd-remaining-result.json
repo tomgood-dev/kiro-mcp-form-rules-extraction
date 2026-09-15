@@ -1,0 +1,16 @@
+{
+  "typeaheads": [],
+  "emptyRequired": [
+    {
+      "id": "4-l1-5625_0-b6-Input_FirstName",
+      "tag": "INPUT",
+      "label": "First Name"
+    },
+    {
+      "id": "24-l1-5625_0-b6-Input_LastName",
+      "tag": "INPUT",
+      "label": "Last Name"
+    }
+  ],
+  "vscompUnset": []
+}
