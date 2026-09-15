@@ -1,0 +1,20 @@
+{
+  "specSlug": "navigation-behaviour-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/navigation-behaviour-v1.spec.js",
+  "runTimestamp": "2026-09-15T17-47-10",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 75677.599,
+  "filtered": false,
+  "total": 1,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 1,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Navigation Behaviour (URE questionnaire) › AC01/AC02/AC03/AC04: URE completion ticks appear/disappear and previous-page navigation",
+      "status": "skipped",
+      "durationMs": 2111
+    }
+  ]
+}

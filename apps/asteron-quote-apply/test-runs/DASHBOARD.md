@@ -1,12 +1,12 @@
 # Asteron Quote Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-11 04:27 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-15 07:58 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
 | Specs | Tests | ✅ Passed | ❌ Failed | ⏭️ Skipped | Specs with failures |
 |---|---|---|---|---|---|
-| 40 | 346 | 280 | 28 | 38 | 13 |
+| 40 | 346 | 280 | 29 | 37 | 14 |
 
 **Pass rate:** 81% of 346 tests (skipped = deferred/blocked ACs, documented per spec).
 
@@ -36,8 +36,8 @@ _Auto-generated 2026-09-11 04:27 UTC. Shows the latest run of each spec. Rebuild
 | lumpsum-acd-death-cover-v1 | 1 | 0 | 0 | ✅ PASS | 2026-09-04 10:45 | 3.4 min | outsystems-dev.asteronlife.co.nz |
 | lumpsum-needlestick-cover-v1 | 10 | 1 | 0 | ❌ FAIL | 2026-09-04 13:18 | 31.8 min | outsystems-dev.asteronlife.co.nz |
 | multi-lives-and-policies-v1 | 15 | 3 | 8 | ❌ FAIL | 2026-09-03 08:58 | 42.4 min | outsystems-dev.asteronlife.co.nz |
-| navigation-behaviour-v1 | 0 | 0 | 1 | ⏭️ all skipped | 2026-09-08 08:40 | 2.0 min | outsystems-qa.asteronlife.co.nz |
-| occupation-apply-flow-v1 | 0 | 0 | 1 | ⏭️ all skipped | 2026-09-07 18:12 | 2.0 min | outsystems-qa.asteronlife.co.nz |
+| navigation-behaviour-v1 | 0 | 0 | 1 | ⏭️ all skipped | 2026-09-15 17:47 | 1.3 min | outsystems-qa.asteronlife.co.nz |
+| occupation-apply-flow-v1 | 0 | 1 | 0 | ❌ FAIL | 2026-09-15 17:49 | 8.4 min | outsystems-qa.asteronlife.co.nz |
 | occupational-codes-v1 | 5 | 1 | 2 | ❌ FAIL | 2026-09-08 11:10 | 13.1 min | outsystems-qa.asteronlife.co.nz |
 | personal-details | 2 | 0 | 0 | ✅ PASS | 2026-09-02 14:53 | 2.6 min | outsystems-dev.asteronlife.co.nz |
 | personal-disability-income-protection-v1 | 2 | 0 | 0 | ✅ PASS | 2026-09-04 15:42 | 7.2 min | outsystems-dev.asteronlife.co.nz |
@@ -66,6 +66,7 @@ _Auto-generated 2026-09-11 04:27 UTC. Shows the latest run of each spec. Rebuild
 | enter-loadings-v1 | 2 failing |
 | lumpsum-needlestick-cover-v1 | 1 failing |
 | multi-lives-and-policies-v1 | 3 failing |
+| occupation-apply-flow-v1 | Occupation — Apply-flow screen (Insurance & Financial Details) › AC01/AC03/AC04: occupation captured; Previous->Insurance History; Next->Income. AC02: offers/Employer/Country/Address fields (expected-fail — absent on this screen) |
 | occupational-codes-v1 | Occupational Codes in the Quote Screen (ACB-6504) › AC11: TPD cover with occupation code IC → Individual-Consideration underwriting message |
 | premium-and-bundling | 2 failing |
 | premium-details-in-the-quote-screen-v1 | 1 failing |

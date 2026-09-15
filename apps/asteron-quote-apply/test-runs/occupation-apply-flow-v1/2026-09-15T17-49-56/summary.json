@@ -1,0 +1,20 @@
+{
+  "specSlug": "occupation-apply-flow-v1",
+  "specFile": "apps/asteron-quote-apply/tests/quote-screen/occupation-apply-flow-v1.spec.js",
+  "runTimestamp": "2026-09-15T17-49-56",
+  "environment": "https://outsystems-qa.asteronlife.co.nz",
+  "durationMs": 503157.23699999996,
+  "filtered": false,
+  "total": 1,
+  "passed": 0,
+  "failed": 1,
+  "skipped": 0,
+  "other": 0,
+  "tests": [
+    {
+      "title": "Occupation — Apply-flow screen (Insurance & Financial Details) › AC01/AC03/AC04: occupation captured; Previous->Insurance History; Next->Income. AC02: offers/Employer/Country/Address fields (expected-fail — absent on this screen)",
+      "status": "failed",
+      "durationMs": 420769
+    }
+  ]
+}
