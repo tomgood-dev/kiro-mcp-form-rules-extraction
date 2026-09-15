@@ -31,7 +31,15 @@ these to avoid the multi-hour thrash of 2026-09-14/15:
    gate that deferred select-default-commission-category AC16, and it blocks the multi-life
    Client-Summary ACs (MLP-10/AC10, MLP-19/AC19). Reaching Client Summary requires satisfying this
    gate first — surface it via the error sweep, don't treat the inert Apply as "no navigation".
-7. **Apply-flow depth frontier (2026-09-15): the Personal Details application screen.** Past DoD,
+7. **Client Summary "Proceed to application" (cracked 2026-09-15).** The per-life name block
+   (`b24-l1-NNNN_0-b6-Input_First/Last/BirthDate`) must be filled via REAL Playwright `fill` — eval
+   `.value=` does NOT commit to the OutSystems reactive model. CRITICAL: the **DOB must MATCH the
+   quote's Age Next Birthday**, else Proceed silently refuses with *"The date of birth does not match
+   client's age given for the quote"* — a message NOT in the standard error containers (the sweep must
+   also read `[class*="message"|"toast"|"alert"|"warning"]`). For ANB 40 on 2026-09-15, DOB
+   `1986-12-15` works. Blur the DOB after fill, then Proceed → Duty of Disclosure. Unblocks the
+   Client-Summary → apply-flow path.
+8. **Apply-flow depth frontier (2026-09-15): the Personal Details application screen.** Past DoD,
    the flow reaches `/QuoteAndApply/PersonalDetails`. Its required fields are: Title (`b5-Dropdown_Title`),
    height `b5-Input_Cm` + weight `b5-Input_Kg` (masked → calcmask), `b5-Input_MobileNumber`,
    `b5-Input_Email`, and an ADDRESS autocomplete `b5-b20-Input_AddressLookup` ("Start typing address..."
