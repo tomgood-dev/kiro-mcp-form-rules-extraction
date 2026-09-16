@@ -1,14 +1,14 @@
 # Asteron Quote Apply — Test Suite Dashboard
 
-_Auto-generated 2026-09-15 09:13 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
+_Auto-generated 2026-09-16 01:21 UTC. Shows the latest run of each spec. Rebuilds automatically after every test run._
 
 ## Suite totals
 
 | Specs | Tests | ✅ Passed | ❌ Failed | ⏭️ Skipped | Specs with failures |
 |---|---|---|---|---|---|
-| 40 | 348 | 281 | 30 | 37 | 15 |
+| 40 | 348 | 285 | 26 | 37 | 15 |
 
-**Pass rate:** 81% of 348 tests (skipped = deferred/blocked ACs, documented per spec).
+**Pass rate:** 82% of 348 tests (skipped = deferred/blocked ACs, documented per spec).
 
 ## Specs (latest run each)
 
@@ -23,7 +23,7 @@ _Auto-generated 2026-09-15 09:13 UTC. Shows the latest run of each spec. Rebuild
 | clone-quote-v1 | 0 | 0 | 1 | ⏭️ all skipped | 2026-09-08 08:40 | 2.0 min | outsystems-qa.asteronlife.co.nz |
 | create-a-new-business-quote-v1 | 17 | 1 | 1 | ❌ FAIL | 2026-09-03 15:17 | 28.9 min | outsystems-dev.asteronlife.co.nz |
 | create-business-policy-quote-v1 | 6 | 0 | 1 | ✅ PASS | 2026-09-04 16:26 | 15.5 min | outsystems-dev.asteronlife.co.nz |
-| discounts-bundling-v1 | 0 | 6 | 0 | ❌ FAIL | 2026-09-11 08:47 | 7.7 min | outsystems-qa.asteronlife.co.nz |
+| discounts-bundling-v1 | 4 | 2 | 0 | ❌ FAIL | 2026-09-16 11:14 | 7.0 min | outsystems-qa.asteronlife.co.nz |
 | early-trauma-benefit-v1 | 1 | 0 | 1 | ✅ PASS | 2026-09-11 09:16 | 3.8 min | outsystems-qa.asteronlife.co.nz |
 | enter-commissions-v1 | 5 | 1 | 1 | ❌ FAIL | 2026-09-07 16:48 | 16.6 min | outsystems-qa.asteronlife.co.nz |
 | enter-loadings-v1 | 0 | 2 | 0 | ❌ FAIL | 2026-09-07 17:08 | 6.6 min | outsystems-qa.asteronlife.co.nz |
@@ -61,7 +61,7 @@ _Auto-generated 2026-09-15 09:13 UTC. Shows the latest run of each spec. Rebuild
 |---|---|
 | business-specific-injury-cover-v1 | 1 failing |
 | create-a-new-business-quote-v1 | 1 failing |
-| discounts-bundling-v1 | Discounts & Bundling Discounts (ACB-2296) › AC01: Bundling Discounts is shown when multiple eligible covers are selected; Discounts & Bundling Discounts (ACB-2296) › AC02: 2 eligible covers (both >= min SI) → 15% bundling discount; Discounts & Bundling Discounts (ACB-2296) › AC03: 3 eligible covers → 20% bundling discount; Discounts & Bundling Discounts (ACB-2296) › AC02 boundary: a 2nd cover BELOW its minimum SI does NOT count toward bundling (stays None/lower); Discounts & Bundling Discounts (ACB-2296) › AC04: removing an eligible cover recalculates/removes the bundling discount; Discounts & Bundling Discounts (ACB-2296) › AC05/AC06: Bundling Discounts shows in the right-hand details banner + "?" tooltip explains 15%/20% |
+| discounts-bundling-v1 | Discounts & Bundling Discounts (ACB-2296) › AC02: 2 eligible covers (both >= min SI) → 15% bundling discount; Discounts & Bundling Discounts (ACB-2296) › AC03: 3 eligible covers → 20% bundling discount |
 | enter-commissions-v1 | 1 failing |
 | enter-loadings-v1 | 2 failing |
 | lumpsum-needlestick-cover-v1 | 1 failing |

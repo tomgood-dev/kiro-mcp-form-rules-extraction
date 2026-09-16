@@ -80,7 +80,11 @@ function cmdNew(app) {
 function cmdTest(app, rest) {
   ensureAppExists(app);
   const cli = path.join(REPO, 'node_modules', '@playwright', 'test', 'cli.js');
-  const args = [cli, 'test', `apps/${app}/tests/`, '--config=playwright.edge.config.js', '--reporter=line', ...rest];
+  // NB: do NOT pass --reporter here. The edge config already declares both the 'line' reporter and
+  // the custom run-folder reporter (report.md + summary.json + .xlsx + dashboard). Passing
+  // --reporter on the CLI would REPLACE the config's reporter list, silently suppressing all the
+  // framework's artifacts (learned 2026-09-16 — the wrapper used to override it and produced no report).
+  const args = [cli, 'test', `apps/${app}/tests/`, '--config=playwright.edge.config.js', ...rest];
   console.log(`Running: node ${args.join(' ')}\n(TARGET_APP=${app}; ensure apps/${app}/.env has BASE_URL + LOGIN_EMAIL/LOGIN_PASSWORD)\n`);
   return sh(nodeBin(), args, { TARGET_APP: app, NODE_TLS_REJECT_UNAUTHORIZED: '0' });
 }
