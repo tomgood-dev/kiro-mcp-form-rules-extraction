@@ -215,6 +215,8 @@ older versions referenced by number are in `apps/asteron-quote-apply/tests/depre
 | `policy-structure-and-kids-cover-rules-v1` | Inflation/Premium Freeze mutual exclusion, Business policy creation, Kids Cover companion requirement, Kids SI tiers |
 | `select-default-commission-category-part-1-v1` / `select-default-commission-category-part-2-v1` | Adviser Use / commission category — see `docs/user-stories/` (acceptance-criteria mode) |
 
-These tests run against the live dev environment and pass consistently (~1-4 min each).
+These tests run against the live **QA** environment (`https://outsystems-qa.asteronlife.co.nz`).
+Quote-screen specs are ~1–4 min each; the deeper apply-flow specs are longer (~7–20 min, real
+end-to-end builds). Scope with `-g "<test>"` for quick checks.
 
 An exhaustive boundary analysis document (`apps/asteron-quote-apply/docs/exhaustive-analysis.md`) maps all 216 discovered rules to fields, permutations, and test scenarios.

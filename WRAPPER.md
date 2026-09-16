@@ -9,6 +9,33 @@ A small helper script, `run.js`, handles the few genuinely-mechanical shell step
 dependencies, running the test suite, opening the results viewer). It does **not** drive the
 process — that's the agent's job.
 
+## Just want to SEE the coverage / results? (BAs & reviewers — no install, no network, no login)
+
+You do **not** need to run anything, be on the corporate network, or have credentials to review what's
+already been tested. Open these files directly in your browser / editor — they are committed in the repo:
+
+- **Coverage summary (start here):** `apps/asteron-quote-apply/docs/coverage-summary-2026-09-16.md`
+  — one-page executive view (covered / deferred / missing, what changed, gaps to close). _Always open
+  the newest `coverage-summary-YYYY-MM-DD.md`; older dates are point-in-time snapshots._
+- **Full gap analysis (detail):** `apps/asteron-quote-apply/docs/coverage-gaps-2026-09-16.md`.
+- **Live test dashboard:** `apps/asteron-quote-apply/test-runs/dashboard.html` (double-click to open —
+  self-contained, sortable/filterable) or `test-runs/DASHBOARD.md`. This is the **live picture** and
+  rebuilds at the end of every test run; the `coverage-*` docs above are dated snapshots.
+- **A specific run's evidence:** `apps/asteron-quote-apply/test-runs/<spec>/<timestamp>/report.md`.
+
+Everything below (setup, running tests) is only needed if you want to **execute** tests yourself.
+
+## Glossary (plain English)
+
+- **AC** — Acceptance Criterion (one numbered requirement from a user story).
+- **Playwright** — the browser-automation tool that runs the tests against the live app.
+- **spec / `.spec.js`** — one test file (usually one user story's ACs).
+- **Covered** — the AC has a real running test (it passes, or it's an intentional expected-fail).
+- **Expected-fail** — a test deliberately kept RED because it encodes a *real app defect/discrepancy*;
+  it goes green automatically the day the app is fixed. A red result is **not** necessarily a broken test.
+- **Deferred** — an AC we can't test yet (documented reason: needs data, pricing values, backend, etc.).
+- **Missing** — an AC with no test and no deferral (a gap to close). The suite currently has **0**.
+
 ## 0. Prerequisites
 - Node.js 18+ (22+ ideal). Microsoft Edge (for the local `edge` config) or Chromium.
 - **Kiro CLI** — this is what runs the actual process.
@@ -30,12 +57,25 @@ a few things are **gitignored** (never committed) and must be provided locally:
    cp   .env.example apps/asteron-quote-apply/.env      # macOS/Linux
    ```
    Set `BASE_URL`, and `LOGIN_EMAIL` + `LOGIN_PASSWORD` (or the `ASTERON_LOGIN_*` aliases — both work).
+   **Where to get these values:** `.env.example` ships a placeholder URL (`your-app.example.com`) — that
+   is NOT the real target. For the bundled Asteron example, `BASE_URL` is the QA environment
+   `https://outsystems-qa.asteronlife.co.nz`, and a **QA test account (email + password) must be
+   obtained from the project owner / your team's credential store** — test credentials are deliberately
+   NOT committed to the repo. Without a real URL + working QA account you can create a correctly-shaped
+   `.env` but the run will stop at login.
 2. **Auth state regenerates itself** — `.auth/state-*.json` is gitignored, but `global-setup.js`
    logs in and recreates it automatically on the first run. No manual step.
 3. **Run a quick scoped check first** (the full suite is long — see §3):
    ```
    node run.js test asteron-quote-apply -g "AC02: 2 eligible covers"
    ```
+   **What success looks like:** that scoped test is a known-passing quote-screen check — expect it
+   **passed**. Note that a FULL-suite run legitimately shows some RED results that are **intentional
+   expected-fails** (they encode real, known app discrepancies — e.g. the per-mille loadings cap, a
+   bundling 12.5%-vs-15% discrepancy, and some adviser-use regressions). A red expected-fail is **by
+   design**, not a broken test — see the "Expected-fail" glossary entry above and the per-spec
+   `report.md` (each failure quotes the AC and the expected-vs-actual so you can tell design-red from a
+   real regression).
 
 **Environment prerequisites that are NOT in the repo (these can block a run regardless of the code):**
 - **Microsoft Edge** installed — the local config launches Edge.
