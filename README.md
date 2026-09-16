@@ -29,7 +29,10 @@ See `WRAPPER.md` for the full walkthrough. In short:
 - Node.js 18+ (22+ ideal)
 - **Kiro CLI** (this runs the actual process)
 - Microsoft Edge (local `edge` config) or Chromium
-- Network access to the target application
+- Network access to the target application (the bundled Asteron QA example is reachable **only from a
+  whitelisted/allowlisted network** — see `apps/asteron-quote-apply/docs/network-access-issue.md`)
+- To run the **bundled example** after cloning: create `apps/asteron-quote-apply/.env` from
+  `.env.example` (it's gitignored) — see `WRAPPER.md` §1a for the full fresh-clone steps.
 
 ### 1. Set up
 ```bash

@@ -19,6 +19,32 @@ node run.js setup
 ```
 Installs npm dependencies and Playwright browsers.
 
+## 1a. Running the bundled `asteron-quote-apply` example after a fresh clone
+The repo ships with a fully-built example app. To run its test suite on a freshly-cloned machine,
+a few things are **gitignored** (never committed) and must be provided locally:
+
+1. **Create its `.env`** — the app's `.env` is gitignored, so a clone doesn't include it. Copy the
+   template and fill in real values:
+   ```
+   copy .env.example apps\asteron-quote-apply\.env      # Windows
+   cp   .env.example apps/asteron-quote-apply/.env      # macOS/Linux
+   ```
+   Set `BASE_URL`, and `LOGIN_EMAIL` + `LOGIN_PASSWORD` (or the `ASTERON_LOGIN_*` aliases — both work).
+2. **Auth state regenerates itself** — `.auth/state-*.json` is gitignored, but `global-setup.js`
+   logs in and recreates it automatically on the first run. No manual step.
+3. **Run a quick scoped check first** (the full suite is long — see §3):
+   ```
+   node run.js test asteron-quote-apply -g "AC02: 2 eligible covers"
+   ```
+
+**Environment prerequisites that are NOT in the repo (these can block a run regardless of the code):**
+- **Microsoft Edge** installed — the local config launches Edge.
+- **Valid credentials** in the `.env` above.
+- **Network access to the target app** — the Asteron QA environment is only reachable from a
+  **whitelisted IP / allowlisted network**. On an off-network device, login fails at `global-setup`
+  no matter how correct everything else is (see `apps/asteron-quote-apply/docs/network-access-issue.md`).
+
+
 ## 2. Start the process — open the repo in Kiro and ask
 Open this repository in Kiro CLI, then just say something like:
 
@@ -56,6 +82,25 @@ node run.js test my-app                 # whole suite (edge config)
 node run.js test my-app -g "AC03"       # a single test by grep
 ```
 (The agent also runs tests itself as part of the process; this is for running them by hand.)
+Note: the full Asteron suite is long — several quote-screen specs are minutes each and the
+apply-flow specs are ~7–20 min (real live builds against QA). Scope with `-g "<test>"` for quick checks.
+
+## 3a. Parallel runs across multiple accounts (optional, for speed)
+`node run.js test` uses the ONE account in `.env`. To run many specs in PARALLEL you need multiple
+accounts — the platform allows only one live session per account at a time, so parallelism = one
+stream per account. Set them up once:
+```
+copy apps\asteron-quote-apply\accounts.example.json apps\asteron-quote-apply\accounts.json   # then edit
+```
+List each QA account (`id`, `email`, `password`) in that gitignored `accounts.json`, then use the
+launcher (it handles per-account auth state, session-safety flags, and launch staggering):
+```
+node tools/parallel-run.js --all                 # every spec, fanned across your accounts
+node tools/parallel-run.js <spec> [<spec> ...]   # named specs across accounts
+node tools/parallel-run.js --list                # show discovered accounts + specs
+node tools/parallel-run.js --scaling-test        # load-test: same short spec on all accounts
+```
+Each account `id` maps to `.auth/state-qa-<id>.json` (auto-created). Add accounts to scale.
 
 ## 4. View results (dashboard + reports only)
 ```
